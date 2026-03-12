@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reposición Bloque Quirúrgico CIMA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:          #f0f4f8;
+            --surface:     #ffffff;
+            --border:      #e2e8f0;
+            --text:        #1e293b;
+            --text-muted:  #64748b;
+            --accent:      #0ea5e9;
+            --accent-dark: #0284c7;
+            --header-bg:   #0f172a;
+            --tab-bg:      rgba(255,255,255,0.08);
+            --tab-active:  #0ea5e9;
+            --tab-text:    #94a3b8;
+            --tab-text-a:  #ffffff;
+            --izq:         #059669;
+            --der:         #2563eb;
+            --pharma:      #dc2626;
+            --unk:         #475569;
+            --danger:      #ef4444;
+            --success:     #10b981;
+            --warning:     #f59e0b;
+            --shadow-sm:   0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+            --radius:      12px;
+            --radius-sm:   8px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            text-transform: uppercase;
+        }
+
+        /* ── TOP ── */
+        .top-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+        }
+        header {
+            background: var(--header-bg);
+            color: #f1f5f9;
+            padding: 0.75rem 1rem;
+            text-align: center;
+        }
+        header h1 {
+            font-size: clamp(0.9rem, 3.8vw, 1.15rem);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        header h1 span { color: var(--accent); }
+
+        /* ── TABS ── */
+        .tabs-container {
+            background: var(--header-bg);
+            overflow-x: auto;
+            padding: 0.5rem 0.8rem 0.6rem;
+            scrollbar-width: none;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .tabs-container::-webkit-scrollbar { display: none; }
+        .tabs { display: flex; gap: 5px; width: max-content; }
+        .tab {
+            padding: 0.38rem 0.95rem;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--tab-bg);
+            color: var(--tab-text);
+            font-weight: 600;
+            font-size: 0.8rem;
+            font-family: 'Outfit', sans-serif;
+            border-radius: 999px;
+            transition: all 0.18s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .tab:hover { background: rgba(255,255,255,0.13); color: #e2e8f0; }
+        .tab.active {
+            background: var(--tab-active);
+            color: var(--tab-text-a);
+            border-color: var(--tab-active);
+            box-shadow: 0 0 14px rgba(14,165,233,0.4);
+        }
+        .tab.tab-editor {
+            border-color: rgba(245,158,11,0.4);
+            color: #f59e0b;
+        }
+        .tab.tab-editor.active {
+            background: var(--warning);
+            border-color: var(--warning);
+            box-shadow: 0 0 14px rgba(245,158,11,0.4);
+        }
+
+        /* ── CONTENT ── */
+        main { padding: 1rem 0.85rem 6rem; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeUp 0.2s ease; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        /* ── LOCATION GROUP ── */
+        .location-group {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 0.85rem;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        .sub-header {
+            padding: 0.6rem 1rem;
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #fff;
+            background: var(--unk);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+        .sub-header::before {
+            content: '';
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.55);
+            flex-shrink: 0;
+        }
+        .sub-header.almacen-izq { background: var(--izq); }
+        .sub-header.almacen-der { background: var(--der); }
+        .sub-header.farmacia    { background: var(--pharma); }
+        .sub-header.desconocido { background: var(--unk); }
+
+        /* ── ITEMS ── */
+        .item-list { padding: 0.15rem 0; }
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.7rem 0.95rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .item:last-child { border-bottom: none; }
+        .item-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.3;
+            min-width: 0;
+        }
+        .item-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        /* ── CHECKBOXES ── */
+        .checkbox-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            font-size: 0.83rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: #f8fafc;
+            border: 1.5px solid var(--border);
+            border-radius: 7px;
+            padding: 0.3rem 0.6rem;
+            transition: all 0.14s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .checkbox-group label:has(input:checked) {
+            background: #e0f2fe;
+            border-color: var(--accent);
+            color: var(--accent-dark);
+        }
+        input[type="checkbox"] {
+            width: 1.1em; height: 1.1em;
+            accent-color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        /* ── SELECTS ── */
+        .number-group select {
+            padding: 0.42rem 0.6rem;
+            border-radius: 7px;
+            border: 1.5px solid var(--border);
+            font-size: 0.83rem;
+            font-family: 'DM Mono', monospace;
+            min-width: 125px;
+            background: #f8fafc;
+            color: var(--text);
+            cursor: pointer;
+            transition: border-color 0.14s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .number-group select:focus { border-color: var(--accent); outline: none; }
+
+        /* ── EMPTY ── */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        /* ── SUMMARY ── */
+        .summary-actions {
+            padding: 0.8rem 0 1.1rem;
+            text-align: center;
+        }
+        .summary-actions button {
+            padding: 0.62rem 1.3rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            background: var(--danger);
+            color: #fff;
+            box-shadow: var(--shadow-sm);
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .summary-actions button:hover { opacity: 0.85; transform: scale(1.02); }
+        .summary-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 0.9rem;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        #summary-content ul { list-style: none; padding: 0.15rem 0; }
+        #summary-content li {
+            padding: 0.62rem 0.95rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.88rem;
+        }
+        #summary-content li:last-child { border-bottom: none; }
+        #content-Resumen .total-item label,
+        #content-Resumen .area-item label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            cursor: pointer;
+        }
+        #content-Resumen .sum-check,
+        #content-Resumen .sum-area-check {
+            width: 1.05em; height: 1.05em;
+            accent-color: var(--accent);
+            flex-shrink: 0;
+        }
+        #content-Resumen .total-item.done span,
+        #content-Resumen .area-item.done span {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+        .quantity {
+            background: var(--accent);
+            color: #fff;
+            padding: 1px 8px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-family: 'DM Mono', monospace;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        /* ── EDITOR TAB ── */
+        .editor-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .editor-search-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .editor-search-box h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+        .search-input-wrap {
+            position: relative;
+        }
+        .search-input-wrap input {
+            width: 100%;
+            padding: 0.6rem 0.9rem 0.6rem 2.4rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.92rem;
+            font-family: 'Outfit', sans-serif;
+            background: #f8fafc;
+            color: var(--text);
+            transition: border-color 0.15s;
+        }
+        .search-input-wrap input:focus { border-color: var(--warning); outline: none; }
+        .search-input-wrap .search-icon {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+        #editor-results {
+            margin-top: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .editor-result-item {
+            background: #f8fafc;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            transition: border-color 0.15s;
+        }
+        .editor-result-item:focus-within {
+            border-color: var(--warning);
+            background: #fffbeb;
+        }
+        .editor-result-meta {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .editor-result-meta span {
+            display: inline-block;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 6px;
+            margin-right: 4px;
+        }
+        .editor-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: flex-end;
+        }
+        .editor-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            flex: 1;
+            min-width: 120px;
+        }
+        .editor-field label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .editor-field input {
+            padding: 0.45rem 0.65rem;
+            border: 1.5px solid var(--border);
+            border-radius: 7px;
+            font-size: 0.88rem;
+            font-family: 'Outfit', sans-serif;
+            background: #fff;
+            color: var(--text);
+            width: 100%;
+        }
+        .ef-name { text-transform: uppercase; }
+        .editor-field input[type="number"] {
+            font-family: 'DM Mono', monospace;
+            max-width: 110px;
+        }
+        .editor-field input:focus { border-color: var(--warning); outline: none; }
+        .editor-save-btn {
+            padding: 0.48rem 1.1rem;
+            background: var(--warning);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            font-size: 0.86rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            align-self: flex-end;
+            white-space: nowrap;
+        }
+        .editor-save-btn:hover { background: #d97706; transform: scale(1.02); }
+        .editor-save-btn.saved {
+            background: var(--success);
+        }
+        .editor-no-results {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            padding: 1.2rem 0;
+        }
+        .editor-hint {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.84rem;
+            padding: 1rem 0;
+        }
+        .editor-type-badge {
+            display: inline-block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 1px 7px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+        .badge-number { background: #dbeafe; color: #1d4ed8; }
+        .badge-check  { background: #dcfce7; color: #166534; }
+
+        /* ── FLOATING BUTTONS ── */
+        #btnSubir, #btnGuardar {
+            position: fixed;
+            z-index: 9999;
+            border: none;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            transition: transform 0.18s, box-shadow 0.18s;
+        }
+        #btnSubir {
+            bottom: 1.1rem; right: 1.1rem;
+            font-size: 1.1rem;
+            background: var(--accent);
+            color: #fff;
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(14,165,233,0.45);
+        }
+        #btnSubir:hover { transform: scale(1.1); }
+        #btnGuardar {
+            bottom: 1.1rem; left: 1.1rem;
+            font-size: 0.86rem;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 0.62rem 1.1rem;
+            border-radius: 999px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        #btnGuardar:hover { transform: scale(1.03); }
+        #btnGuardar::before { content: '💾'; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+<div class="top-wrapper">
+    <header>
+        <h1>Reposición <span>Bloque Quirúrgico</span> CIMA</h1>
+    </header>
+    <div class="tabs-container">
+        <div class="tabs" id="tabs"></div>
+    </div>
+</div>
+
+<main id="tab-contents"></main>
+
+<button id="btnSubir" title="Subir al inicio">⬆</button>
+<button id="btnGuardar" title="Guardar checklist">Guardar</button>
+
+<script>
+// ─────────────────────────────────────────────
+// DATOS BASE
+// ─────────────────────────────────────────────
+const DEFAULT_INVENTORY = {
+    "Reanimación": {
+        "FARMACIA": [
+            { name: "Midazolam (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Metamizol (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Tramadol (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Dexketoprofeno (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Metoclopramida (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Ondansetrón (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Paracetamol (R)", type: "number", stock: 10, storage: "FARMACIA" },
+            { name: "Atropina (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "SF 10ml (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "SF 500ml", type: "number", stock: 3, storage: "FARMACIA" },
+            { name: "SF 100ml", type: "number", stock: 20, storage: "FARMACIA" },
+            { name: "SGS", type: "number", stock: 10, storage: "FARMACIA" },
+            { name: "RL", type: "number", stock: 10, storage: "FARMACIA" }
+        ],
+        "ALMACÉN": [
+            { name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Aguja carga (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Llave 3p (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Abocath (REA)", type: "checkbox", options: ["18G","20G","22G"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Tapón via (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Alargadera (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sistemas (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gasas (REA)", type: "checkbox", options: ["Grandes","Pequeñas"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "BIC", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gafas Nasales (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guedel (REA)", type: "checkbox", options: ["Verde","Amarillo","Rojo"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Empapadores (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
+        ]
+    },
+    "UCSI": {
+        "FARMACIA": [
+            { name: "Midazolam (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Augmentine (U)", type: "checkbox", options: ["500mg","1g","2g"], storage: "FARMACIA" },
+            { name: "Cefazolina (U)", type: "checkbox", options: ["1g","2g"], storage: "FARMACIA" },
+            { name: "Cefuroxima (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Ceftazidima (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Vancomicina (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Gentamicina (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Clindamicina (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Cloxacilina (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Ampicilina (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Cefotaxima (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Meropenem (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Paracetamol (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Ciprofloxacino (U)", type: "checkbox", options: ["200mg","400mg"], storage: "FARMACIA" },
+            { name: "SF 10ml (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "SF 100ml (U)", type: "checkbox", storage: "FARMACIA" },
+            { name: "RL", type: "checkbox", storage: "FARMACIA" }
+        ],
+        "ALMACÉN": [
+            { name: "Jeringas (U)", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Aguja carga (U)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Llave 3p (U)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Abocath (UCSI)", type: "checkbox", options: ["18G","20G","22G"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Alargadera (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sistemas (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gasas (U)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Empapadores (U)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Aposito via (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
+        ]
+    },
+    "template_quirofano": {
+        "Carro Enfermeria": [
+            { name: "Bisturi", type: "checkbox", options: ["nº10","nº11","nº15","nº22","nº24"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Antisepticos", type: "checkbox", options: ["Betadine","Clorh. Alc.","Clorh. Alc. Tintada","Clorh. Acu.","Clorh. Acu. Tintada","Alcohol"], storage: "FARMACIA" },
+            { name: "Otros liquidos", type: "checkbox", options: ["Agua Oxig.","Nobecutan"], storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Contenedor Agujas", type: "number", stock: 1, storage: "ALMACÉN LIMPIEZA" },
+            { name: "Gasas Grandes c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gasas Pequeñas c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guantes Esteriles (nº8,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guantes Esteriles (nº8)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guantes Esteriles (nº7,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guantes Esteriles (nº7)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guantes Esteriles (nº6,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guantes Esteriles (nº6)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sábana Adhesiva", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Funda Mayo", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Bata esteril", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Placa bisturi", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Mango Lampara", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Paño utilidades", type: "number", stock: 3, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Paño adhesivo", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Bolsa instrumental", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Pegatina", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Goma aspiración", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Yankauer", type: "checkbox", options: ["G (1)","M (1)","P (1)"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Rasca", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Bisturi eléctrico", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Rotulador", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Jeringa cono ancho", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "SF 500ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "SF 100ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Kit sondaje", type: "checkbox", options: ["Sonda Vesical","Cathegel","Paño Kit Sondaje","Guante sondaje","Jeringa Kit Sondaje"], storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Botes anatomia", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Receptal aspiración", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" }
+        ],
+        "Carro Anestesia": [
+            { name: "RL", type: "number", stock: 10, storage: "FARMACIA" },
+            { name: "SGS", type: "number", stock: 5, storage: "FARMACIA" },
+            { name: "SF 500mL", type: "number", stock: 3, storage: "FARMACIA" },
+            { name: "SF 100ml", type: "number", stock: 8, storage: "FARMACIA" },
+            { name: "Glucosado 5% 500ml", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Gelafundina", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Paracetamol", type: "number", stock: 6, storage: "FARMACIA" },
+            { name: "Filtro", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Mascarilla Laringea (nº5)", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Mascarilla Laringea (nº4)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Mascarilla Laringea (nº3)", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gafas Nasales", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "TET (nº8)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "TET (nº7,5)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "TET (nº7)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "TET (nº6,5)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Electrodos", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sulky", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Pomada ocular", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Capnografo", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guedel verde", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guedel amarillo", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guedel rojo", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guedel azul", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sistema jeringa", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Jeringas bomba", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Rasuradoras", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Venda gasa", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sistema estandar", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Alargadera", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Aposito via", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Compresor", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "SteryStrip", type: "checkbox", options: ["Azul (2)","Naranja (2)"], storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Abocath 18G", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Abocath 20G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Abocath 22G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Abocath 16G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Abocath 14G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Llave 3Pasos", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Tapon via", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Mefix pequeño", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Esparadrapo", type: "checkbox", options: ["Plastico","Tela","Papel"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Atropina", type: "number", stock: 10, storage: "FARMACIA" },
+            { name: "Bicarbonato", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "SF 10mL", type: "number", stock: 5, storage: "FARMACIA" },
+            { name: "Dexametasona", type: "number", stock: 5, storage: "FARMACIA" },
+            { name: "Urapidilo", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Dexketoprofeno", type: "number", stock: 5, storage: "FARMACIA" },
+            { name: "Eufilina", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Hidrocortisona", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Metamizol", type: "number", stock: 5, storage: "FARMACIA" },
+            { name: "Neostigmina", type: "number", stock: 20, storage: "FARMACIA" },
+            { name: "Ondansetron 4mg", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Ondansetron 8mg", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Pantoprazol", type: "number", stock: 3, storage: "FARMACIA" },
+            { name: "Naloxona", type: "number", stock: 4, storage: "FARMACIA" },
+            { name: "Dexclorferinamina", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Furosemida", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Solu Moderin 125mg", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Metilprednisona 20mg", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Metilprednisona 40mg", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Salbutamol inhalado", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Diclofenaco", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Metoclopramida", type: "number", stock: 5, storage: "FARMACIA" },
+            { name: "Adrenalina", type: "number", stock: 4, storage: "FARMACIA" },
+            { name: "Ac. Tranexámico", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Bupivacaina 0,25", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Bupivacaina 0.5", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Cefazolina 1G", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Efedrina", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Lidocaina 2%", type: "number", stock: 5, storage: "FARMACIA" },
+            { name: "Mepivacaina 2%", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Midazolam", type: "number", stock: 3, storage: "FARMACIA" },
+            { name: "Propofol 50 ml", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Propofol 10 mL", type: "number", stock: 15, storage: "FARMACIA" },
+            { name: "Ropivacaina", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Levobupivacaina", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Solinitrina", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Tramadol", type: "number", stock: 5, storage: "FARMACIA" },
+            { name: "Trandate", type: "number", stock: 1, storage: "FARMACIA" },
+            { name: "Amiodarona", type: "number", stock: 2, storage: "FARMACIA" }
+        ],
+        "Otros": [
+            { name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gasas grandes s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gasas pequeñas s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sondas Aspiración (Naranja)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sondas Aspiración (Verde)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sondas Aspiración (Negro)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sondas Aspiración (Blanco)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA" },
+            { name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Agujas", type: "checkbox", options: ["Carga","Azul","Verde","Amarilla"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
+            { name: "Set anestesia", type: "checkbox", options: ["Tubuladura","Filtro","Capnografo"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Cal sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Cal sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Receptales aspiración", type: "number", stock: 8, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Receptal aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Set aspiración anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
+            { name: "Taburete", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Bomba infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
+        ]
+    }
+};
+
+// ─────────────────────────────────────────────
+// STORAGE KEYS
+// ─────────────────────────────────────────────
+const CHECKLIST_KEY      = 'hospitalInventoryState_v12';
+const SUMMARY_TICKS_KEY  = 'summaryTicks_v1';
+const AREA_TICKS_KEY     = 'summaryAreaTicks_v1';
+const INVENTORY_EDIT_KEY = 'inventoryEdits_v1'; // guarda overrides de nombre y stock
+
+// ─────────────────────────────────────────────
+// ESTADO GLOBAL
+// ─────────────────────────────────────────────
+const ID_SEP = '||';
+const tabOrder = [
+    "Reanimación","UCSI","Quirófano 6","Quirófano 5","Quirófano 4",
+    "Quirófano 3","Quirófano 2","Quirófano 1","Hemodinamia",
+    "Quirófano 8","Quirófano 7","Resumen","✏️ Editor"
+];
+
+let checklistState   = {};
+let summaryTicks     = {};
+let summaryAreaTicks = {};
+// inventoryEdits: { "area||location||originalName": { name, stock } }
+let inventoryEdits   = {};
+// inventoryData: copia viva de DEFAULT_INVENTORY con quirófanos expandidos y edits aplicados
+let inventoryData    = {};
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    loadAll();
+    buildInventory();
+    renderTabs();
+    renderAllTabContents();
+    switchTab(tabOrder[0]);
+    bindFloatingBtns();
+    bindChecklistChanges();
+});
+
+function loadAll() {
+    const loadJSON = (key, def) => { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } };
+    checklistState   = loadJSON(CHECKLIST_KEY, {});
+    summaryTicks     = loadJSON(SUMMARY_TICKS_KEY, {});
+    summaryAreaTicks = loadJSON(AREA_TICKS_KEY, {});
+    inventoryEdits   = loadJSON(INVENTORY_EDIT_KEY, {});
+    // limpieza preventiva resumen
+    for (const k of Object.keys(checklistState)) {
+        if (k.startsWith('Resumen') || k.startsWith('Area')) delete checklistState[k];
+    }
+}
+
+// Construye inventoryData = DEFAULT + quirófanos + edits aplicados
+function buildInventory() {
+    // deep clone default
+    inventoryData = JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
+    // expandir quirófanos
+    ["1","2","3","4","5","6","7","8","Hemodinamia"].forEach(n => {
+        const key = n === "Hemodinamia" ? "Hemodinamia" : `Quirófano ${n}`;
+        if (!inventoryData[key]) inventoryData[key] = JSON.parse(JSON.stringify(inventoryData.template_quirofano));
+    });
+    delete inventoryData.template_quirofano;
+    // aplicar edits guardados
+    for (const editKey in inventoryEdits) {
+        const [area, location, origName] = editKey.split(ID_SEP);
+        if (!inventoryData[area]?.[location]) continue;
+        const item = inventoryData[area][location].find(i => i.name === origName);
+        if (!item) continue;
+        const edit = inventoryEdits[editKey];
+        if (edit.name !== undefined) item.name = edit.name;
+        if (edit.stock !== undefined && item.type === 'number') item.stock = edit.stock;
+    }
+}
+
+// ─────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────
+function renderTabs() {
+    const container = document.getElementById('tabs');
+    container.innerHTML = tabOrder.map(t => {
+        const isEditor = t === '✏️ Editor';
+        return `<button class="tab${isEditor ? ' tab-editor' : ''}" data-tab="${t}">${t}</button>`;
+    }).join('');
+    container.addEventListener('click', e => {
+        if (e.target.classList.contains('tab')) switchTab(e.target.dataset.tab);
+    });
+}
+
+function switchTab(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const btn = document.querySelector(`.tab[data-tab="${tabName}"]`);
+    const content = document.getElementById(`content-${tabName.replace(/[\s✏️]+/g, '-')}`);
+    if (btn) { btn.classList.add('active'); btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
+    if (content) content.classList.add('active');
+    if (tabName === 'Resumen') renderSummary();
+}
+
+// ─────────────────────────────────────────────
+// RENDER ALL CONTENTS
+// ─────────────────────────────────────────────
+function renderAllTabContents() {
+    const main = document.getElementById('tab-contents');
+    main.innerHTML = tabOrder.map(tabName => {
+        const id = `content-${tabName.replace(/[\s✏️]+/g, '-')}`;
+        if (tabName === 'Resumen') return `<div class="tab-content" id="${id}"></div>`;
+        if (tabName === '✏️ Editor') return `<div class="tab-content" id="${id}">${renderEditorHTML()}</div>`;
+        const areaData = inventoryData[tabName];
+        return `<div class="tab-content" id="${id}">${
+            areaData
+                ? Object.entries(areaData).map(([loc, items]) => renderLocationGroup(tabName, loc, items)).join('')
+                : '<p class="empty-state">Sin datos.</p>'
+        }</div>`;
+    }).join('');
+    // bind editor after inject
+    bindEditor();
+}
+
+// ─────────────────────────────────────────────
+// CHECKLIST RENDER
+// ─────────────────────────────────────────────
+function getLocationClass(s) {
+    const l = s.toLowerCase();
+    if (l.includes('farmacia')) return 'farmacia';
+    if (l.includes('izquierdo')) return 'almacen-izq';
+    if (l.includes('derecho')) return 'almacen-der';
+    return 'desconocido';
+}
+
+function renderLocationGroup(tabName, locationName, items) {
+    return `<div class="location-group">
+        <div class="sub-header">${locationName}</div>
+        <div class="item-list">${items.map(item => renderItem(tabName, locationName, item)).join('')}</div>
+    </div>`;
+}
+
+function renderItem(tabName, locationName, item) {
+    const baseId = [tabName, locationName, item.name].join(ID_SEP);
+    let html = '';
+    if (item.type === 'checkbox') {
+        const opts = item.options?.length ? item.options : [''];
+        html = opts.map(opt => {
+            const oid = opt ? [baseId, opt].join(ID_SEP) : baseId;
+            return `<div class="checkbox-group"><label for="${oid}"><input type="checkbox" id="${oid}" ${checklistState[oid] ? 'checked' : ''}>${opt || 'Falta'}</label></div>`;
+        }).join('');
+    } else {
+        const val = checklistState[baseId] || '0';
+        let opts = `<option value="0">Stock OK (${item.stock})</option>`;
+        for (let i = 1; i <= item.stock; i++) opts += `<option value="${i}" ${val == i ? 'selected' : ''}>Faltan ${i}</option>`;
+        html = `<div class="number-group"><select id="${baseId}">${opts}</select></div>`;
+    }
+    return `<div class="item"><span class="item-name">${item.name}</span><div class="item-controls">${html}</div></div>`;
+}
+
+// ─────────────────────────────────────────────
+// CHECKLIST LOGIC
+// ─────────────────────────────────────────────
+function bindChecklistChanges() {
+    document.getElementById('tab-contents').addEventListener('change', e => {
+        if (!e.target.matches('input[type="checkbox"], select')) return;
+        if (e.target.closest('#content--️-Editor')) return; // ignorar editor
+        saveChecklistState();
+        if (document.querySelector('.tab.active')?.dataset.tab === 'Resumen') renderSummary();
+    });
+}
+
+function saveChecklistState() {
+    const state = {};
+    document.querySelectorAll('#tab-contents input[type="checkbox"], #tab-contents select').forEach(input => {
+        if (input.closest('#content--️-Editor')) return;
+        if (input.type === 'checkbox' && input.checked) {
+            if (['sum-check','sum-area-check'].some(c => input.classList.contains(c))) return;
+            if (input.id.startsWith('Resumen') || input.id.startsWith('Area')) return;
+            state[input.id] = true;
+        } else if (input.tagName === 'SELECT' && input.value && parseInt(input.value) > 0) {
+            state[input.id] = input.value;
+        }
+    });
+    localStorage.setItem(CHECKLIST_KEY, JSON.stringify(state));
+    checklistState = state;
+}
+
+// ─────────────────────────────────────────────
+// SUMMARY
+// ─────────────────────────────────────────────
+function renderSummary() {
+    const el = document.getElementById('content-Resumen');
+    if (!el) return;
+
+    // build location map
+    const locMap = {};
+    for (const area in inventoryData) {
+        for (const location in inventoryData[area]) {
+            for (const item of inventoryData[area][location]) {
+                const base = [area, location, item.name].join(ID_SEP);
+                if (item.options?.length) item.options.forEach(o => { locMap[[base, o].join(ID_SEP)] = item.storage; });
+                else locMap[base] = item.storage;
+            }
+        }
+    }
+
+    let byArea = {}, byStorage = {};
+    for (const inputId in checklistState) {
+        if (inputId.startsWith('Resumen') || inputId.startsWith('Area')) continue;
+        const value = checklistState[inputId];
+        const [area, , itemName, option] = inputId.split(ID_SEP);
+        if (!byArea[area]) byArea[area] = [];
+        let display = itemName + (option ? ` (${option})` : '');
+        const isNum = !isNaN(parseInt(value));
+        if (isNum) display += ` - Faltan: ${value}`;
+        byArea[area].push(display);
+        const store = locMap[inputId] || 'Desconocido';
+        const fullName = option ? `${itemName} (${option})` : itemName;
+        if (!byStorage[store]) byStorage[store] = {};
+        if (isNum) { byStorage[store][itemName] = (byStorage[store][itemName] || 0) + parseInt(value); }
+        else       { byStorage[store][fullName] = (byStorage[store][fullName] || 0) + 1; }
+    }
+
+    const hasItems = Object.keys(checklistState).length > 0;
+
+    el.innerHTML = `
+        <div class="summary-actions"><button id="clear-all-data">Limpiar Todo el Checklist</button></div>
+        <div class="summary-section">
+            <div class="sub-header desconocido">Resumen por Área</div>
+            ${!hasItems ? '<p class="empty-state">No hay nada que reponer.</p>' : ''}
+            ${Object.entries(byArea).map(([area, items]) => !items.length ? '' : `
+                <div class="location-group" style="margin:.45rem;border-radius:8px">
+                    <h3 class="sub-header desconocido">${area}</h3>
+                    <ul>${items.sort().map(item => {
+                        const aid = ['Area', area, item].join(ID_SEP);
+                        const chk = !!summaryAreaTicks[aid];
+                        return `<li class="area-item ${chk?'done':''}"><label for="${aid}"><input type="checkbox" class="sum-area-check" id="${aid}" ${chk?'checked':''}><span>${item}</span></label></li>`;
+                    }).join('')}</ul>
+                </div>`).join('')}
+        </div>
+        <div class="summary-section">
+            <div class="sub-header desconocido">Lista de Reposición Total</div>
+            ${!hasItems ? '<p class="empty-state">No hay nada que reponer.</p>' : ''}
+            ${Object.keys(byStorage).sort().map(loc => `
+                <div class="location-group" style="margin:.45rem;border-radius:8px">
+                    <h3 class="sub-header ${getLocationClass(loc)}">${loc}</h3>
+                    <ul>${Object.entries(byStorage[loc]).sort((a,b)=>a[0].localeCompare(b[0])).map(([name, qty]) => {
+                        const sid = ['Resumen', loc, name].join(ID_SEP);
+                        const chk = !!summaryTicks[sid];
+                        return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span>${name}</span></label><span class="quantity">×${qty}</span></li>`;
+                    }).join('')}</ul>
+                </div>`).join('')}
+        </div>`;
+
+    document.getElementById('clear-all-data').addEventListener('click', () => {
+        if (!confirm('¿Borrar todos los datos? Esta acción no se puede deshacer.')) return;
+        [CHECKLIST_KEY, SUMMARY_TICKS_KEY, AREA_TICKS_KEY].forEach(k => localStorage.removeItem(k));
+        checklistState = {}; summaryTicks = {}; summaryAreaTicks = {};
+        document.querySelectorAll('#tab-contents input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('#tab-contents select').forEach(s => s.value = '0');
+        renderSummary();
+    });
+
+    el.addEventListener('change', e => {
+        const cb = e.target.closest('.sum-check');
+        if (cb) {
+            cb.checked ? summaryTicks[cb.id] = true : delete summaryTicks[cb.id];
+            localStorage.setItem(SUMMARY_TICKS_KEY, JSON.stringify(summaryTicks));
+            cb.closest('.total-item')?.classList.toggle('done', cb.checked);
+        }
+        const acb = e.target.closest('.sum-area-check');
+        if (acb) {
+            acb.checked ? summaryAreaTicks[acb.id] = true : delete summaryAreaTicks[acb.id];
+            localStorage.setItem(AREA_TICKS_KEY, JSON.stringify(summaryAreaTicks));
+            acb.closest('.area-item')?.classList.toggle('done', acb.checked);
+        }
+    });
+}
+
+// ─────────────────────────────────────────────
+// EDITOR TAB
+// ─────────────────────────────────────────────
+function renderEditorHTML() {
+    return `<div class="editor-wrap">
+        <div class="editor-search-box">
+            <h2>✏️ Editor de Productos</h2>
+            <div class="search-input-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="editorSearch" placeholder="Busca un producto… ej: Propofol, Bisturi, TET…" autocomplete="off" autocorrect="off" spellcheck="false">
+            </div>
+            <div id="editor-results"><p class="editor-hint">Escribe para buscar en todos los quirófanos y áreas.</p></div>
+        </div>
+    </div>`;
+}
+
+function bindEditor() {
+    const input = document.getElementById('editorSearch');
+    if (!input) return;
+    input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        const resultsEl = document.getElementById('editor-results');
+        if (q.length < 2) {
+            resultsEl.innerHTML = '<p class="editor-hint">Escribe al menos 2 caracteres para buscar.</p>';
+            return;
+        }
+        // Collect matches: iterate inventoryData but match against original names too
+        const matches = [];
+        for (const area in inventoryData) {
+            for (const location in inventoryData[area]) {
+                for (const item of inventoryData[area][location]) {
+                    if (item.name.toLowerCase().includes(q)) {
+                        // find original name from DEFAULT (antes de edits)
+                        const editKey = findEditKey(area, location, item.name);
+                        matches.push({ area, location, item, editKey });
+                    }
+                }
+            }
+        }
+        if (!matches.length) {
+            resultsEl.innerHTML = '<p class="editor-no-results">No se encontraron productos con ese nombre.</p>';
+            return;
+        }
+        resultsEl.innerHTML = matches.slice(0, 20).map(({ area, location, item, editKey }, idx) => {
+            const isNum = item.type === 'number';
+            const badge = isNum
+                ? `<span class="editor-type-badge badge-number">stock</span>`
+                : `<span class="editor-type-badge badge-check">check</span>`;
+            return `
+            <div class="editor-result-item" data-idx="${idx}" data-edit-key="${editKey}" data-original-name="${item.name}" data-type="${item.type}">
+                <div class="editor-result-meta">
+                    <span>${area}</span><span>${location}</span>${badge}
+                </div>
+                <div class="editor-fields">
+                    <div class="editor-field">
+                        <label>Nombre del producto</label>
+                        <input type="text" class="ef-name" value="${item.name}" placeholder="Nombre">
+                    </div>
+                    ${isNum ? `<div class="editor-field">
+                        <label>Stock máximo</label>
+                        <input type="number" class="ef-stock" value="${item.stock}" min="1" max="999" placeholder="Stock">
+                    </div>` : ''}
+                    <button class="editor-save-btn">Guardar</button>
+                </div>
+            </div>`;
+        }).join('');
+
+        // bind save buttons
+        resultsEl.querySelectorAll('.editor-save-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleEditorSave(btn));
+        });
+    });
+}
+
+// Encuentra el editKey correcto buscando en DEFAULT_INVENTORY el item con nombre actual
+function findEditKey(area, location, currentName) {
+    // primero busca en edits guardados si ya está mapeado
+    for (const k in inventoryEdits) {
+        const [a, l] = k.split(ID_SEP);
+        if (a === area && l === location && inventoryEdits[k].name === currentName) return k;
+    }
+    // si no, busca en DEFAULT por nombre original
+    const defArea = area === 'Hemodinamia' ? 'template_quirofano'
+        : area.startsWith('Quirófano') ? 'template_quirofano'
+        : area;
+    const defItems = DEFAULT_INVENTORY[defArea]?.[location] || DEFAULT_INVENTORY[area]?.[location];
+    if (defItems) {
+        const found = defItems.find(i => i.name === currentName);
+        if (found) return [area, location, found.name].join(ID_SEP);
+    }
+    return [area, location, currentName].join(ID_SEP);
+}
+
+function handleEditorSave(btn) {
+    const card = btn.closest('.editor-result-item');
+    const editKey  = card.dataset.editKey;
+    const origName = card.dataset.originalName;
+    const type     = card.dataset.type;
+
+    const newName  = card.querySelector('.ef-name')?.value.trim().toUpperCase();
+    const newStock = card.querySelector('.ef-stock') ? parseInt(card.querySelector('.ef-stock').value) : null;
+
+    if (!newName) return;
+
+    // Actualiza edits en memoria
+    if (!inventoryEdits[editKey]) inventoryEdits[editKey] = {};
+    inventoryEdits[editKey].name = newName;
+    if (type === 'number' && newStock > 0) {
+        inventoryEdits[editKey].stock = newStock;
+
+        // Resetear a 0 el estado del checklist para este item en TODOS los quirófanos
+        // El editKey es area||location||origName → necesitamos limpiar checklistState
+        const [area, location] = editKey.split(ID_SEP);
+        const keysToDelete = Object.keys(checklistState).filter(k => {
+            const parts = k.split(ID_SEP);
+            // el nombre puede haber cambiado, buscar por area y location
+            return parts[0] === area && parts[1] === location && parts[2] === origName;
+        });
+        keysToDelete.forEach(k => delete checklistState[k]);
+        localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
+    }
+
+    // Guardar edits
+    localStorage.setItem(INVENTORY_EDIT_KEY, JSON.stringify(inventoryEdits));
+
+    // Reconstruir inventario y rerenderizar pestañas de checklist
+    buildInventory();
+    reRenderChecklistTabs();
+
+    // feedback visual
+    btn.textContent = '✔ Guardado';
+    btn.classList.add('saved');
+    // actualiza el campo origName del card para futuras ediciones en la misma sesión
+    card.dataset.originalName = newName;
+    card.dataset.editKey = [editKey.split(ID_SEP)[0], editKey.split(ID_SEP)[1], newName].join(ID_SEP);
+    setTimeout(() => { btn.textContent = 'Guardar'; btn.classList.remove('saved'); }, 1500);
+}
+
+// Rerenderiza solo las pestañas del checklist (no Editor ni Resumen)
+function reRenderChecklistTabs() {
+    const main = document.getElementById('tab-contents');
+    tabOrder.forEach(tabName => {
+        if (tabName === 'Resumen' || tabName === '✏️ Editor') return;
+        const id = `content-${tabName.replace(/[\s✏️]+/g, '-')}`;
+        const el = document.getElementById(id);
+        if (!el) return;
+        const wasActive = el.classList.contains('active');
+        const areaData = inventoryData[tabName];
+        el.innerHTML = areaData
+            ? Object.entries(areaData).map(([loc, items]) => renderLocationGroup(tabName, loc, items)).join('')
+            : '<p class="empty-state">Sin datos.</p>';
+    });
+}
+
+// ─────────────────────────────────────────────
+// FLOATING BUTTONS
+// ─────────────────────────────────────────────
+function bindFloatingBtns() {
+    const btnSubir   = document.getElementById('btnSubir');
+    const btnGuardar = document.getElementById('btnGuardar');
+    window.addEventListener('scroll', () => {
+        btnSubir.style.display = document.documentElement.scrollTop > 200 ? 'flex' : 'none';
+    });
+    btnSubir?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    btnGuardar?.addEventListener('click', () => {
+        saveChecklistState();
+        btnGuardar.textContent = '✔ Guardado';
+        setTimeout(() => btnGuardar.textContent = 'Guardar', 1300);
+    });
+}
+</script>
+</body>
+</html>
