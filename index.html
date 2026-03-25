@@ -992,13 +992,26 @@ function renderSummary() {
                 </div>`).join('')}
         </div>`;
 
-    document.getElementById('clear-all-data').addEventListener('click', () => {
-        if (!confirm('¿Borrar todos los datos? Esta acción no se puede deshacer.')) return;
-        [CHECKLIST_KEY, SUMMARY_TICKS_KEY, AREA_TICKS_KEY].forEach(k => localStorage.removeItem(k));
-        checklistState = {}; summaryTicks = {}; summaryAreaTicks = {};
-        document.querySelectorAll('#tab-contents input[type="checkbox"]').forEach(cb => cb.checked = false);
-        document.querySelectorAll('#tab-contents select').forEach(s => s.value = '0');
-        renderSummary();
+    const clearBtn = document.getElementById('clear-all-data');
+    clearBtn.addEventListener('click', () => {
+        if (clearBtn.dataset.confirm === '1') {
+            [CHECKLIST_KEY, SUMMARY_TICKS_KEY, AREA_TICKS_KEY].forEach(k => localStorage.removeItem(k));
+            checklistState = {}; summaryTicks = {}; summaryAreaTicks = {};
+            document.querySelectorAll('#tab-contents input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('#tab-contents select').forEach(s => s.value = '0');
+            renderSummary();
+        } else {
+            clearBtn.dataset.confirm = '1';
+            clearBtn.textContent = '⚠️ Pulsa de nuevo para confirmar';
+            clearBtn.style.background = '#b91c1c';
+            setTimeout(() => {
+                if (clearBtn && clearBtn.isConnected) {
+                    clearBtn.dataset.confirm = '0';
+                    clearBtn.textContent = 'Limpiar Todo el Checklist';
+                    clearBtn.style.background = '';
+                }
+            }, 3000);
+        }
     });
 
     el.addEventListener('change', e => {
