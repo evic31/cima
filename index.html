@@ -155,6 +155,18 @@
             border-bottom: 1px solid #f1f5f9;
         }
         .item:last-child { border-bottom: none; }
+        .item.g-1, .item.g-3, .item.g-5 { background: #ffffff; }
+        .item.g-2, .item.g-4            { background: #ffffff; }
+        /* Carro Enfermeria — verde menta en impares */
+        .loc-0 .item.g-1,
+        .loc-0 .item.g-3 { background: #ecfdf5; }
+        /* Carro Anestesia — amarillo cálido en impares */
+        .loc-1 .item.g-1,
+        .loc-1 .item.g-3,
+        .loc-1 .item.g-5 { background: #fef9c3; }
+        /* Otros — lavanda en impares */
+        .loc-2 .item.g-1,
+        .loc-2 .item.g-3 { background: #ede9fe; }
         .item-name {
             font-size: 0.9rem;
             font-weight: 500;
@@ -573,149 +585,160 @@ const DEFAULT_INVENTORY = {
     },
     "template_quirofano": {
         "Carro Enfermeria": [
-            { name: "Bisturi", type: "checkbox", options: ["nº10","nº11","nº15","nº22","nº24"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Antisepticos", type: "checkbox", options: ["Betadine","Clorh. Alc.","Clorh. Alc. Tintada","Clorh. Acu.","Clorh. Acu. Tintada","Alcohol"], storage: "FARMACIA" },
-            { name: "Otros liquidos", type: "checkbox", options: ["Agua Oxig.","Nobecutan"], storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Contenedor Agujas", type: "number", stock: 1, storage: "ALMACÉN LIMPIEZA" },
-            { name: "Gasas Grandes c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Gasas Pequeñas c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guantes Esteriles (nº8,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guantes Esteriles (nº8)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guantes Esteriles (nº7,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guantes Esteriles (nº7)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guantes Esteriles (nº6,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guantes Esteriles (nº6)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sábana Adhesiva", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Funda Mayo", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Bata esteril", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Placa bisturi", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Mango Lampara", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Paño utilidades", type: "number", stock: 3, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Paño adhesivo", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Bolsa instrumental", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Pegatina", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Goma aspiración", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Yankauer", type: "checkbox", options: ["G (1)","M (1)","P (1)"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Rasca", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Bisturi eléctrico", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Rotulador", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Jeringa cono ancho", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "SF 500ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "SF 100ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Kit sondaje", type: "checkbox", options: ["Sonda Vesical","Cathegel","Paño Kit Sondaje","Guante sondaje","Jeringa Kit Sondaje"], storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Botes anatomia", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Receptal aspiración", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" }
+            // ── BLOQUE 1 ──
+            { g:1, name: "Bisturi", type: "checkbox", options: ["nº10","nº11","nº15","nº22","nº24"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Antisepticos", type: "checkbox", options: ["Betadine","Clorh. Alc.","Clorh. Alc. Tintada","Clorh. Acu.","Clorh. Acu. Tintada","Alcohol"], storage: "FARMACIA" },
+            { g:1, name: "Otros liquidos", type: "checkbox", options: ["Agua Oxig.","Nobecutan"], storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:1, name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Contenedor Agujas", type: "number", stock: 1, storage: "ALMACÉN LIMPIEZA" },
+            { g:1, name: "Gasas Grandes c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Gasas Pequeñas c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº8,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº8)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº7,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº7)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº6,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº6)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            // ── BLOQUE 2 ──
+            { g:2, name: "Sábana Adhesiva", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Funda Mayo", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Bata esteril", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Placa bisturi", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Mango Lampara", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Paño utilidades", type: "number", stock: 3, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Paño adhesivo", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Bolsa instrumental", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Pegatina", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Goma aspiración", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Yankauer", type: "checkbox", options: ["G (1)","M (1)","P (1)"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Rasca", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Bisturi eléctrico", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Rotulador", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Jeringa cono ancho", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            // ── BLOQUE 3 ──
+            { g:3, name: "SF 500ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "SF 100ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "Kit sondaje", type: "checkbox", options: ["Sonda Vesical","Cathegel","Paño Kit Sondaje","Guante sondaje","Jeringa Kit Sondaje"], storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Botes anatomia", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Receptal aspiración", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" }
         ],
         "Carro Anestesia": [
-            { name: "RL", type: "number", stock: 10, storage: "FARMACIA" },
-            { name: "SGS", type: "number", stock: 5, storage: "FARMACIA" },
-            { name: "SF 500mL", type: "number", stock: 3, storage: "FARMACIA" },
-            { name: "SF 100ml", type: "number", stock: 8, storage: "FARMACIA" },
-            { name: "Glucosado 5% 500ml", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Gelafundina", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Paracetamol", type: "number", stock: 6, storage: "FARMACIA" },
-            { name: "Filtro", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Mascarilla Laringea (nº5)", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Mascarilla Laringea (nº4)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Mascarilla Laringea (nº3)", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Gafas Nasales", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "TET (nº8)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "TET (nº7,5)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "TET (nº7)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "TET (nº6,5)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Electrodos", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sulky", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Pomada ocular", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Capnografo", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guedel verde", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guedel amarillo", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guedel rojo", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guedel azul", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sistema jeringa", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Jeringas bomba", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Rasuradoras", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Venda gasa", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sistema estandar", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Alargadera", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Aposito via", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Compresor", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "SteryStrip", type: "checkbox", options: ["Azul (2)","Naranja (2)"], storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Abocath 18G", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Abocath 20G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Abocath 22G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Abocath 16G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Abocath 14G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Llave 3Pasos", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Tapon via", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Mefix pequeño", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Esparadrapo", type: "checkbox", options: ["Plastico","Tela","Papel"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Atropina", type: "number", stock: 10, storage: "FARMACIA" },
-            { name: "Bicarbonato", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "SF 10mL", type: "number", stock: 5, storage: "FARMACIA" },
-            { name: "Dexametasona", type: "number", stock: 5, storage: "FARMACIA" },
-            { name: "Urapidilo", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Dexketoprofeno", type: "number", stock: 5, storage: "FARMACIA" },
-            { name: "Eufilina", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Hidrocortisona", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Metamizol", type: "number", stock: 5, storage: "FARMACIA" },
-            { name: "Neostigmina", type: "number", stock: 20, storage: "FARMACIA" },
-            { name: "Ondansetron 4mg", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Ondansetron 8mg", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Pantoprazol", type: "number", stock: 3, storage: "FARMACIA" },
-            { name: "Naloxona", type: "number", stock: 4, storage: "FARMACIA" },
-            { name: "Dexclorferinamina", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Furosemida", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Solu Moderin 125mg", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Metilprednisona 20mg", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Metilprednisona 40mg", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Salbutamol inhalado", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Diclofenaco", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Metoclopramida", type: "number", stock: 5, storage: "FARMACIA" },
-            { name: "Adrenalina", type: "number", stock: 4, storage: "FARMACIA" },
-            { name: "Ac. Tranexámico", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Bupivacaina 0,25", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Bupivacaina 0.5", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Cefazolina 1G", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Efedrina", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Lidocaina 2%", type: "number", stock: 5, storage: "FARMACIA" },
-            { name: "Mepivacaina 2%", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Midazolam", type: "number", stock: 3, storage: "FARMACIA" },
-            { name: "Propofol 50 ml", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Propofol 10 mL", type: "number", stock: 15, storage: "FARMACIA" },
-            { name: "Ropivacaina", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Levobupivacaina", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Solinitrina", type: "number", stock: 2, storage: "FARMACIA" },
-            { name: "Tramadol", type: "number", stock: 5, storage: "FARMACIA" },
-            { name: "Trandate", type: "number", stock: 1, storage: "FARMACIA" },
-            { name: "Amiodarona", type: "number", stock: 2, storage: "FARMACIA" }
+            // ── BLOQUE 1 ── (Filtro bajado al final, tras Mascarilla nº3)
+            { g:1, name: "RL", type: "number", stock: 10, storage: "FARMACIA" },
+            { g:1, name: "SGS", type: "number", stock: 5, storage: "FARMACIA" },
+            { g:1, name: "SF 500mL", type: "number", stock: 3, storage: "FARMACIA" },
+            { g:1, name: "SF 100ml", type: "number", stock: 8, storage: "FARMACIA" },
+            { g:1, name: "Glucosado 5% 500ml", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:1, name: "Gelafundina", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:1, name: "Paracetamol", type: "number", stock: 6, storage: "FARMACIA" },
+            { g:1, name: "Mascarilla Laringea (nº5)", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Mascarilla Laringea (nº4)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Mascarilla Laringea (nº3)", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            // ── BLOQUE 2 ──
+            { g:2, name: "Filtro", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Gafas Nasales", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "TET (nº8)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "TET (nº7,5)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "TET (nº7)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "TET (nº6,5)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Electrodos", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Sulky", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:2, name: "Pomada ocular", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:2, name: "Capnografo", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel verde", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel amarillo", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel rojo", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel azul", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            // ── BLOQUE 3 ──
+            { g:3, name: "Sistema jeringa", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Jeringas bomba", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Rasuradoras", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Venda gasa", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Sistema estandar", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Alargadera", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Aposito via", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "Compresor", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "SteryStrip", type: "checkbox", options: ["Azul (2)","Naranja (2)"], storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "Abocath 18G", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Abocath 20G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Abocath 22G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Abocath 16G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Abocath 14G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Llave 3Pasos", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Tapon via", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Mefix pequeño", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Esparadrapo", type: "checkbox", options: ["Plastico","Tela","Papel"], storage: "ALMACÉN PASILLO DERECHO" },
+            // ── BLOQUE 4 ──
+            { g:4, name: "Atropina", type: "number", stock: 10, storage: "FARMACIA" },
+            { g:4, name: "Bicarbonato", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "SF 10mL", type: "number", stock: 5, storage: "FARMACIA" },
+            { g:4, name: "Dexametasona", type: "number", stock: 5, storage: "FARMACIA" },
+            { g:4, name: "Urapidilo", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Dexketoprofeno", type: "number", stock: 5, storage: "FARMACIA" },
+            { g:4, name: "Eufilina", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Hidrocortisona", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Metamizol", type: "number", stock: 5, storage: "FARMACIA" },
+            { g:4, name: "Neostigmina", type: "number", stock: 20, storage: "FARMACIA" },
+            { g:4, name: "Ondansetron 4mg", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Ondansetron 8mg", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Pantoprazol", type: "number", stock: 3, storage: "FARMACIA" },
+            { g:4, name: "Naloxona", type: "number", stock: 4, storage: "FARMACIA" },
+            { g:4, name: "Dexclorferinamina", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:4, name: "Furosemida", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Solu Moderin 125mg", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:4, name: "Metilprednisona 20mg", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:4, name: "Metilprednisona 40mg", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:4, name: "Salbutamol inhalado", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:4, name: "Diclofenaco", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Metoclopramida", type: "number", stock: 5, storage: "FARMACIA" },
+            // ── BLOQUE 5 ──
+            { g:5, name: "Adrenalina", type: "number", stock: 4, storage: "FARMACIA" },
+            { g:5, name: "Ac. Tranexámico", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Bupivacaina 0,25", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Bupivacaina 0.5", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Cefazolina 1G", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Efedrina", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Lidocaina 2%", type: "number", stock: 5, storage: "FARMACIA" },
+            { g:5, name: "Mepivacaina 2%", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:5, name: "Midazolam", type: "number", stock: 3, storage: "FARMACIA" },
+            { g:5, name: "Propofol 50 ml", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Propofol 10 mL", type: "number", stock: 15, storage: "FARMACIA" },
+            { g:5, name: "Ropivacaina", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Levobupivacaina", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:5, name: "Solinitrina", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Tramadol", type: "number", stock: 5, storage: "FARMACIA" },
+            { g:5, name: "Trandate", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:5, name: "Amiodarona", type: "number", stock: 2, storage: "FARMACIA" }
         ],
         "Otros": [
-            { name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Gasas grandes s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Gasas pequeñas s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sondas Aspiración (Naranja)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sondas Aspiración (Verde)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sondas Aspiración (Negro)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sondas Aspiración (Blanco)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA" },
-            { name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Agujas", type: "checkbox", options: ["Carga","Azul","Verde","Amarilla"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
-            { name: "Set anestesia", type: "checkbox", options: ["Tubuladura","Filtro","Capnografo"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Cal sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Cal sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Receptales aspiración", type: "number", stock: 8, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Receptal aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Set aspiración anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
-            { name: "Taburete", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Bomba infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
+            // ── BLOQUE 1 ──
+            { g:1, name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Gasas grandes s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Gasas pequeñas s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Sondas Aspiración (Naranja)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Sondas Aspiración (Verde)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Sondas Aspiración (Negro)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Sondas Aspiración (Blanco)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:1, name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:1, name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA" },
+            { g:1, name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Agujas", type: "checkbox", options: ["Carga","Azul","Verde","Amarilla"], storage: "ALMACÉN PASILLO DERECHO" },
+            // ── BLOQUE 2 ──
+            { g:2, name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
+            { g:2, name: "Set anestesia", type: "checkbox", options: ["Tubuladura","Filtro","Capnografo"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Cal sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Cal sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Receptales aspiración", type: "number", stock: 8, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Receptal aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Set aspiración anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
+            // ── BLOQUE 3 ──
+            { g:3, name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
+            { g:3, name: "Taburete", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Bomba infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
         ]
     }
 };
@@ -829,7 +852,7 @@ function renderAllTabContents() {
         const areaData = inventoryData[tabName];
         return `<div class="tab-content" id="${id}">${
             areaData
-                ? Object.entries(areaData).map(([loc, items]) => renderLocationGroup(tabName, loc, items)).join('')
+                ? Object.entries(areaData).map(([loc, items], idx) => renderLocationGroup(tabName, loc, items, idx)).join('')
                 : '<p class="empty-state">Sin datos.</p>'
         }</div>`;
     }).join('');
@@ -848,8 +871,8 @@ function getLocationClass(s) {
     return 'desconocido';
 }
 
-function renderLocationGroup(tabName, locationName, items) {
-    return `<div class="location-group">
+function renderLocationGroup(tabName, locationName, items, locIdx = 0) {
+    return `<div class="location-group loc-${locIdx}">
         <div class="sub-header">${locationName}</div>
         <div class="item-list">${items.map(item => renderItem(tabName, locationName, item)).join('')}</div>
     </div>`;
@@ -870,7 +893,8 @@ function renderItem(tabName, locationName, item) {
         for (let i = 1; i <= item.stock; i++) opts += `<option value="${i}" ${val == i ? 'selected' : ''}>Faltan ${i}</option>`;
         html = `<div class="number-group"><select id="${baseId}">${opts}</select></div>`;
     }
-    return `<div class="item"><span class="item-name">${item.name}</span><div class="item-controls">${html}</div></div>`;
+    const gClass = item.g ? `g-${item.g}` : '';
+    return `<div class="item ${gClass}"><span class="item-name">${item.name}</span><div class="item-controls">${html}</div></div>`;
 }
 
 // ─────────────────────────────────────────────
@@ -1142,7 +1166,7 @@ function reRenderChecklistTabs() {
         const wasActive = el.classList.contains('active');
         const areaData = inventoryData[tabName];
         el.innerHTML = areaData
-            ? Object.entries(areaData).map(([loc, items]) => renderLocationGroup(tabName, loc, items)).join('')
+            ? Object.entries(areaData).map(([loc, items], idx) => renderLocationGroup(tabName, loc, items, idx)).join('')
             : '<p class="empty-state">Sin datos.</p>';
     });
 }
