@@ -6,6 +6,7 @@
     <title>Reposición Bloque Quirúrgico CIMA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --bg:          #f0f4f8;
@@ -272,21 +273,21 @@
             font-size: 0.88rem;
         }
         #summary-content li:last-child { border-bottom: none; }
-        #content-Resumen .total-item label,
-        #content-Resumen .area-item label {
+        #content-RESUMEN .total-item label,
+        #content-RESUMEN .area-item label {
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
             cursor: pointer;
         }
-        #content-Resumen .sum-check,
-        #content-Resumen .sum-area-check {
+        #content-RESUMEN .sum-check,
+        #content-RESUMEN .sum-area-check {
             width: 1.05em; height: 1.05em;
             accent-color: var(--accent);
             flex-shrink: 0;
         }
-        #content-Resumen .total-item.done span,
-        #content-Resumen .area-item.done span {
+        #content-RESUMEN .total-item.done span,
+        #content-RESUMEN .area-item.done span {
             text-decoration: line-through;
             color: #aaa;
         }
@@ -525,14 +526,17 @@ const DEFAULT_INVENTORY = {
             { name: "Tramadol (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "Dexketoprofeno (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "Metoclopramida (R)", type: "checkbox", storage: "FARMACIA" },
-            { name: "Ondansetrón (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Ondansetrón 4mg (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Ondansetrón 8mg (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "Paracetamol (R)", type: "number", stock: 10, storage: "FARMACIA" },
             { name: "Atropina (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "SF 10ml (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "SF 500ml", type: "number", stock: 3, storage: "FARMACIA" },
             { name: "SF 100ml", type: "number", stock: 20, storage: "FARMACIA" },
             { name: "SGS", type: "number", stock: 10, storage: "FARMACIA" },
-            { name: "RL", type: "number", stock: 10, storage: "FARMACIA" }
+            { name: "RL", type: "number", stock: 10, storage: "FARMACIA" },
+            { name: "Glucosado 5%", type: "number", stock: 2, storage: "FARMACIA" }
+
         ],
         "ALMACÉN": [
             { name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
@@ -547,7 +551,7 @@ const DEFAULT_INVENTORY = {
             { name: "Gafas Nasales (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Guedel (REA)", type: "checkbox", options: ["Verde","Amarillo","Rojo"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Empapadores (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
+            { name: "Guantes (REA)", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
         ]
     },
     "UCSI": {
@@ -571,16 +575,16 @@ const DEFAULT_INVENTORY = {
             { name: "RL", type: "checkbox", storage: "FARMACIA" }
         ],
         "ALMACÉN": [
-            { name: "Jeringas (U)", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Aguja carga (U)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Llave 3p (U)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Jeringas (UCSI)", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Aguja carga (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Llave 3p (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Abocath (UCSI)", type: "checkbox", options: ["18G","20G","22G"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Alargadera (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Sistemas (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Gasas (U)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Empapadores (U)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gasas (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Empapadores (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Aposito via (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
+            { name: "Guantes (UCSI)", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
         ]
     },
     "template_quirofano": {
@@ -620,7 +624,7 @@ const DEFAULT_INVENTORY = {
             { g:3, name: "SF 500ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:3, name: "SF 100ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:3, name: "Kit sondaje", type: "checkbox", options: ["Sonda Vesical","Cathegel","Paño Kit Sondaje","Guante sondaje","Jeringa Kit Sondaje"], storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:3, name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Empapadores", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Botes anatomia", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Receptal aspiración", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" }
         ],
@@ -647,19 +651,18 @@ const DEFAULT_INVENTORY = {
             { g:2, name: "Sulky", type: "number", stock: 1, storage: "FARMACIA" },
             { g:2, name: "Pomada ocular", type: "number", stock: 1, storage: "FARMACIA" },
             { g:2, name: "Capnografo", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Guedel verde", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Guedel amarillo", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Guedel rojo", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Guedel azul", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel #2 80mm (verde)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel #3 90mm (amarillo)", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel #4 10mm (rojo)", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel #5 11mm (celeste/ naranja)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 3 ──
             { g:3, name: "Sistema jeringa", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Jeringas bomba", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Rasuradoras", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Venda gasa", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Jeringas bomba", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Vendas gasa", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Sistema estandar", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Alargadera", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Aposito via", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:3, name: "Compresor", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Smart", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "SteryStrip", type: "checkbox", options: ["Azul (2)","Naranja (2)"], storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:3, name: "Abocath 18G", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Abocath 20G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
@@ -673,6 +676,7 @@ const DEFAULT_INVENTORY = {
             // ── BLOQUE 4 ──
             { g:4, name: "Atropina", type: "number", stock: 10, storage: "FARMACIA" },
             { g:4, name: "Bicarbonato", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Cefazolina 1G", type: "number", stock: 2, storage: "FARMACIA" },
             { g:4, name: "SF 10mL", type: "number", stock: 5, storage: "FARMACIA" },
             { g:4, name: "Dexametasona", type: "number", stock: 5, storage: "FARMACIA" },
             { g:4, name: "Urapidilo", type: "number", stock: 2, storage: "FARMACIA" },
@@ -698,47 +702,48 @@ const DEFAULT_INVENTORY = {
             { g:5, name: "Ac. Tranexámico", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Bupivacaina 0,25", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Bupivacaina 0.5", type: "number", stock: 2, storage: "FARMACIA" },
-            { g:5, name: "Cefazolina 1G", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Efedrina", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Lidocaina 2%", type: "number", stock: 5, storage: "FARMACIA" },
-            { g:5, name: "Mepivacaina 2%", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:5, name: "Mepivacaina 2%", type: "number", stock: 3, storage: "FARMACIA" },
             { g:5, name: "Midazolam", type: "number", stock: 3, storage: "FARMACIA" },
             { g:5, name: "Propofol 50 ml", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Propofol 10 mL", type: "number", stock: 15, storage: "FARMACIA" },
             { g:5, name: "Ropivacaina", type: "number", stock: 2, storage: "FARMACIA" },
-            { g:5, name: "Levobupivacaina", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:5, name: "Levobupivacaina", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Solinitrina", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Tramadol", type: "number", stock: 5, storage: "FARMACIA" },
             { g:5, name: "Trandate", type: "number", stock: 1, storage: "FARMACIA" },
-            { g:5, name: "Amiodarona", type: "number", stock: 2, storage: "FARMACIA" }
+            { g:5, name: "Amiodarona", type: "number", stock: 2, storage: "FARMACIA" },
+            // ── BLOQUE 6 ──
+            { g: 6, name: "Guantes", type: "checkbox", options: ["S", "M", "L"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Gasas grandes s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Gasas pequeñas s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Sondas Aspiración #16 (Naranja)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Sondas Aspiración #14 (Verde)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Sondas Aspiración #12 (Blanco)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Sondas Aspiración #10 (Negro)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g: 6, name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g: 6, name: "Alcohol", type: "number", stock: 1, storage: "FARMACIA" },
+            { g: 6, name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA" },
+            { g: 6, name: "Jeringas", type: "checkbox", options: ["20cc", "10cc", "5cc", "3cc"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Agujas", type: "checkbox", options: ["Carga", "Azul", "Verde", "Amarilla"], storage: "ALMACÉN PASILLO DERECHO" },
+
         ],
         "Otros": [
             // ── BLOQUE 1 ──
-            { g:1, name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Gasas grandes s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Gasas pequeñas s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Sondas Aspiración (Naranja)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Sondas Aspiración (Verde)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Sondas Aspiración (Negro)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Sondas Aspiración (Blanco)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:1, name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:1, name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA" },
-            { g:1, name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Agujas", type: "checkbox", options: ["Carga","Azul","Verde","Amarilla"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
+            { g:1, name: "Set anestesia", type: "checkbox", options: ["Tubuladura","Filtro","Capnografo"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Cal sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Cal sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Receptales aspiración", type: "number", stock: 8, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Receptal aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Set aspiración anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 2 ──
-            { g:2, name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
-            { g:2, name: "Set anestesia", type: "checkbox", options: ["Tubuladura","Filtro","Capnografo"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Cal sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Cal sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Receptales aspiración", type: "number", stock: 8, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Receptal aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Set aspiración anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
-            // ── BLOQUE 3 ──
-            { g:3, name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
-            { g:3, name: "Taburete", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Bomba infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
+            { g:2, name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
+            { g:2, name: "Taburete", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Bomba infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
         ]
     }
 };
@@ -756,9 +761,9 @@ const INVENTORY_EDIT_KEY = 'inventoryEdits_v1'; // guarda overrides de nombre y 
 // ─────────────────────────────────────────────
 const ID_SEP = '||';
 const tabOrder = [
-    "Reanimación","UCSI","Quirófano 6","Quirófano 5","Quirófano 4",
-    "Quirófano 3","Quirófano 2","Quirófano 1","Hemodinamia",
-    "Quirófano 8","Quirófano 7","Resumen","✏️ Editor"
+    "Reanimación","UCSI","Quirófano 1","Quirófano 2","Quirófano 3",
+    "Quirófano 4","Quirófano 5","Quirófano 6","Hemodinamia",
+    "Quirófano 8","Quirófano 7","RESUMEN","✏️ Editor"
 ];
 
 let checklistState   = {};
@@ -788,9 +793,9 @@ function loadAll() {
     summaryTicks     = loadJSON(SUMMARY_TICKS_KEY, {});
     summaryAreaTicks = loadJSON(AREA_TICKS_KEY, {});
     inventoryEdits   = loadJSON(INVENTORY_EDIT_KEY, {});
-    // limpieza preventiva resumen
+    // limpieza preventiva RESUMEN
     for (const k of Object.keys(checklistState)) {
-        if (k.startsWith('Resumen') || k.startsWith('Area')) delete checklistState[k];
+        if (k.startsWith('RESUMEN') || k.startsWith('Area')) delete checklistState[k];
     }
 }
 
@@ -837,7 +842,7 @@ function switchTab(tabName) {
     const content = document.getElementById(`content-${tabName.replace(/[\s✏️]+/g, '-')}`);
     if (btn) { btn.classList.add('active'); btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
     if (content) content.classList.add('active');
-    if (tabName === 'Resumen') renderSummary();
+    if (tabName === 'RESUMEN') renderSummary();
 }
 
 // ─────────────────────────────────────────────
@@ -847,7 +852,7 @@ function renderAllTabContents() {
     const main = document.getElementById('tab-contents');
     main.innerHTML = tabOrder.map(tabName => {
         const id = `content-${tabName.replace(/[\s✏️]+/g, '-')}`;
-        if (tabName === 'Resumen') return `<div class="tab-content" id="${id}"></div>`;
+        if (tabName === 'RESUMEN') return `<div class="tab-content" id="${id}"></div>`;
         if (tabName === '✏️ Editor') return `<div class="tab-content" id="${id}">${renderEditorHTML()}</div>`;
         const areaData = inventoryData[tabName];
         return `<div class="tab-content" id="${id}">${
@@ -905,7 +910,7 @@ function bindChecklistChanges() {
         if (!e.target.matches('input[type="checkbox"], select')) return;
         if (e.target.closest('#content--️-Editor')) return; // ignorar editor
         saveChecklistState();
-        if (document.querySelector('.tab.active')?.dataset.tab === 'Resumen') renderSummary();
+        if (document.querySelector('.tab.active')?.dataset.tab === 'RESUMEN') renderSummary();
     });
 }
 
@@ -915,7 +920,7 @@ function saveChecklistState() {
         if (input.closest('#content--️-Editor')) return;
         if (input.type === 'checkbox' && input.checked) {
             if (['sum-check','sum-area-check'].some(c => input.classList.contains(c))) return;
-            if (input.id.startsWith('Resumen') || input.id.startsWith('Area')) return;
+            if (input.id.startsWith('RESUMEN') || input.id.startsWith('Area')) return;
             state[input.id] = true;
         } else if (input.tagName === 'SELECT' && input.value && parseInt(input.value) > 0) {
             state[input.id] = input.value;
@@ -929,7 +934,7 @@ function saveChecklistState() {
 // SUMMARY
 // ─────────────────────────────────────────────
 function renderSummary() {
-    const el = document.getElementById('content-Resumen');
+    const el = document.getElementById('content-RESUMEN');
     if (!el) return;
 
     // build location map
@@ -946,7 +951,7 @@ function renderSummary() {
 
     let byArea = {}, byStorage = {};
     for (const inputId in checklistState) {
-        if (inputId.startsWith('Resumen') || inputId.startsWith('Area')) continue;
+        if (inputId.startsWith('RESUMEN') || inputId.startsWith('Area')) continue;
         const value = checklistState[inputId];
         const [area, , itemName, option] = inputId.split(ID_SEP);
         if (!byArea[area]) byArea[area] = [];
@@ -964,9 +969,12 @@ function renderSummary() {
     const hasItems = Object.keys(checklistState).length > 0;
 
     el.innerHTML = `
-        <div class="summary-actions"><button id="clear-all-data">Limpiar Todo el Checklist</button></div>
+        <div class="summary-actions">
+            <button id="clear-all-data">Limpiar Todo el Checklist</button>
+            <button id="btn-pdf" style="background:#0ea5e9;margin-left:0.5rem">🖨️ Exportar PDF</button>
+        </div>
         <div class="summary-section">
-            <div class="sub-header desconocido">Resumen por Área</div>
+            <div class="sub-header desconocido">RESUMEN por Área</div>
             ${!hasItems ? '<p class="empty-state">No hay nada que reponer.</p>' : ''}
             ${Object.entries(byArea).map(([area, items]) => !items.length ? '' : `
                 <div class="location-group" style="margin:.45rem;border-radius:8px">
@@ -985,7 +993,7 @@ function renderSummary() {
                 <div class="location-group" style="margin:.45rem;border-radius:8px">
                     <h3 class="sub-header ${getLocationClass(loc)}">${loc}</h3>
                     <ul>${Object.entries(byStorage[loc]).sort((a,b)=>a[0].localeCompare(b[0])).map(([name, qty]) => {
-                        const sid = ['Resumen', loc, name].join(ID_SEP);
+                        const sid = ['RESUMEN', loc, name].join(ID_SEP);
                         const chk = !!summaryTicks[sid];
                         return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span>${name}</span></label><span class="quantity">×${qty}</span></li>`;
                     }).join('')}</ul>
@@ -1013,7 +1021,43 @@ function renderSummary() {
             }, 3000);
         }
     });
+    document.getElementById('btn-pdf').addEventListener('click', () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 15;
 
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('LISTA DE REPOSICION - BLOQUE QUIRURGICO CIMA', 14, y);
+        y += 10;
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(new Date().toLocaleDateString('es-ES'), 14, y);
+        y += 10;
+
+        Object.keys(byStorage).sort().forEach(loc => {
+            const items = byStorage[loc];
+            if (!Object.keys(items).length) return;
+            if (y > 270) { doc.addPage(); y = 15; }
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setFillColor(240, 240, 240);
+            doc.rect(14, y - 5, 182, 8, 'F');
+            doc.text(loc.toUpperCase(), 16, y);
+            y += 8;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            Object.entries(items).sort((a, b) => a[0].localeCompare(b[0])).forEach(([name, qty]) => {
+                if (y > 275) { doc.addPage(); y = 15; }
+                doc.text(`- ${name.toUpperCase()}`, 18, y);
+                doc.text(`x${qty}`, 185, y, { align: 'right' });
+                y += 7;
+            });
+            y += 4;
+        });
+
+        doc.save('reposicion-cima.pdf');
+    });
     el.addEventListener('change', e => {
         const cb = e.target.closest('.sum-check');
         if (cb) {
@@ -1168,11 +1212,11 @@ function handleEditorSave(btn) {
     setTimeout(() => { btn.textContent = 'Guardar'; btn.classList.remove('saved'); }, 1500);
 }
 
-// Rerenderiza solo las pestañas del checklist (no Editor ni Resumen)
+// Rerenderiza solo las pestañas del checklist (no Editor ni RESUMEN)
 function reRenderChecklistTabs() {
     const main = document.getElementById('tab-contents');
     tabOrder.forEach(tabName => {
-        if (tabName === 'Resumen' || tabName === '✏️ Editor') return;
+        if (tabName === 'RESUMEN' || tabName === '✏️ Editor') return;
         const id = `content-${tabName.replace(/[\s✏️]+/g, '-')}`;
         const el = document.getElementById(id);
         if (!el) return;
