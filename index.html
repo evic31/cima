@@ -61,6 +61,25 @@
             padding: 0.75rem 1rem;
             text-align: center;
             box-shadow: 0 2px 16px rgba(88,166,255,.30);
+            position: relative;
+        }
+        .header-info-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #fff;
+            font-size: 15px;
+            line-height: 1;
         }
         header h1 {
             font-size: clamp(0.9rem, 3.8vw, 1.15rem);
@@ -511,6 +530,7 @@
 <div class="top-wrapper">
     <header>
         <h1>Reposición <span>BLOQUE QUIRÚRGICO</span> CIMA</h1>
+        <button class="header-info-btn" onclick="document.getElementById('info-modal').style.display='flex'" title="Información">ℹ</button>
     </header>
     <div class="tabs-container">
         <div class="tabs" id="tabs"></div>
@@ -1252,6 +1272,31 @@ function bindFloatingBtns() {
         setTimeout(() => btnGuardar.textContent = 'Guardar', 1300);
     });
 }
+function openRef(key) {
+    const d = REF_DATA[key]; if (!d) return;
+    document.getElementById('ref-panel-title').textContent = d.title;
+    document.getElementById('ref-panel-body').innerHTML = d.content;
+    document.getElementById('ref-modal').classList.add('on');
+}
+function closeRef() {
+    document.getElementById('ref-modal').classList.remove('on');
+}
 </script>
+<div id="info-modal" onclick="this.style.display='none'"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center">
+    <div onclick="event.stopPropagation()"
+        style="background:#fff;border-radius:12px;padding:24px 28px;max-width:320px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+        <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--blue);margin-bottom:8px;letter-spacing:.08em">
+            REVISIÓN & REPOSICIÓN INTERACTIVA BQ</div>
+        <div style="font-size:13px;color:var(--txt);line-height:1.7">
+        Elaborado por Eduardo FPV<br>
+        DUE Bloque Quirúrgico<br>
+        CIMA Barcelona · 2026
+        </div>
+        <div onclick="document.getElementById('info-modal').style.display='none'"
+            style="margin-top:16px;font-family:'Space Mono',monospace;font-size:10px;color:var(--txt2);cursor:pointer">cerrar
+        </div>
+    </div>
+</div>
 </body>
 </html>
