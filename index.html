@@ -1136,7 +1136,7 @@ function buildManualSheetPDF() {
     const PW = 297, PH = 210, M = 7, GAP = 5;
     const COL_W = (PW - 2 * M - GAP) / 2;
     const UB_W = 6, STK_W = 6;
-    const RH = 3.7, SH = 4.3, HEAD_H = 5, TOP = M + 12, BOTTOM = PH - M - 2;
+    const RH = 3.5, SH = 4.2, HEAD_H = 5, TOP = M + 12, BOTTOM = PH - M - 2;
     // cambian según la tabla (quirófanos / REA-UCSI)
     let NAME_W, TOT_W, cols, Q_W, title;
 
@@ -1191,7 +1191,7 @@ function buildManualSheetPDF() {
         put('Casilla vacía: ', true); put('anotar cuántas FALTAN   ·   ');
         doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.2); doc.rect(lx, ly - 1.9, 1.9, 1.9); lx += 2.6;
         put(': marcar si falta   ·   '); put('STK', true); put(' stock máximo   ·   ');
-        if (TOT_W) { put('TOTAL', true); put(' suma a reponer   ·   '); } else { put('REPUESTO', true); put(' marcar al reponer   ·   '); }
+        put('TOTAL', true); put(' suma a reponer   ·   ');
         put('UB: ', true);
         Object.entries(STORAGE_ABBR).forEach(([full, [ab, c]], i) => {
             doc.setTextColor(...c); put(ab, true); doc.setTextColor(71, 85, 105);
@@ -1252,7 +1252,7 @@ function buildManualSheetPDF() {
         // celdas por quirófano
         cols.forEach((c, i) => {
             const cx = qx(x0, i);
-            if (!r.isNum || c.box) {
+            if (!r.isNum) {
                 doc.setDrawColor(148, 163, 184); doc.setLineWidth(0.2);
                 doc.rect(cx + Q_W / 2 - 0.95, y0 + RH / 2 - 0.95, 1.9, 1.9);
             } else if (!r.uniform && r.stocks[i] != null) {
@@ -1278,12 +1278,12 @@ function buildManualSheetPDF() {
     // ── reparto en 2 columnas por página ──
     let colIdx = -1, x = 0, y = 0, colTop = 0;
     const closeCol = () => { if (colIdx >= 0 && y > colTop) { doc.setDrawColor(71, 85, 105); doc.setLineWidth(0.4); doc.rect(x, colTop, COL_W, y - colTop); } };
-    const startCol = () => {
+    const startCol = (header = true) => {
         closeCol();
         colIdx++;
         if (colIdx % 2 === 0) { if (colIdx > 0) doc.addPage(); drawPageHeader(); }
         x = M + (colIdx % 2) * (COL_W + GAP); y = TOP; colTop = y;
-        drawColHeader(x, y); y += HEAD_H;
+        if (header) { drawColHeader(x, y); y += HEAD_H; }
     };
     const flow = rows => rows.forEach((r, i) => {
         if (r.kind === 'sec') {
@@ -1299,26 +1299,81 @@ function buildManualSheetPDF() {
     });
 
     // ── páginas 1-2: quirófanos (una columna por quirófano + TOTAL) ──
-    title = 'HOJA DE REVISIÓN · QUIRÓFANOS';
+    title = 'HOJA DE REVISIÓN · QUIRÓFANOS · REA · UCSI';
     NAME_W = 49; TOT_W = 8;
     cols = quis.map(q => ({ label: qLabel(q) }));
     Q_W = (COL_W - NAME_W - UB_W - STK_W - TOT_W) / cols.length;
     startCol();
     flow(buildRows(quis));
 
-    // ── página nueva: REA a la izquierda, UCSI a la derecha (FALTA + REPUESTO) ──
-    const others = ['Reanimación', 'UCSI'].filter(a => inventoryData[a]);
-    if (others.length) {
-        title = 'HOJA DE REVISIÓN · ' + others.map(a => a.toUpperCase()).join(' / ');
-        NAME_W = 83; TOT_W = 0;
-        cols = [{ label: 'FALTA' }, { label: 'REPUESTO', box: true }];
-        Q_W = (COL_W - NAME_W - UB_W - STK_W) / cols.length;
-        if (colIdx % 2 === 0) { closeCol(); colIdx++; y = colTop; }  // salta la columna derecha libre → página nueva
-        others.forEach(a => {
-            startCol();
-            flow(buildRows([a], a.toUpperCase() + ' · ', loc => loc === 'FARMACIA' ? 3 : 4));
+    // ── REA / UCSI en el hueco que quede: abreviaturas para rodear a boli lo que falta ──
+    const abbr = name => name
+        .replace(/\((R|U|REA|UCSI)\)/gi, '').trim()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .split(/\s+/).map((w, i) => /\d/.test(w) ? w : i === 0 ? w.slice(0, 4).toUpperCase() : (w.length > 6 ? w.slice(0, 4) : w).toLowerCase()).join(' ');
+    const LH = 3.4, LBL_W = 17, TOK_GAP = 2.6;
+    function compactLines(area) {
+        const out = [];
+        Object.entries(inventoryData[area]).forEach(([loc, items]) => {
+            // cada artículo = grupo que no se parte entre líneas
+            const groups = items.map(item => {
+                const [, c] = STORAGE_ABBR[item.storage] || ['', [45, 49, 66]];
+                const segs = [];
+                if (item.options?.length) {
+                    segs.push({ t: abbr(item.name), c, bold: true, size: 6.3 });
+                    item.options.forEach(o => segs.push({ t: o, c: [45, 49, 66], size: 6.3, pad: 1.4 }));
+                } else {
+                    segs.push({ t: abbr(item.name), c, bold: true, size: 6.3 });
+                    if (item.type === 'number') segs.push({ t: `(${item.stock})`, c: [148, 163, 184], size: 5, pad: 0.6 });
+                }
+                segs.forEach(sg => { doc.setFont('helvetica', sg.bold ? 'bold' : 'normal'); doc.setFontSize(sg.size); sg.w = doc.getTextWidth(sg.t); });
+                return { segs, w: segs.reduce((a, sg) => a + sg.w + (sg.pad || 0), 0) };
+            });
+            let line = { label: loc, groups: [], w: 0 };
+            const maxW = COL_W - LBL_W - 2;
+            groups.forEach(g => {
+                if (line.groups.length && line.w + TOK_GAP + g.w > maxW) { out.push(line); line = { label: '', groups: [], w: 0 }; }
+                line.w += (line.groups.length ? TOK_GAP : 0) + g.w; line.groups.push(g);
+            });
+            out.push(line);
         });
+        return out;
     }
+    function drawCompact(area, lines) {
+        const si = 3;
+        doc.setFillColor(...SECTION_TINT[si].band); doc.rect(x, y, COL_W, SH, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(45, 49, 66);
+        doc.text(area.toUpperCase(), x + 1.2, y + 3.05);
+        const tw = doc.getTextWidth(area.toUpperCase());
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(5.8); doc.setTextColor(71, 85, 105);
+        doc.text('rodear lo que falta · (n) stock máx.: anotar cuántos faltan', x + tw + 3.5, y + 3.05);
+        doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.line(x, y, x + COL_W, y); doc.line(x, y + SH, x + COL_W, y + SH);
+        y += SH;
+        lines.forEach((ln, li) => {
+            const ty = y + LH - 1.05;
+            if (ln.label) {
+                if (li) { doc.setDrawColor(120, 132, 152); doc.setLineWidth(0.25); doc.line(x, y, x + COL_W, y); }
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5); doc.setTextColor(107, 120, 153);
+                doc.text(ln.label, x + 1.2, ty);
+            }
+            let tx = x + LBL_W;
+            ln.groups.forEach((g, gi) => {
+                if (gi) tx += TOK_GAP;
+                g.segs.forEach(sg => {
+                    tx += sg.pad || 0;
+                    doc.setFont('helvetica', sg.bold ? 'bold' : 'normal'); doc.setFontSize(sg.size); doc.setTextColor(...sg.c);
+                    doc.text(sg.t, tx, ty); tx += sg.w;
+                });
+            });
+            y += LH;
+        });
+        y += 0.8;
+    }
+    ['Reanimación', 'UCSI'].filter(a => inventoryData[a]).forEach(a => {
+        const lines = compactLines(a);
+        if (y + SH + lines.length * LH + 0.8 > BOTTOM) startCol(false);
+        drawCompact(a, lines);
+    });
     closeCol();
 
     const pages = doc.getNumberOfPages();
