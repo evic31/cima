@@ -1125,7 +1125,9 @@ const STORAGE_ABBR = {
 const SECTION_TINT = [
     { band: [167, 243, 208], row: [236, 253, 245] }, // Carro Enfermeria
     { band: [253, 230, 138], row: [254, 249, 195] }, // Carro Anestesia
-    { band: [221, 214, 254], row: [237, 233, 254] }  // Otros
+    { band: [221, 214, 254], row: [237, 233, 254] }, // Otros
+    { band: [254, 202, 202], row: [254, 242, 242] }, // REA/UCSI · Farmacia
+    { band: [191, 219, 254], row: [239, 246, 255] }  // REA/UCSI · Almacén
 ];
 
 function buildManualSheetPDF() {
@@ -1133,29 +1135,35 @@ function buildManualSheetPDF() {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const PW = 297, PH = 210, M = 7, GAP = 5;
     const COL_W = (PW - 2 * M - GAP) / 2;
-    const NAME_W = 49, UB_W = 6, STK_W = 6, TOT_W = 8;
+    const UB_W = 6, STK_W = 6;
     const RH = 3.7, SH = 4.3, HEAD_H = 5, TOP = M + 12, BOTTOM = PH - M - 2;
+    // cambian según la tabla (quirófanos / REA-UCSI)
+    let NAME_W, TOT_W, cols, Q_W, title;
 
     // quirófanos = áreas con la plantilla de quirófano, en el orden de las pestañas
     const quis = tabOrder.filter(t => inventoryData[t]?.['Carro Enfermeria']);
     const qLabel = t => t.startsWith('Quirófano') ? 'Q' + t.split(' ')[1] : t === 'Hemodinamia' ? 'HEM' : t.slice(0, 4).toUpperCase();
-    const Q_W = (COL_W - NAME_W - UB_W - STK_W - TOT_W) / quis.length;
 
     // filas: una por artículo, o una por opción (Bisturi → nº10, nº11…)
-    const ref = inventoryData[quis[0]];
-    const rows = [];
-    Object.keys(ref).forEach((loc, si) => {
-        rows.push({ kind: 'sec', label: loc, si });
-        ref[loc].forEach((item, ii) => {
-            const stocks = quis.map(q => inventoryData[q][loc]?.[ii]?.stock);
-            const base = {
-                kind: 'item', si, loc, g: item.g || 0, name: item.name, storage: item.storage,
-                isNum: item.type === 'number', stocks, uniform: stocks.every(s => s === stocks[0])
-            };
-            const opts = item.options?.length ? item.options : [null];
-            opts.forEach((opt, oi) => rows.push({ ...base, opt, first: oi === 0, last: oi === opts.length - 1, n: opts.length }));
+    // areas = áreas con la misma estructura (una columna por área); prefix = texto antes del nombre de sección
+    function buildRows(areas, prefix = '', tintOf = (loc, si) => si) {
+        const ref = inventoryData[areas[0]];
+        const rows = [];
+        Object.keys(ref).forEach((loc, idx) => {
+            const si = tintOf(loc, idx);
+            rows.push({ kind: 'sec', label: prefix + loc, si });
+            ref[loc].forEach((item, ii) => {
+                const stocks = areas.map(q => inventoryData[q][loc]?.[ii]?.stock);
+                const base = {
+                    kind: 'item', si, loc: prefix + loc, g: item.g || 0, name: item.name, storage: item.storage,
+                    isNum: item.type === 'number', stocks, uniform: stocks.every(s => s === stocks[0])
+                };
+                const opts = item.options?.length ? item.options : [null];
+                opts.forEach((opt, oi) => rows.push({ ...base, opt, first: oi === 0, last: oi === opts.length - 1, n: opts.length }));
+            });
         });
-    });
+        return rows;
+    }
 
     const fit = (txt, maxW, size, min = 4.5) => {
         let s = size;
@@ -1170,8 +1178,8 @@ function buildManualSheetPDF() {
     function drawPageHeader() {
         doc.setTextColor(45, 49, 66);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-        doc.text('HOJA DE REVISIÓN · QUIRÓFANOS', M, M + 4);
-        const tw = doc.getTextWidth('HOJA DE REVISIÓN · QUIRÓFANOS');
+        doc.text(title, M, M + 4);
+        const tw = doc.getTextWidth(title);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(107, 120, 153);
         doc.text('Reposición Bloque Quirúrgico CIMA · versión manual', M + tw + 3, M + 4);
         doc.setFontSize(8); doc.setTextColor(45, 49, 66);
@@ -1182,7 +1190,9 @@ function buildManualSheetPDF() {
         const put = (t, bold) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.text(t, lx, ly); lx += doc.getTextWidth(t); };
         put('Casilla vacía: ', true); put('anotar cuántas FALTAN   ·   ');
         doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.2); doc.rect(lx, ly - 1.9, 1.9, 1.9); lx += 2.6;
-        put(': marcar si falta   ·   '); put('STK', true); put(' stock máximo   ·   '); put('TOTAL', true); put(' suma a reponer   ·   '); put('UB: ', true);
+        put(': marcar si falta   ·   '); put('STK', true); put(' stock máximo   ·   ');
+        if (TOT_W) { put('TOTAL', true); put(' suma a reponer   ·   '); } else { put('REPUESTO', true); put(' marcar al reponer   ·   '); }
+        put('UB: ', true);
         Object.entries(STORAGE_ABBR).forEach(([full, [ab, c]], i) => {
             doc.setTextColor(...c); put(ab, true); doc.setTextColor(71, 85, 105);
             put(' ' + full.replace('ALMACÉN ', 'Alm. ').toLowerCase() + (i < 5 ? ' · ' : ''));
@@ -1191,8 +1201,8 @@ function buildManualSheetPDF() {
 
     function drawColHeader(x0, y0) {
         doc.setFillColor(226, 232, 240); doc.rect(x0, y0, COL_W, HEAD_H, 'F');
-        quis.forEach((q, i) => { if (shadeQ(i)) { doc.setFillColor(203, 213, 225); doc.rect(qx(x0, i), y0, Q_W, HEAD_H, 'F'); } });
-        doc.setFillColor(254, 215, 170); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, HEAD_H, 'F');
+        cols.forEach((c, i) => { if (shadeQ(i)) { doc.setFillColor(203, 213, 225); doc.rect(qx(x0, i), y0, Q_W, HEAD_H, 'F'); } });
+        if (TOT_W) { doc.setFillColor(254, 215, 170); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, HEAD_H, 'F'); }
         doc.setFont('helvetica', 'bold'); doc.setTextColor(45, 49, 66); doc.setFontSize(6.5);
         const ty = y0 + 3.4;
         doc.text('MATERIAL', x0 + 1.2, ty);
@@ -1200,9 +1210,9 @@ function buildManualSheetPDF() {
         doc.text('UB', x0 + NAME_W + UB_W / 2, ty, { align: 'center' });
         doc.text('STK', x0 + NAME_W + UB_W + STK_W / 2, ty, { align: 'center' });
         doc.setFontSize(6.5);
-        quis.forEach((q, i) => doc.text(fit(qLabel(q), Q_W - 0.6, 6.5), qx(x0, i) + Q_W / 2, ty, { align: 'center' }));
+        cols.forEach((c, i) => doc.text(fit(c.label, Q_W - 0.6, 6.5), qx(x0, i) + Q_W / 2, ty, { align: 'center' }));
         doc.setFontSize(5.5);
-        doc.text('TOTAL', x0 + COL_W - TOT_W / 2, ty, { align: 'center' });
+        if (TOT_W) doc.text('TOTAL', x0 + COL_W - TOT_W / 2, ty, { align: 'center' });
     }
 
     function drawSection(x0, y0, r, cont) {
@@ -1217,8 +1227,8 @@ function buildManualSheetPDF() {
         const t = SECTION_TINT[r.si % SECTION_TINT.length];
         // fondos
         if (r.g % 2 === 1) { doc.setFillColor(...t.row); doc.rect(x0, y0, NAME_W + UB_W + STK_W, RH, 'F'); }
-        quis.forEach((q, i) => { if (shadeQ(i)) { doc.setFillColor(238, 242, 247); doc.rect(qx(x0, i), y0, Q_W, RH, 'F'); } });
-        doc.setFillColor(255, 247, 237); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, RH, 'F');
+        cols.forEach((c, i) => { if (shadeQ(i)) { doc.setFillColor(238, 242, 247); doc.rect(qx(x0, i), y0, Q_W, RH, 'F'); } });
+        if (TOT_W) { doc.setFillColor(255, 247, 237); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, RH, 'F'); }
         const ty = y0 + RH - 1.05;
         // nombre (+ opción a la derecha)
         doc.setTextColor(45, 49, 66); doc.setFont('helvetica', 'normal');
@@ -1240,9 +1250,9 @@ function buildManualSheetPDF() {
             if (r.isNum) doc.text(r.uniform ? String(r.stocks[0]) : 'var', x0 + NAME_W + UB_W + STK_W / 2, ty, { align: 'center' });
         }
         // celdas por quirófano
-        quis.forEach((q, i) => {
+        cols.forEach((c, i) => {
             const cx = qx(x0, i);
-            if (!r.isNum) {
+            if (!r.isNum || c.box) {
                 doc.setDrawColor(148, 163, 184); doc.setLineWidth(0.2);
                 doc.rect(cx + Q_W / 2 - 0.95, y0 + RH / 2 - 0.95, 1.9, 1.9);
             } else if (!r.uniform && r.stocks[i] != null) {
@@ -1253,19 +1263,21 @@ function buildManualSheetPDF() {
         // rejilla vertical
         doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.1);
         [NAME_W, NAME_W + UB_W, NAME_W + UB_W + STK_W].forEach(d => doc.line(x0 + d, y0, x0 + d, y0 + RH));
-        quis.forEach((q, i) => doc.line(qx(x0, i) + Q_W, y0, qx(x0, i) + Q_W, y0 + RH));
+        cols.forEach((c, i) => doc.line(qx(x0, i) + Q_W, y0, qx(x0, i) + Q_W, y0 + RH));
         // línea superior (se pinta tras los fondos para que no la tapen): gruesa entre bloques,
         // sin cortar el nombre dentro de un artículo con opciones; tras banda de sección no hace falta
         if (prev?.kind === 'item') {
             if (prev.g !== r.g) { doc.setDrawColor(51, 65, 85); doc.setLineWidth(0.5); }
             else                { doc.setDrawColor(120, 132, 152); doc.setLineWidth(0.25); }
             doc.line(prev.last ? x0 : x0 + NAME_W, y0, x0 + COL_W, y0);
+        } else { // justo bajo una banda de sección
+            doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.line(x0, y0, x0 + COL_W, y0);
         }
     }
 
     // ── reparto en 2 columnas por página ──
     let colIdx = -1, x = 0, y = 0, colTop = 0;
-    const closeCol = () => { if (colIdx >= 0) { doc.setDrawColor(71, 85, 105); doc.setLineWidth(0.4); doc.rect(x, colTop, COL_W, y - colTop); } };
+    const closeCol = () => { if (colIdx >= 0 && y > colTop) { doc.setDrawColor(71, 85, 105); doc.setLineWidth(0.4); doc.rect(x, colTop, COL_W, y - colTop); } };
     const startCol = () => {
         closeCol();
         colIdx++;
@@ -1273,8 +1285,7 @@ function buildManualSheetPDF() {
         x = M + (colIdx % 2) * (COL_W + GAP); y = TOP; colTop = y;
         drawColHeader(x, y); y += HEAD_H;
     };
-    startCol();
-    rows.forEach((r, i) => {
+    const flow = rows => rows.forEach((r, i) => {
         if (r.kind === 'sec') {
             if (y + SH + RH * 3 > BOTTOM) startCol();
             drawSection(x, y, r, false); y += SH;
@@ -1286,6 +1297,28 @@ function buildManualSheetPDF() {
         if (y + need > BOTTOM) { startCol(); drawSection(x, y, r, true); y += SH; prev = null; }
         drawItem(x, y, r, prev); y += RH;
     });
+
+    // ── páginas 1-2: quirófanos (una columna por quirófano + TOTAL) ──
+    title = 'HOJA DE REVISIÓN · QUIRÓFANOS';
+    NAME_W = 49; TOT_W = 8;
+    cols = quis.map(q => ({ label: qLabel(q) }));
+    Q_W = (COL_W - NAME_W - UB_W - STK_W - TOT_W) / cols.length;
+    startCol();
+    flow(buildRows(quis));
+
+    // ── página nueva: REA a la izquierda, UCSI a la derecha (FALTA + REPUESTO) ──
+    const others = ['Reanimación', 'UCSI'].filter(a => inventoryData[a]);
+    if (others.length) {
+        title = 'HOJA DE REVISIÓN · ' + others.map(a => a.toUpperCase()).join(' / ');
+        NAME_W = 83; TOT_W = 0;
+        cols = [{ label: 'FALTA' }, { label: 'REPUESTO', box: true }];
+        Q_W = (COL_W - NAME_W - UB_W - STK_W) / cols.length;
+        if (colIdx % 2 === 0) { closeCol(); colIdx++; y = colTop; }  // salta la columna derecha libre → página nueva
+        others.forEach(a => {
+            startCol();
+            flow(buildRows([a], a.toUpperCase() + ' · ', loc => loc === 'FARMACIA' ? 3 : 4));
+        });
+    }
     closeCol();
 
     const pages = doc.getNumberOfPages();
