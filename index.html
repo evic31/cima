@@ -1130,13 +1130,23 @@ const SECTION_TINT = [
     { band: [191, 219, 254], row: [239, 246, 255] }  // REA/UCSI · Almacén
 ];
 
+// Prueba alturas de fila de mayor a menor y se queda con la más grande que cabe en 2 páginas
 function buildManualSheetPDF() {
+    let doc;
+    for (let rh = 4.2; rh >= 3.3; rh = +(rh - 0.05).toFixed(2)) {
+        doc = renderManualSheet(rh);
+        if (doc.getNumberOfPages() <= 2) return doc;
+    }
+    return doc;
+}
+
+function renderManualSheet(RH) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const PW = 297, PH = 210, M = 7, GAP = 5;
     const COL_W = (PW - 2 * M - GAP) / 2;
     const UB_W = 6, STK_W = 6;
-    const RH = 3.5, SH = 4.2, HEAD_H = 5, TOP = M + 12, BOTTOM = PH - M - 2;
+    const SH = 4.2, HEAD_H = 5, TOP = M + 12, BOTTOM = PH - M - 2;
     // cambian según la tabla (quirófanos / REA-UCSI)
     let NAME_W, TOT_W, cols, Q_W, title;
 
@@ -1311,7 +1321,7 @@ function buildManualSheetPDF() {
         .replace(/\((R|U|REA|UCSI)\)/gi, '').trim()
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .split(/\s+/).map((w, i) => /\d/.test(w) ? w : i === 0 ? w.slice(0, 4).toUpperCase() : (w.length > 6 ? w.slice(0, 4) : w).toLowerCase()).join(' ');
-    const LH = 3.4, LBL_W = 17, TOK_GAP = 2.6;
+    const LH = RH - 0.1, LBL_W = 17, TOK_GAP = 2.6;
     function compactLines(area) {
         const out = [];
         Object.entries(inventoryData[area]).forEach(([loc, items]) => {
