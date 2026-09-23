@@ -1213,7 +1213,7 @@ function buildManualSheetPDF() {
         doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.line(x0, y0 + SH, x0 + COL_W, y0 + SH);
     }
 
-    function drawItem(x0, y0, r, next) {
+    function drawItem(x0, y0, r, prev) {
         const t = SECTION_TINT[r.si % SECTION_TINT.length];
         // fondos
         if (r.g % 2 === 1) { doc.setFillColor(...t.row); doc.rect(x0, y0, NAME_W + UB_W + STK_W, RH, 'F'); }
@@ -1254,11 +1254,13 @@ function buildManualSheetPDF() {
         doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.1);
         [NAME_W, NAME_W + UB_W, NAME_W + UB_W + STK_W].forEach(d => doc.line(x0 + d, y0, x0 + d, y0 + RH));
         quis.forEach((q, i) => doc.line(qx(x0, i) + Q_W, y0, qx(x0, i) + Q_W, y0 + RH));
-        // línea inferior: gruesa entre bloques, sin cortar el nombre dentro de un artículo con opciones
-        const blockEnd = !next || next.kind !== 'item' || next.g !== r.g;
-        if (blockEnd) { doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.35); }
-        const fromX = r.last ? x0 : x0 + NAME_W;
-        doc.line(fromX, y0 + RH, x0 + COL_W, y0 + RH);
+        // línea superior (se pinta tras los fondos para que no la tapen): gruesa entre bloques,
+        // sin cortar el nombre dentro de un artículo con opciones; tras banda de sección no hace falta
+        if (prev?.kind === 'item') {
+            if (prev.g !== r.g) { doc.setDrawColor(51, 65, 85); doc.setLineWidth(0.5); }
+            else                { doc.setDrawColor(120, 132, 152); doc.setLineWidth(0.25); }
+            doc.line(prev.last ? x0 : x0 + NAME_W, y0, x0 + COL_W, y0);
+        }
     }
 
     // ── reparto en 2 columnas por página ──
@@ -1280,8 +1282,9 @@ function buildManualSheetPDF() {
         }
         // un artículo con opciones no se parte entre columnas
         const need = r.first ? RH * r.n : RH;
-        if (y + need > BOTTOM) { startCol(); drawSection(x, y, r, true); y += SH; }
-        drawItem(x, y, r, rows[i + 1]); y += RH;
+        let prev = rows[i - 1];
+        if (y + need > BOTTOM) { startCol(); drawSection(x, y, r, true); y += SH; prev = null; }
+        drawItem(x, y, r, prev); y += RH;
     });
     closeCol();
 
