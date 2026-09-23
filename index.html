@@ -265,7 +265,10 @@
         /* ── SUMMARY ── */
         .summary-actions {
             padding: 0.8rem 0 1.1rem;
-            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
         }
         .summary-actions button {
             padding: 0.62rem 1.3rem;
@@ -999,7 +1002,8 @@ function renderSummary() {
     el.innerHTML = `
         <div class="summary-actions">
             <button id="clear-all-data">Limpiar Todo el Checklist</button>
-            <button id="btn-pdf" style="background:#0ea5e9;margin-left:0.5rem">🖨️ Exportar PDF</button>
+            <button id="btn-pdf" style="background:#0ea5e9">🖨️ Exportar PDF</button>
+            <button id="btn-hoja" style="background:#475569" title="Hoja en blanco para rellenar a mano">📋 Hoja manual PDF</button>
         </div>
         <div class="summary-section">
             <div class="sub-header desconocido">RESUMEN por Área</div>
@@ -1086,6 +1090,9 @@ function renderSummary() {
 
         doc.save('reposicion-cima.pdf');
     });
+    document.getElementById('btn-hoja').addEventListener('click', () => {
+        buildManualSheetPDF().save('hoja-revision-quirofanos.pdf');
+    });
     el.addEventListener('change', e => {
         const cb = e.target.closest('.sum-check');
         if (cb) {
@@ -1100,6 +1107,192 @@ function renderSummary() {
             acb.closest('.area-item')?.classList.toggle('done', acb.checked);
         }
     });
+}
+
+// ─────────────────────────────────────────────
+// HOJA MANUAL (PDF en blanco para rellenar a mano)
+// Filas = material de quirófano en el orden de la app; columnas = quirófanos (orden de pestañas)
+// ─────────────────────────────────────────────
+const STORAGE_ABBR = {
+    'FARMACIA':                  ['F',   [220, 38, 38]],
+    'ALMACÉN PASILLO DERECHO':   ['AD',  [37, 99, 235]],
+    'ALMACÉN PASILLO IZQUIERDO': ['AI',  [5, 150, 105]],
+    'ALMACÉN LIMPIEZA':          ['LIM', [71, 85, 105]],
+    'BLOQUE QUIRÚRGICO':         ['BQ',  [71, 85, 105]],
+    'ARMARIO LENCERIA':          ['LEN', [71, 85, 105]]
+};
+// mismos tonos que las filas impares de cada carro en la app
+const SECTION_TINT = [
+    { band: [167, 243, 208], row: [236, 253, 245] }, // Carro Enfermeria
+    { band: [253, 230, 138], row: [254, 249, 195] }, // Carro Anestesia
+    { band: [221, 214, 254], row: [237, 233, 254] }  // Otros
+];
+
+function buildManualSheetPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const PW = 297, PH = 210, M = 7, GAP = 5;
+    const COL_W = (PW - 2 * M - GAP) / 2;
+    const NAME_W = 49, UB_W = 6, STK_W = 6, TOT_W = 8;
+    const RH = 3.7, SH = 4.3, HEAD_H = 5, TOP = M + 12, BOTTOM = PH - M - 2;
+
+    // quirófanos = áreas con la plantilla de quirófano, en el orden de las pestañas
+    const quis = tabOrder.filter(t => inventoryData[t]?.['Carro Enfermeria']);
+    const qLabel = t => t.startsWith('Quirófano') ? 'Q' + t.split(' ')[1] : t === 'Hemodinamia' ? 'HEM' : t.slice(0, 4).toUpperCase();
+    const Q_W = (COL_W - NAME_W - UB_W - STK_W - TOT_W) / quis.length;
+
+    // filas: una por artículo, o una por opción (Bisturi → nº10, nº11…)
+    const ref = inventoryData[quis[0]];
+    const rows = [];
+    Object.keys(ref).forEach((loc, si) => {
+        rows.push({ kind: 'sec', label: loc, si });
+        ref[loc].forEach((item, ii) => {
+            const stocks = quis.map(q => inventoryData[q][loc]?.[ii]?.stock);
+            const base = {
+                kind: 'item', si, loc, g: item.g || 0, name: item.name, storage: item.storage,
+                isNum: item.type === 'number', stocks, uniform: stocks.every(s => s === stocks[0])
+            };
+            const opts = item.options?.length ? item.options : [null];
+            opts.forEach((opt, oi) => rows.push({ ...base, opt, first: oi === 0, last: oi === opts.length - 1, n: opts.length }));
+        });
+    });
+
+    const fit = (txt, maxW, size, min = 4.5) => {
+        let s = size;
+        doc.setFontSize(s);
+        while (doc.getTextWidth(txt) > maxW && s > min) { s -= 0.25; doc.setFontSize(s); }
+        while (doc.getTextWidth(txt) > maxW && txt.length > 3) txt = txt.slice(0, -2) + '…';
+        return txt;
+    };
+    const qx = (x0, i) => x0 + NAME_W + UB_W + STK_W + i * Q_W;
+    const shadeQ = i => i % 2 === 1;
+
+    function drawPageHeader() {
+        doc.setTextColor(45, 49, 66);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+        doc.text('HOJA DE REVISIÓN · QUIRÓFANOS', M, M + 4);
+        const tw = doc.getTextWidth('HOJA DE REVISIÓN · QUIRÓFANOS');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(107, 120, 153);
+        doc.text('Reposición Bloque Quirúrgico CIMA · versión manual', M + tw + 3, M + 4);
+        doc.setFontSize(8); doc.setTextColor(45, 49, 66);
+        doc.text('Fecha: ____________    Turno: ________    Revisa: ______________________', PW - M, M + 4, { align: 'right' });
+        // leyenda
+        doc.setFontSize(6.3); doc.setTextColor(71, 85, 105);
+        let lx = M; const ly = M + 9;
+        const put = (t, bold) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.text(t, lx, ly); lx += doc.getTextWidth(t); };
+        put('Casilla vacía: ', true); put('anotar cuántas FALTAN   ·   ');
+        doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.2); doc.rect(lx, ly - 1.9, 1.9, 1.9); lx += 2.6;
+        put(': marcar si falta   ·   '); put('STK', true); put(' stock máximo   ·   '); put('TOTAL', true); put(' suma a reponer   ·   '); put('UB: ', true);
+        Object.entries(STORAGE_ABBR).forEach(([full, [ab, c]], i) => {
+            doc.setTextColor(...c); put(ab, true); doc.setTextColor(71, 85, 105);
+            put(' ' + full.replace('ALMACÉN ', 'Alm. ').toLowerCase() + (i < 5 ? ' · ' : ''));
+        });
+    }
+
+    function drawColHeader(x0, y0) {
+        doc.setFillColor(226, 232, 240); doc.rect(x0, y0, COL_W, HEAD_H, 'F');
+        quis.forEach((q, i) => { if (shadeQ(i)) { doc.setFillColor(203, 213, 225); doc.rect(qx(x0, i), y0, Q_W, HEAD_H, 'F'); } });
+        doc.setFillColor(254, 215, 170); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, HEAD_H, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(45, 49, 66); doc.setFontSize(6.5);
+        const ty = y0 + 3.4;
+        doc.text('MATERIAL', x0 + 1.2, ty);
+        doc.setFontSize(5.5);
+        doc.text('UB', x0 + NAME_W + UB_W / 2, ty, { align: 'center' });
+        doc.text('STK', x0 + NAME_W + UB_W + STK_W / 2, ty, { align: 'center' });
+        doc.setFontSize(6.5);
+        quis.forEach((q, i) => doc.text(fit(qLabel(q), Q_W - 0.6, 6.5), qx(x0, i) + Q_W / 2, ty, { align: 'center' }));
+        doc.setFontSize(5.5);
+        doc.text('TOTAL', x0 + COL_W - TOT_W / 2, ty, { align: 'center' });
+    }
+
+    function drawSection(x0, y0, r, cont) {
+        const t = SECTION_TINT[r.si % SECTION_TINT.length];
+        doc.setFillColor(...t.band); doc.rect(x0, y0, COL_W, SH, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(45, 49, 66);
+        doc.text((r.label || r.loc).toUpperCase() + (cont ? '  (cont.)' : ''), x0 + 1.2, y0 + 3.05);
+        doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.line(x0, y0 + SH, x0 + COL_W, y0 + SH);
+    }
+
+    function drawItem(x0, y0, r, next) {
+        const t = SECTION_TINT[r.si % SECTION_TINT.length];
+        // fondos
+        if (r.g % 2 === 1) { doc.setFillColor(...t.row); doc.rect(x0, y0, NAME_W + UB_W + STK_W, RH, 'F'); }
+        quis.forEach((q, i) => { if (shadeQ(i)) { doc.setFillColor(238, 242, 247); doc.rect(qx(x0, i), y0, Q_W, RH, 'F'); } });
+        doc.setFillColor(255, 247, 237); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, RH, 'F');
+        const ty = y0 + RH - 1.05;
+        // nombre (+ opción a la derecha)
+        doc.setTextColor(45, 49, 66); doc.setFont('helvetica', 'normal');
+        let optW = 0;
+        if (r.opt) {
+            doc.setFont('helvetica', 'bold');
+            const o = fit(r.opt, 20, 5.8);
+            optW = doc.getTextWidth(o) + 1.5;
+            doc.text(o, x0 + NAME_W - 1, ty, { align: 'right' });
+            doc.setFont('helvetica', 'normal');
+        }
+        if (r.first) doc.text(fit(r.name, NAME_W - 2 - optW, 6.4), x0 + 1.2, ty);
+        // ubicación y stock (solo en la primera fila del artículo)
+        if (r.first) {
+            const [ab, c] = STORAGE_ABBR[r.storage] || [String(r.storage || '?').slice(0, 3), [71, 85, 105]];
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(...c);
+            doc.text(fit(ab, UB_W - 0.6, 5.3), x0 + NAME_W + UB_W / 2, ty, { align: 'center' });
+            doc.setTextColor(45, 49, 66);
+            if (r.isNum) doc.text(r.uniform ? String(r.stocks[0]) : 'var', x0 + NAME_W + UB_W + STK_W / 2, ty, { align: 'center' });
+        }
+        // celdas por quirófano
+        quis.forEach((q, i) => {
+            const cx = qx(x0, i);
+            if (!r.isNum) {
+                doc.setDrawColor(148, 163, 184); doc.setLineWidth(0.2);
+                doc.rect(cx + Q_W / 2 - 0.95, y0 + RH / 2 - 0.95, 1.9, 1.9);
+            } else if (!r.uniform && r.stocks[i] != null) {
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(3.8); doc.setTextColor(148, 163, 184);
+                doc.text(String(r.stocks[i]), cx + Q_W - 0.4, y0 + 1.5, { align: 'right' });
+            }
+        });
+        // rejilla vertical
+        doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.1);
+        [NAME_W, NAME_W + UB_W, NAME_W + UB_W + STK_W].forEach(d => doc.line(x0 + d, y0, x0 + d, y0 + RH));
+        quis.forEach((q, i) => doc.line(qx(x0, i) + Q_W, y0, qx(x0, i) + Q_W, y0 + RH));
+        // línea inferior: gruesa entre bloques, sin cortar el nombre dentro de un artículo con opciones
+        const blockEnd = !next || next.kind !== 'item' || next.g !== r.g;
+        if (blockEnd) { doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.35); }
+        const fromX = r.last ? x0 : x0 + NAME_W;
+        doc.line(fromX, y0 + RH, x0 + COL_W, y0 + RH);
+    }
+
+    // ── reparto en 2 columnas por página ──
+    let colIdx = -1, x = 0, y = 0, colTop = 0;
+    const closeCol = () => { if (colIdx >= 0) { doc.setDrawColor(71, 85, 105); doc.setLineWidth(0.4); doc.rect(x, colTop, COL_W, y - colTop); } };
+    const startCol = () => {
+        closeCol();
+        colIdx++;
+        if (colIdx % 2 === 0) { if (colIdx > 0) doc.addPage(); drawPageHeader(); }
+        x = M + (colIdx % 2) * (COL_W + GAP); y = TOP; colTop = y;
+        drawColHeader(x, y); y += HEAD_H;
+    };
+    startCol();
+    rows.forEach((r, i) => {
+        if (r.kind === 'sec') {
+            if (y + SH + RH * 3 > BOTTOM) startCol();
+            drawSection(x, y, r, false); y += SH;
+            return;
+        }
+        // un artículo con opciones no se parte entre columnas
+        const need = r.first ? RH * r.n : RH;
+        if (y + need > BOTTOM) { startCol(); drawSection(x, y, r, true); y += SH; }
+        drawItem(x, y, r, rows[i + 1]); y += RH;
+    });
+    closeCol();
+
+    const pages = doc.getNumberOfPages();
+    for (let p = 1; p <= pages; p++) {
+        doc.setPage(p);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(148, 163, 184);
+        doc.text(`${p}/${pages}`, PW - M, PH - 3, { align: 'right' });
+        doc.text('Reposición BQ · CIMA', M, PH - 3);
+    }
+    return doc;
 }
 
 // ─────────────────────────────────────────────
