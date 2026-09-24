@@ -1143,38 +1143,33 @@ function buildManualSheetPDF() {
 function renderManualSheet(RH) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const PW = 297, PH = 210, M = 7, GAP = 5;
-    const COL_W = (PW - 2 * M - GAP) / 2;
-    const UB_W = 6, STK_W = 6;
+    const PW = 297, PH = 210, M = 7, GAP = 4;
+    const UB_W = 5, STK_W = 5, TOT_W = 7, LIST_MIN = 46;
     const SH = 4.2, HEAD_H = 5, TOP = M + 12, BOTTOM = PH - M - 2;
-    // cambian según la tabla (quirófanos / REA-UCSI)
-    let NAME_W, TOT_W, cols, Q_W, title;
+    const NAME_PT = 6.4, OPT_PT = 5.8;
+    const title = 'HOJA DE REVISIÓN · QUIRÓFANOS · REA · UCSI';
 
     // quirófanos = áreas con la plantilla de quirófano, en el orden de las pestañas
     const quis = tabOrder.filter(t => inventoryData[t]?.['Carro Enfermeria']);
     const qLabel = t => t.startsWith('Quirófano') ? 'Q' + t.split(' ')[1] : t === 'Hemodinamia' ? 'HEM' : t.slice(0, 4).toUpperCase();
+    const lists = ['Reanimación', 'UCSI'].filter(a => inventoryData[a]);
 
-    // filas: una por artículo, o una por opción (Bisturi → nº10, nº11…)
-    // areas = áreas con la misma estructura (una columna por área); prefix = texto antes del nombre de sección
-    function buildRows(areas, prefix = '', tintOf = (loc, si) => si) {
-        const ref = inventoryData[areas[0]];
-        const rows = [];
-        Object.keys(ref).forEach((loc, idx) => {
-            const si = tintOf(loc, idx);
-            rows.push({ kind: 'sec', label: prefix + loc, si });
-            ref[loc].forEach((item, ii) => {
-                const stocks = areas.map(q => inventoryData[q][loc]?.[ii]?.stock);
-                const base = {
-                    kind: 'item', si, loc: prefix + loc, g: item.g || 0, name: item.name, storage: item.storage,
-                    isNum: item.type === 'number', stocks, uniform: stocks.every(s => s === stocks[0])
-                };
-                const opts = item.options?.length ? item.options : [null];
-                opts.forEach((opt, oi) => rows.push({ ...base, opt, first: oi === 0, last: oi === opts.length - 1, n: opts.length }));
-            });
+    // filas de quirófano: una por artículo, o una por opción (Bisturi → nº10, nº11…)
+    const rows = [];
+    Object.keys(inventoryData[quis[0]]).forEach((loc, si) => {
+        rows.push({ kind: 'sec', label: loc, si });
+        inventoryData[quis[0]][loc].forEach((item, ii) => {
+            const stocks = quis.map(q => inventoryData[q][loc]?.[ii]?.stock);
+            const base = {
+                kind: 'item', si, label: loc, g: item.g || 0, name: item.name, storage: item.storage,
+                isNum: item.type === 'number', stocks, uniform: stocks.every(s => s === stocks[0])
+            };
+            const opts = item.options?.length ? item.options : [null];
+            opts.forEach((opt, oi) => rows.push({ ...base, opt, first: oi === 0, last: oi === opts.length - 1, n: opts.length }));
         });
-        return rows;
-    }
+    });
 
+    const textW = (t, pt, bold) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(pt); return doc.getTextWidth(t); };
     const fit = (txt, maxW, size, min = 4.5) => {
         let s = size;
         doc.setFontSize(s);
@@ -1182,6 +1177,16 @@ function renderManualSheet(RH) {
         while (doc.getTextWidth(txt) > maxW && txt.length > 3) txt = txt.slice(0, -2) + '…';
         return txt;
     };
+
+    // ── anchos: MATERIAL justo para el nombre más largo; lo que sobra, a la lista REA/UCSI de la derecha ──
+    const optsW = {};
+    rows.forEach(r => { if (r.kind === 'item' && r.opt) optsW[r.name] = Math.max(optsW[r.name] || 0, textW(r.opt, OPT_PT, true)); });
+    const NAME_W = Math.min(56, Math.max(30, 2.6 + Math.max(...rows.filter(r => r.kind === 'item' && r.first)
+        .map(r => textW(r.name, NAME_PT) + (optsW[r.name] ? optsW[r.name] + 1.5 : 0)))));
+    const FIXED_W = NAME_W + UB_W + STK_W + TOT_W;
+    const Q_W = Math.max(5.8, Math.min(8, (PW - 2 * M - 2 * GAP - (lists.length ? LIST_MIN : 0) - 2 * FIXED_W) / (2 * quis.length)));
+    const COL_W = FIXED_W + quis.length * Q_W;
+    const LIST_X = M + 2 * (COL_W + GAP), LIST_W = PW - M - LIST_X;
     const qx = (x0, i) => x0 + NAME_W + UB_W + STK_W + i * Q_W;
     const shadeQ = i => i % 2 === 1;
 
@@ -1198,193 +1203,174 @@ function renderManualSheet(RH) {
         doc.setFontSize(6.3); doc.setTextColor(71, 85, 105);
         let lx = M; const ly = M + 9;
         const put = (t, bold) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.text(t, lx, ly); lx += doc.getTextWidth(t); };
-        put('Casilla vacía: ', true); put('anotar cuántas FALTAN   ·   ');
+        put('Casilla vacía: ', true); put('anotar cuántas FALTAN  ·  ');
         doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.2); doc.rect(lx, ly - 1.9, 1.9, 1.9); lx += 2.6;
-        put(': marcar si falta   ·   '); put('STK', true); put(' stock máximo   ·   ');
-        put('TOTAL', true); put(' suma a reponer   ·   ');
-        put('UB: ', true);
-        Object.entries(STORAGE_ABBR).forEach(([full, [ab, c]], i) => {
+        put(' marcar si falta  ·  '); put('Opciones REA/UCSI: ', true); put('rodear la que falta  ·  ');
+        put('STK', true); put(' stock máx.  ·  '); put('TOTAL', true); put(' suma a reponer  ·  '); put('UB: ', true);
+        const UB_TXT = { F: 'farmacia', AD: 'pasillo dcho', AI: 'pasillo izq', LIM: 'limpieza', BQ: 'bloque', LEN: 'lencería' };
+        Object.values(STORAGE_ABBR).forEach(([ab, c], i, arr) => {
             doc.setTextColor(...c); put(ab, true); doc.setTextColor(71, 85, 105);
-            put(' ' + full.replace('ALMACÉN ', 'Alm. ').toLowerCase() + (i < 5 ? ' · ' : ''));
+            put(' ' + (UB_TXT[ab] || '') + (i < arr.length - 1 ? ' · ' : ''));
         });
     }
 
     function drawColHeader(x0, y0) {
         doc.setFillColor(226, 232, 240); doc.rect(x0, y0, COL_W, HEAD_H, 'F');
-        cols.forEach((c, i) => { if (shadeQ(i)) { doc.setFillColor(203, 213, 225); doc.rect(qx(x0, i), y0, Q_W, HEAD_H, 'F'); } });
-        if (TOT_W) { doc.setFillColor(254, 215, 170); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, HEAD_H, 'F'); }
+        quis.forEach((q, i) => { if (shadeQ(i)) { doc.setFillColor(203, 213, 225); doc.rect(qx(x0, i), y0, Q_W, HEAD_H, 'F'); } });
+        doc.setFillColor(254, 215, 170); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, HEAD_H, 'F');
         doc.setFont('helvetica', 'bold'); doc.setTextColor(45, 49, 66); doc.setFontSize(6.5);
         const ty = y0 + 3.4;
         doc.text('MATERIAL', x0 + 1.2, ty);
-        doc.setFontSize(5.5);
+        doc.setFontSize(5.3);
         doc.text('UB', x0 + NAME_W + UB_W / 2, ty, { align: 'center' });
         doc.text('STK', x0 + NAME_W + UB_W + STK_W / 2, ty, { align: 'center' });
-        doc.setFontSize(6.5);
-        cols.forEach((c, i) => doc.text(fit(c.label, Q_W - 0.6, 6.5), qx(x0, i) + Q_W / 2, ty, { align: 'center' }));
-        doc.setFontSize(5.5);
-        if (TOT_W) doc.text('TOTAL', x0 + COL_W - TOT_W / 2, ty, { align: 'center' });
+        quis.forEach((q, i) => doc.text(fit(qLabel(q), Q_W - 0.5, 6.3), qx(x0, i) + Q_W / 2, ty, { align: 'center' }));
+        doc.text(fit('TOTAL', TOT_W - 0.4, 5.3), x0 + COL_W - TOT_W / 2, ty, { align: 'center' });
     }
 
-    function drawSection(x0, y0, r, cont) {
-        const t = SECTION_TINT[r.si % SECTION_TINT.length];
-        doc.setFillColor(...t.band); doc.rect(x0, y0, COL_W, SH, 'F');
+    function drawSection(x0, y0, w, label, si, cont) {
+        doc.setFillColor(...SECTION_TINT[si % SECTION_TINT.length].band); doc.rect(x0, y0, w, SH, 'F');
         doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(45, 49, 66);
-        doc.text((r.label || r.loc).toUpperCase() + (cont ? '  (cont.)' : ''), x0 + 1.2, y0 + 3.05);
-        doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.line(x0, y0 + SH, x0 + COL_W, y0 + SH);
+        doc.text(fit(label.toUpperCase() + (cont ? '  (cont.)' : ''), w - 2, 7), x0 + 1.2, y0 + 3.05);
     }
+
+    // línea superior de una fila (se pinta tras los fondos para que no la tapen)
+    function topLine(x0, y0, w, prev, g, fromX) {
+        if (prev?.kind === 'item') {
+            if (prev.g !== g) { doc.setDrawColor(51, 65, 85); doc.setLineWidth(0.5); }
+            else              { doc.setDrawColor(120, 132, 152); doc.setLineWidth(0.25); }
+            doc.line(fromX, y0, x0 + w, y0);
+        } else { // justo bajo una banda de sección
+            doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.line(x0, y0, x0 + w, y0);
+        }
+    }
+
+    function drawUB(storage, cx, ty) {
+        const [ab, c] = STORAGE_ABBR[storage] || [String(storage || '?').slice(0, 3), [71, 85, 105]];
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(...c);
+        doc.text(fit(ab, UB_W - 0.5, 5.2), cx, ty, { align: 'center' });
+        doc.setTextColor(45, 49, 66);
+    }
+    const box = (cx, y0) => { doc.setDrawColor(148, 163, 184); doc.setLineWidth(0.2); doc.rect(cx - 0.95, y0 + RH / 2 - 0.95, 1.9, 1.9); };
 
     function drawItem(x0, y0, r, prev) {
         const t = SECTION_TINT[r.si % SECTION_TINT.length];
-        // fondos
         if (r.g % 2 === 1) { doc.setFillColor(...t.row); doc.rect(x0, y0, NAME_W + UB_W + STK_W, RH, 'F'); }
-        cols.forEach((c, i) => { if (shadeQ(i)) { doc.setFillColor(238, 242, 247); doc.rect(qx(x0, i), y0, Q_W, RH, 'F'); } });
-        if (TOT_W) { doc.setFillColor(255, 247, 237); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, RH, 'F'); }
+        quis.forEach((q, i) => { if (shadeQ(i)) { doc.setFillColor(238, 242, 247); doc.rect(qx(x0, i), y0, Q_W, RH, 'F'); } });
+        doc.setFillColor(255, 247, 237); doc.rect(x0 + COL_W - TOT_W, y0, TOT_W, RH, 'F');
         const ty = y0 + RH - 1.05;
-        // nombre (+ opción a la derecha)
-        doc.setTextColor(45, 49, 66); doc.setFont('helvetica', 'normal');
+        doc.setTextColor(45, 49, 66);
         let optW = 0;
         if (r.opt) {
             doc.setFont('helvetica', 'bold');
-            const o = fit(r.opt, 20, 5.8);
+            const o = fit(r.opt, 22, OPT_PT);
             optW = doc.getTextWidth(o) + 1.5;
             doc.text(o, x0 + NAME_W - 1, ty, { align: 'right' });
-            doc.setFont('helvetica', 'normal');
         }
-        if (r.first) doc.text(fit(r.name, NAME_W - 2 - optW, 6.4), x0 + 1.2, ty);
-        // ubicación y stock (solo en la primera fila del artículo)
+        doc.setFont('helvetica', 'normal');
         if (r.first) {
-            const [ab, c] = STORAGE_ABBR[r.storage] || [String(r.storage || '?').slice(0, 3), [71, 85, 105]];
-            doc.setFont('helvetica', 'bold'); doc.setTextColor(...c);
-            doc.text(fit(ab, UB_W - 0.6, 5.3), x0 + NAME_W + UB_W / 2, ty, { align: 'center' });
-            doc.setTextColor(45, 49, 66);
-            if (r.isNum) doc.text(r.uniform ? String(r.stocks[0]) : 'var', x0 + NAME_W + UB_W + STK_W / 2, ty, { align: 'center' });
+            doc.text(fit(r.name, NAME_W - 2 - optW, NAME_PT), x0 + 1.2, ty);
+            drawUB(r.storage, x0 + NAME_W + UB_W / 2, ty);
+            if (r.isNum) { doc.setFontSize(5.8); doc.text(r.uniform ? String(r.stocks[0]) : 'var', x0 + NAME_W + UB_W + STK_W / 2, ty, { align: 'center' }); }
         }
-        // celdas por quirófano
-        cols.forEach((c, i) => {
+        quis.forEach((q, i) => {
             const cx = qx(x0, i);
-            if (!r.isNum) {
-                doc.setDrawColor(148, 163, 184); doc.setLineWidth(0.2);
-                doc.rect(cx + Q_W / 2 - 0.95, y0 + RH / 2 - 0.95, 1.9, 1.9);
-            } else if (!r.uniform && r.stocks[i] != null) {
+            if (!r.isNum) box(cx + Q_W / 2, y0);
+            else if (!r.uniform && r.stocks[i] != null) {
                 doc.setFont('helvetica', 'normal'); doc.setFontSize(3.8); doc.setTextColor(148, 163, 184);
                 doc.text(String(r.stocks[i]), cx + Q_W - 0.4, y0 + 1.5, { align: 'right' });
             }
         });
-        // rejilla vertical
         doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.1);
         [NAME_W, NAME_W + UB_W, NAME_W + UB_W + STK_W].forEach(d => doc.line(x0 + d, y0, x0 + d, y0 + RH));
-        cols.forEach((c, i) => doc.line(qx(x0, i) + Q_W, y0, qx(x0, i) + Q_W, y0 + RH));
-        // línea superior (se pinta tras los fondos para que no la tapen): gruesa entre bloques,
-        // sin cortar el nombre dentro de un artículo con opciones; tras banda de sección no hace falta
-        if (prev?.kind === 'item') {
-            if (prev.g !== r.g) { doc.setDrawColor(51, 65, 85); doc.setLineWidth(0.5); }
-            else                { doc.setDrawColor(120, 132, 152); doc.setLineWidth(0.25); }
-            doc.line(prev.last ? x0 : x0 + NAME_W, y0, x0 + COL_W, y0);
-        } else { // justo bajo una banda de sección
-            doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.line(x0, y0, x0 + COL_W, y0);
-        }
+        quis.forEach((q, i) => doc.line(qx(x0, i) + Q_W, y0, qx(x0, i) + Q_W, y0 + RH));
+        // sin cortar el nombre dentro de un artículo con opciones
+        topLine(x0, y0, COL_W, prev, r.g, prev?.last ? x0 : x0 + NAME_W);
     }
 
-    // ── reparto en 2 columnas por página ──
+    const ensurePage = p => { while (doc.getNumberOfPages() < p) { doc.addPage(); drawPageHeader(); } doc.setPage(p); };
+    const frame = (x0, top, w, bottom) => { if (bottom > top) { doc.setDrawColor(71, 85, 105); doc.setLineWidth(0.4); doc.rect(x0, top, w, bottom - top); } };
+
+    // ── tablas de quirófano: 2 columnas por página ──
+    drawPageHeader();
     let colIdx = -1, x = 0, y = 0, colTop = 0;
-    const closeCol = () => { if (colIdx >= 0 && y > colTop) { doc.setDrawColor(71, 85, 105); doc.setLineWidth(0.4); doc.rect(x, colTop, COL_W, y - colTop); } };
-    const startCol = (header = true) => {
-        closeCol();
+    const startCol = () => {
+        if (colIdx >= 0) frame(x, colTop, COL_W, y);
         colIdx++;
-        if (colIdx % 2 === 0) { if (colIdx > 0) doc.addPage(); drawPageHeader(); }
+        ensurePage(Math.floor(colIdx / 2) + 1);
         x = M + (colIdx % 2) * (COL_W + GAP); y = TOP; colTop = y;
-        if (header) { drawColHeader(x, y); y += HEAD_H; }
+        drawColHeader(x, y); y += HEAD_H;
     };
-    const flow = rows => rows.forEach((r, i) => {
+    startCol();
+    rows.forEach((r, i) => {
         if (r.kind === 'sec') {
             if (y + SH + RH * 3 > BOTTOM) startCol();
-            drawSection(x, y, r, false); y += SH;
+            drawSection(x, y, COL_W, r.label, r.si, false); y += SH;
             return;
         }
         // un artículo con opciones no se parte entre columnas
-        const need = r.first ? RH * r.n : RH;
         let prev = rows[i - 1];
-        if (y + need > BOTTOM) { startCol(); drawSection(x, y, r, true); y += SH; prev = null; }
+        if (y + (r.first ? RH * r.n : RH) > BOTTOM) { startCol(); drawSection(x, y, COL_W, r.label, r.si, true); y += SH; prev = null; }
         drawItem(x, y, r, prev); y += RH;
     });
+    frame(x, colTop, COL_W, y);
 
-    // ── páginas 1-2: quirófanos (una columna por quirófano + TOTAL) ──
-    title = 'HOJA DE REVISIÓN · QUIRÓFANOS · REA · UCSI';
-    NAME_W = 49; TOT_W = 8;
-    cols = quis.map(q => ({ label: qLabel(q) }));
-    Q_W = (COL_W - NAME_W - UB_W - STK_W - TOT_W) / cols.length;
-    startCol();
-    flow(buildRows(quis));
-
-    // ── REA / UCSI en el hueco que quede: abreviaturas para rodear a boli lo que falta ──
-    const abbr = name => name
-        .replace(/\((R|U|REA|UCSI)\)/gi, '').trim()
-        .normalize('NFD').replace(/[̀-ͯ]/g, '')
-        .split(/\s+/).map((w, i) => /\d/.test(w) ? w : i === 0 ? w.slice(0, 4).toUpperCase() : (w.length > 6 ? w.slice(0, 4) : w).toLowerCase()).join(' ');
-    const LH = RH - 0.1, LBL_W = 17, TOK_GAP = 2.6;
-    function compactLines(area) {
-        const out = [];
+    // ── lista REA / UCSI a la derecha (una por página): un material por fila;
+    //    casilla = marcar/anotar, opciones en línea = rodear la que falta ──
+    const MARK_W = 7.5, LNAME_W = LIST_W - UB_W - MARK_W;
+    const cleanName = n => n.replace(/\s*\((R|U|REA|UCSI)\)\s*/gi, ' ').trim();
+    let page = 0, ly = 0, lTop = 0;
+    const startList = (area, cont) => {
+        if (page) frame(LIST_X, lTop, LIST_W, ly);
+        page++;
+        ensurePage(page);
+        ly = TOP; lTop = ly;
+        doc.setFillColor(226, 232, 240); doc.rect(LIST_X, ly, LIST_W, HEAD_H, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(45, 49, 66);
+        doc.text(fit(area.toUpperCase() + (cont ? ' (cont.)' : ''), LNAME_W - 2, 6.5), LIST_X + 1.2, ly + 3.4);
+        doc.setFontSize(5.3);
+        doc.text('UB', LIST_X + LNAME_W + UB_W / 2, ly + 3.4, { align: 'center' });
+        doc.text(fit('FALTA', MARK_W - 0.4, 5.3), LIST_X + LNAME_W + UB_W + MARK_W / 2, ly + 3.4, { align: 'center' });
+        ly += HEAD_H;
+    };
+    lists.forEach(area => {
+        startList(area, false);
         Object.entries(inventoryData[area]).forEach(([loc, items]) => {
-            // cada artículo = grupo que no se parte entre líneas
-            const groups = items.map(item => {
-                const [, c] = STORAGE_ABBR[item.storage] || ['', [45, 49, 66]];
-                const segs = [];
+            const si = loc === 'FARMACIA' ? 3 : 4;
+            if (ly + SH + RH * 2 > BOTTOM) startList(area, true);
+            drawSection(LIST_X, ly, LIST_W, loc, si, false); ly += SH;
+            let prev = null;
+            items.forEach(item => {
+                if (ly + RH > BOTTOM) { startList(area, true); drawSection(LIST_X, ly, LIST_W, loc, si, true); ly += SH; prev = null; }
+                const ty = ly + RH - 1.05;
+                doc.setFillColor(238, 242, 247); doc.rect(LIST_X + LNAME_W + UB_W, ly, MARK_W, RH, 'F');
+                // opciones a la derecha del nombre, para rodear
+                let optsW = 0;
                 if (item.options?.length) {
-                    segs.push({ t: abbr(item.name), c, bold: true, size: 6.3 });
-                    item.options.forEach(o => segs.push({ t: o, c: [45, 49, 66], size: 6.3, pad: 1.4 }));
-                } else {
-                    segs.push({ t: abbr(item.name), c, bold: true, size: 6.3 });
-                    if (item.type === 'number') segs.push({ t: `(${item.stock})`, c: [148, 163, 184], size: 5, pad: 0.6 });
+                    const o = item.options.join('  ');
+                    const ow = Math.min(textW(o, OPT_PT, true), LNAME_W * 0.6);
+                    doc.setTextColor(45, 49, 66);
+                    doc.text(fit(o, ow, OPT_PT), LIST_X + LNAME_W - 1, ty, { align: 'right' });
+                    optsW = ow + 1.5;
                 }
-                segs.forEach(sg => { doc.setFont('helvetica', sg.bold ? 'bold' : 'normal'); doc.setFontSize(sg.size); sg.w = doc.getTextWidth(sg.t); });
-                return { segs, w: segs.reduce((a, sg) => a + sg.w + (sg.pad || 0), 0) };
+                doc.setFont('helvetica', 'normal'); doc.setTextColor(45, 49, 66);
+                doc.text(fit(cleanName(item.name), LNAME_W - 2 - optsW, NAME_PT), LIST_X + 1.2, ty);
+                drawUB(item.storage, LIST_X + LNAME_W + UB_W / 2, ty);
+                const mx = LIST_X + LNAME_W + UB_W;
+                if (item.options?.length) { /* se rodea la opción */ }
+                else if (item.type === 'number') {
+                    doc.setFont('helvetica', 'normal'); doc.setFontSize(4.6); doc.setTextColor(120, 132, 152);
+                    doc.text('/' + item.stock, mx + MARK_W - 0.4, ly + 1.8, { align: 'right' });
+                } else box(mx + MARK_W / 2, ly);
+                doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.1);
+                [LNAME_W, LNAME_W + UB_W].forEach(d => doc.line(LIST_X + d, ly, LIST_X + d, ly + RH));
+                topLine(LIST_X, ly, LIST_W, prev, 0, LIST_X);
+                prev = { kind: 'item', g: 0 };
+                ly += RH;
             });
-            let line = { label: loc, groups: [], w: 0 };
-            const maxW = COL_W - LBL_W - 2;
-            groups.forEach(g => {
-                if (line.groups.length && line.w + TOK_GAP + g.w > maxW) { out.push(line); line = { label: '', groups: [], w: 0 }; }
-                line.w += (line.groups.length ? TOK_GAP : 0) + g.w; line.groups.push(g);
-            });
-            out.push(line);
         });
-        return out;
-    }
-    function drawCompact(area, lines) {
-        const si = 3;
-        doc.setFillColor(...SECTION_TINT[si].band); doc.rect(x, y, COL_W, SH, 'F');
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(45, 49, 66);
-        doc.text(area.toUpperCase(), x + 1.2, y + 3.05);
-        const tw = doc.getTextWidth(area.toUpperCase());
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(5.8); doc.setTextColor(71, 85, 105);
-        doc.text('rodear lo que falta · (n) stock máx.: anotar cuántos faltan', x + tw + 3.5, y + 3.05);
-        doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.line(x, y, x + COL_W, y); doc.line(x, y + SH, x + COL_W, y + SH);
-        y += SH;
-        lines.forEach((ln, li) => {
-            const ty = y + LH - 1.05;
-            if (ln.label) {
-                if (li) { doc.setDrawColor(120, 132, 152); doc.setLineWidth(0.25); doc.line(x, y, x + COL_W, y); }
-                doc.setFont('helvetica', 'bold'); doc.setFontSize(5.5); doc.setTextColor(107, 120, 153);
-                doc.text(ln.label, x + 1.2, ty);
-            }
-            let tx = x + LBL_W;
-            ln.groups.forEach((g, gi) => {
-                if (gi) tx += TOK_GAP;
-                g.segs.forEach(sg => {
-                    tx += sg.pad || 0;
-                    doc.setFont('helvetica', sg.bold ? 'bold' : 'normal'); doc.setFontSize(sg.size); doc.setTextColor(...sg.c);
-                    doc.text(sg.t, tx, ty); tx += sg.w;
-                });
-            });
-            y += LH;
-        });
-        y += 0.8;
-    }
-    ['Reanimación', 'UCSI'].filter(a => inventoryData[a]).forEach(a => {
-        const lines = compactLines(a);
-        if (y + SH + lines.length * LH + 0.8 > BOTTOM) startCol(false);
-        drawCompact(a, lines);
     });
-    closeCol();
+    if (page) frame(LIST_X, lTop, LIST_W, ly);
 
     const pages = doc.getNumberOfPages();
     for (let p = 1; p <= pages; p++) {
