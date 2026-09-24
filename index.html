@@ -1613,7 +1613,7 @@ function bindFloatingBtns() {
 //   «quita X» → desmarca · «deshacer» · «para» → apaga
 // ─────────────────────────────────────────────
 const VOZ_NUM = {
-    un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+    cero: 0, un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
     once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17, dieciocho: 18,
     diecinueve: 19, veinte: 20, veinticinco: 25, treinta: 30, cuarenta: 40, cincuenta: 50, cien: 100, quinientos: 500
 };
@@ -1658,7 +1658,7 @@ const VOZ_ALIAS = {
     'Diclofenaco': ['voltaren'],
     'Metoclopramida': ['primperan'],
     'Ac. Tranexámico': ['tranexamico', 'acido tranexamico', 'tranesamico', 'acido tranesamico'],
-    'Bupivacaina 0,25': ['bupi'], 'Bupivacaina 0.5': ['bupi'],
+    'Bupivacaina 0,25': ['bupi', 'bupy'], 'Bupivacaina 0.5': ['bupi', 'bupy'],
     'Lidocaina 2%': ['lido'], 'Mepivacaina 2%': ['mepi'],
     'Levobupivacaina': ['levobupi', 'levo'],
     'Sevorane': ['sevo', 'sevoflurano'],
@@ -1730,9 +1730,18 @@ function vozTokens(t) {
         else if (/^\d+(\.\d+)?$/.test(w)) nums.push(parseFloat(w));
         else if (/^\.5$/.test(w) && nums.length) nums[nums.length - 1] += 0.5;
         else if (VOZ_NUM[w] !== undefined) nums.push(VOZ_NUM[w]);
+        else if (w === 'coma' || w === 'punto') nums.push('.');
         else if (!VOZ_STOP.has(w)) words.push(w);
     });
-    return { words, nums };
+    // «cero cinco» / «0 25» → 0,5 / 0,25 · «siete coma cinco» → 7,5
+    const out = [];
+    for (let i = 0; i < nums.length; i++) {
+        const v = nums[i];
+        if (v === '.') { if (out.length && typeof nums[i + 1] === 'number') { out[out.length - 1] = parseFloat(out[out.length - 1] + '.' + String(nums[i + 1])); i++; } continue; }
+        if (v === 0 && typeof nums[i + 1] === 'number' && nums[i + 1] > 0) { out.push(parseFloat('0.' + String(nums[i + 1]))); i++; continue; }
+        out.push(v);
+    }
+    return { words, nums: out };
 }
 
 // cómo se leen en alto los nombres (c/c no es «cuenta corriente»)
@@ -1749,7 +1758,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '24-sep 21:40'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '24-sep 21:55'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
