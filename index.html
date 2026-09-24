@@ -1662,7 +1662,7 @@ const VOZ_ALIAS = {
     'Lidocaina 2%': ['lido'], 'Mepivacaina 2%': ['mepi'],
     'Levobupivacaina': ['levobupi', 'levo'],
     'Sevorane': ['sevo', 'sevoflurano'],
-    'Frova': ['froba'],
+    'Frova': ['froba', 'guia de intubacion dificil', 'guia intubacion dificil', 'guia de intubacion'],
     'Sondas Aspiración #16 (Naranja)': ['receptal naranja', 'sonda naranja'],
     'Sondas Aspiración #14 (Verde)': ['receptal verde', 'sonda verde'],
     'Sondas Aspiración #12 (Blanco)': ['receptal blanco', 'sonda blanca'],
@@ -1758,7 +1758,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '24-sep 21:55'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '24-sep 22:05'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
