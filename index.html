@@ -578,7 +578,7 @@
         .og-btns { display: flex; gap: 0.3rem; }
         .order-list { list-style: none; padding: 0; margin: 0; counter-reset: ord; }
         .order-list li {
-            display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.5rem 0.3rem 0.35rem;
+            display: flex; align-items: center; gap: 0.25rem; padding: 0.3rem 0.5rem 0.3rem 0.35rem;
             border-bottom: 1px solid var(--border); background: #fff; counter-increment: ord;
         }
         .order-list li:last-child { border-bottom: none; }
@@ -587,10 +587,11 @@
         .order-list .on { flex: 1; font-size: 0.86rem; line-height: 1.25; }
         .order-list .on small { display: block; color: var(--text-muted); font-size: 0.72rem; }
         .ord-btn {
-            width: 34px; height: 30px; border-radius: 7px; border: 1.5px solid var(--border2);
+            width: 30px; height: 30px; border-radius: 7px; border: 1.5px solid var(--border2); padding: 0;
             background: var(--surf2); color: var(--text); font-size: 0.8rem; cursor: pointer; flex-shrink: 0;
             -webkit-tap-highlight-color: transparent;
         }
+        .ord-btn.ord-far { font-size: 1.15rem; font-weight: 700; line-height: 1; background: #dbeafe; }
         .sub-header .ord-btn { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.5); color: #fff; height: 26px; width: 30px; }
         .order-list li.moved { animation: vozFlash 1.2s ease; }
         .order-list li.sortable-ghost { opacity: 0.4; background: #dbeafe; }
@@ -1846,7 +1847,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '24-sep 23:10'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '24-sep 23:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2200,7 +2201,7 @@ function renderOrder() {
         <div class="editor-search-box">
             <h2>⚙️ Orden de la lista de reposición</h2>
             <p class="order-hint">Pon el material en el orden en que lo recoges. Se usa en <b>RESUMEN → Lista de Reposición Total</b> y en <b>🖨️ Exportar PDF</b>.
-            Mueve con <b>▲ ▼</b> o arrastrando desde <b>⋮⋮</b>. Los grupos también se ordenan con sus ▲ ▼.</p>
+            Mueve con <b>▲ ▼</b> (uno a uno), <b>⇈ ⇊</b> (al principio / al final) o arrastrando desde <b>⋮⋮</b>. Los grupos también se ordenan con sus ▲ ▼.</p>
             <div class="order-actions">
                 <button id="orderCopy">📋 Copiar orden</button>
                 <button id="orderReset">↺ Volver a alfabético</button>
@@ -2213,7 +2214,7 @@ function renderOrder() {
                     <span class="og-btns"><button class="ord-btn" data-act="gup" title="Subir grupo">▲</button><button class="ord-btn" data-act="gdown" title="Bajar grupo">▼</button></span></summary>
                 <ol class="order-list">${units.map(u => `<li data-name="${escAttr(u)}"><span class="oh">⋮⋮</span>
                     <span class="on">${u}${opts[u] || areas[u] ? `<small>${[opts[u]?.join(' · '), [...(areas[u] || [])].join(', ')].filter(Boolean).join(' — ')}</small>` : ''}</span>
-                    <button class="ord-btn" data-act="up">▲</button><button class="ord-btn" data-act="down">▼</button></li>`).join('')}</ol>
+                    <button class="ord-btn ord-far" data-act="top" title="Al principio">⇈</button><button class="ord-btn" data-act="up">▲</button><button class="ord-btn" data-act="down">▼</button><button class="ord-btn ord-far" data-act="bottom" title="Al final">⇊</button></li>`).join('')}</ol>
             </details>`;
         }).join('')}</div>
     </div>`;
@@ -2240,7 +2241,13 @@ function renderOrder() {
         if (!btn) return;
         e.preventDefault(); e.stopPropagation();   // que no abra/cierre el grupo
         const act = btn.dataset.act;
-        if (act === 'up' || act === 'down') {
+        if (act === 'top' || act === 'bottom') {
+            const li = btn.closest('li'), ol = li.parentElement;
+            act === 'top' ? ol.prepend(li) : ol.append(li);
+            commitGroup(li.closest('.order-group'));
+            flash(li);
+            li.scrollIntoView({ block: 'center' });
+        } else if (act === 'up' || act === 'down') {
             const li = btn.closest('li');
             const sib = act === 'up' ? li.previousElementSibling : li.nextElementSibling;
             if (!sib) return;
