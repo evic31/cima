@@ -874,8 +874,8 @@ const INVENTORY_EDIT_KEY = 'inventoryEdits_v1'; // guarda overrides de nombre y 
 const ID_SEP = '||';
 const tabOrder = [
     "Reanimación","UCSI","Quirófano 1","Quirófano 2","Quirófano 3",
-    "Quirófano 4","Quirófano 5","Quirófano 6","Hemodinamia",
-    "Quirófano 8","Quirófano 7","RESUMEN","✏️ Editor","⚙️ Orden"
+    "Quirófano 4","Quirófano 5","Quirófano 6","Quirófano 7",
+    "Quirófano 8","Hemodinamia","RESUMEN","✏️ Editor","⚙️ Orden"
 ];
 
 let checklistState   = {};
@@ -1847,7 +1847,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '24-sep 23:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-sep 09:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
