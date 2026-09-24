@@ -1615,7 +1615,74 @@ const VOZ_SYN = [
 ];
 const VOZ_STOP = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'en', 'al', 'y', 'e', 'faltan', 'falta', 'hay', 'que', 'mas', 'ml', 'mg', 'cc', 'nº', 'n']);
 // letras de talla dichas en voz alta
-const VOZ_LETTER = { s: ['s', 'ese'], m: ['m', 'eme', 'mediano', 'medianos', 'mediana'], l: ['l', 'ele'], g: ['g', 'ge', 'grande', 'grandes'], p: ['p', 'pe', 'pequeno', 'pequenos', 'pequena', 'pequenas'] };
+const VOZ_PEQ = ['pequeno', 'pequenos', 'pequena', 'pequenas'], VOZ_GRA = ['grande', 'grandes'];
+const VOZ_LETTER = { s: ['s', 'ese', ...VOZ_PEQ], m: ['m', 'eme', 'mediano', 'medianos', 'mediana', 'medianas'], l: ['l', 'ele', ...VOZ_GRA], g: ['g', 'ge', ...VOZ_GRA], p: ['p', 'pe', ...VOZ_PEQ] };
+
+// ── nombres alternativos SOLO para la voz (la app y la hoja impresa no cambian) ──
+// clave = nombre del material tal cual en la app (sin (R)/(U)/(REA)/(UCSI)); valor = otras formas de decirlo.
+// Si el alias no lleva número, vale el del nombre: «zofran 4» → Ondansetron 4mg.
+const VOZ_ALIAS = {
+    'Otros liquidos': ['liquidos'],
+    'Mefix': ['aposito en rollo', 'aposito rollo'],
+    'Mefix pequeño': ['aposito en rollo', 'aposito rollo'],
+    'Contenedor Agujas': ['contenedor', 'contenedor punzantes'],
+    'Gasas Grandes c/c': ['gasas grandes con contraste', 'gasas grandes contraste'],
+    'Gasas Pequeñas c/c': ['gasas pequenas con contraste', 'gasas pequenas contraste'],
+    'Gasas grandes s/c': ['gasas verdes grandes', 'gasas grandes sin contraste'],
+    'Gasas pequeñas s/c': ['gasas verdes pequenas', 'gasas pequenas sin contraste'],
+    'Yankauer': ['canula de aspiracion', 'canula aspiracion', 'canula'],
+    'Sulky': ['lubricante acuoso'],
+    'Smart': ['compresor'],
+    'SteryStrip': ['tira adhesiva', 'tiras adhesivas', 'steri strip'],
+    'Abocath 18G': ['via'], 'Abocath 20G': ['via'], 'Abocath 22G': ['via'], 'Abocath 16G': ['via'], 'Abocath 14G': ['via'],
+    'Abocath': ['via'],
+    'Llave 3p': ['llave tres pasos'],
+    'Dexketoprofeno': ['enantyum', 'enantium'],
+    'Metamizol': ['nolotil'],
+    'Ondansetron 4mg': ['zofran'], 'Ondansetron 8mg': ['zofran'],
+    'Dexclorferinamina': ['dexclorfeniramina', 'polaramine'],
+    'Metilprednisona 20mg': ['metilprednisolona', 'urbason'], 'Metilprednisona 40mg': ['metilprednisolona', 'urbason'],
+    'Salbutamol inhalado': ['ventolin'],
+    'Diclofenaco': ['voltaren'],
+    'Metoclopramida': ['primperan'],
+    'Ac. Tranexámico': ['tranexamico', 'acido tranexamico'],
+    'Bupivacaina 0,25': ['bupi'], 'Bupivacaina 0.5': ['bupi'],
+    'Lidocaina 2%': ['lido'], 'Mepivacaina 2%': ['mepi'],
+    'Levobupivacaina': ['levobupi', 'levo'],
+    'Sevorane': ['sevo', 'sevoflurano'],
+    'Sondas Aspiración #16 (Naranja)': ['receptal naranja', 'sonda naranja'],
+    'Sondas Aspiración #14 (Verde)': ['receptal verde', 'sonda verde'],
+    'Sondas Aspiración #12 (Blanco)': ['receptal blanco', 'sonda blanca'],
+    'Sondas Aspiración #10 (Negro)': ['receptal negro', 'sonda negra'],
+    'Cal sodada G.Electric': ['cal sodada general electric'],
+    'BIC': ['bomba analgesia', 'bomba de analgesia'],
+    'Guedel': ['tubo mayo', 'canula de guedel'],
+    'Guedel #2 80mm (verde)': ['tubo mayo verde'], 'Guedel #3 90mm (amarillo)': ['tubo mayo amarillo'],
+    'Guedel #4 10mm (rojo)': ['tubo mayo rojo'], 'Guedel #5 11mm (celeste/ naranja)': ['tubo mayo celeste', 'tubo mayo naranja']
+};
+// opciones: clave = 'Material||Opción'
+const VOZ_OPT_ALIAS = {
+    'Antisepticos||Clorh. Alc.': ['clorhexidina alcoholica', 'clorhexidina alcohol', 'clore alcohol'],
+    'Antisepticos||Clorh. Alc. Tintada': ['clorhexidina alcoholica tintada', 'clore alcohol tintada'],
+    'Antisepticos||Clorh. Acu.': ['clorhexidina acuosa', 'clore acuosa'],
+    'Antisepticos||Clorh. Acu. Tintada': ['clorhexidina acuosa tintada', 'clore acuosa tintada'],
+    'Otros liquidos||Agua Oxig.': ['agua oxigenada', 'h2o2', 'oxigenada'],
+    'Otros liquidos||Nobecutan': ['aposito aerosol', 'aposito en aerosol', 'aerosol', 'spray'],
+    'Kit sondaje||Cathegel': ['lubricante'],
+    'Kit sondaje||Paño Kit Sondaje': ['pano sondaje'],
+    'Kit sondaje||Jeringa Kit Sondaje': ['jeringa sondaje'],
+    'Kit sondaje||Guante sondaje': ['guante sondaje', 'guantes sondaje'],
+    'Kit sondaje||Sonda Vesical': ['sonda vesical'],
+    'SteryStrip||Azul (2)': ['azul'], 'SteryStrip||Naranja (2)': ['naranja']
+};
+const vozKey = n => vozNorm(String(n).replace(/\((R|U|REA|UCSI)\)/gi, ''));
+const VOZ_ALIAS_N = {}, VOZ_OPT_ALIAS_N = {};
+setTimeout(() => {
+    Object.entries(VOZ_ALIAS).forEach(([k, v]) => { VOZ_ALIAS_N[vozKey(k)] = v; });
+    Object.entries(VOZ_OPT_ALIAS).forEach(([k, v]) => { const [a, o] = k.split(ID_SEP); VOZ_OPT_ALIAS_N[vozKey(a) + ID_SEP + vozKey(o)] = v; });
+});
+// palabras de carro/zona que se pueden decir dentro de la frase: «empapadores enfermería»
+const VOZ_CARRO = { enfermeria: 'Carro Enfermeria', anestesia: 'Carro Anestesia', otros: 'Otros', farmacia: 'FARMACIA', almacen: 'ALMACÉN' };
 
 const vozNorm = t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/(\d),(\d)/g, '$1.$2').replace(/nº|#/g, ' ')
@@ -1645,7 +1712,8 @@ function vozTokens(t) {
     const words = [], nums = [];
     n.split(' ').forEach(w => {
         if (!w) return;
-        if (/^\d+(\.\d+)?$/.test(w)) nums.push(parseFloat(w));
+        if (/^0\d+$/.test(w)) nums.push(parseFloat('0.' + w.slice(1)));
+        else if (/^\d+(\.\d+)?$/.test(w)) nums.push(parseFloat(w));
         else if (/^\.5$/.test(w) && nums.length) nums[nums.length - 1] += 0.5;
         else if (VOZ_NUM[w] !== undefined) nums.push(VOZ_NUM[w]);
         else if (!VOZ_STOP.has(w)) words.push(w);
@@ -1663,6 +1731,7 @@ function initVoz() {
     document.getElementById('vozUndo').addEventListener('click', vozUndo);
     document.getElementById('vozHelp').addEventListener('click', () => vozSay(
         'Di el material como está escrito y la cantidad. Por ejemplo: paracetamol 3, o jeringas 10 y 5. ' +
+        'Puedes añadir el carro en la frase, por ejemplo: empapadores enfermería. ' +
         'Di anestesia o enfermería para elegir carro, quirófano 3 para cambiar, quita y el material para desmarcar, deshacer, o para.'));
 }
 
@@ -1735,8 +1804,8 @@ function vozHandle(alts) {
     const area = vozTab();
     const locs = inventoryData[area] ? Object.keys(inventoryData[area]) : [];
     if (!locs.length) { vozShow(heard, 'Abre primero un quirófano, REA o UCSI', true); return vozSay('Abre primero un quirófano'); }
-    const nw = n.split(' ');
-    const carroHit = nw.length <= 2 && locs.find(l => vozTokens(l).words.filter(w => w !== 'carro').some(w => vozWordEq(nw[nw.length - 1], w)));
+    const nw = n.split(' ').filter(w => w !== 'carro');
+    const carroHit = nw.length === 1 && locs.find(l => vozTokens(l).words.filter(w => w !== 'carro').some(w => vozWordEq(nw[0], w)));
     if (carroHit) {
         // respuesta a «¿enfermería o anestesia?» o cambio de carro preferente
         voz.carro = carroHit;
@@ -1753,8 +1822,10 @@ function vozHandle(alts) {
     });
     if (!best) { vozShow(heard, 'No lo encuentro en ' + area, true); return vozSay('No lo encuentro'); }
     // empate entre carros (Guantes, Empapadores, Jeringas…): pregunta
-    const top = best.filter(c => c.score === best[0].score);
-    const names = [...new Set(top.map(c => c.item.name))];
+    let top = best.filter(c => c.score === best[0].score);
+    const inCarro = top.filter(c => c.loc === voz.carro);
+    if (inCarro.length) top = inCarro;
+    const names = [...new Map(top.map(c => [vozKey(c.item.name), c.item.name])).values()];
     if (names.length > 1) {
         const list = names.slice(0, 4).map(x => x.replace(/\s*\((R|U|REA|UCSI)\)/gi, ''));
         vozShow(heard, '¿Cuál? ' + list.join(' · '), true);
@@ -1767,7 +1838,7 @@ function vozHandle(alts) {
         const q = distinctLocs.join(' o ') + '?';
         vozShow(heard, '¿' + q); return vozSay(distinctLocs.map(l => l.replace('Carro ', '')).join(' o ') + '?');
     }
-    vozApply({ ...(pref || best[0]), remove }, heard);
+    vozApply({ ...(pref || top[0]), remove }, heard);
 }
 
 function vozTabCommand(n) {
@@ -1785,44 +1856,66 @@ function vozTabCommand(n) {
     return null;
 }
 
-// candidatos de la pestaña, ordenados por puntuación
+// candidatos de la pestaña, ordenados por puntuación.
+// Cada material se prueba con su nombre y con sus alias de voz; se queda la mejor forma.
 function vozMatch(area, text) {
     const U = vozTokens(text);
+    // carro dicho dentro de la frase («guantes anestesia pequeño») → preferencia, no cuenta como palabra
+    const carroWords = U.words.filter(w => VOZ_CARRO[w]);
+    U.words = U.words.filter(w => !VOZ_CARRO[w]);
     if (!U.words.length) return [];
     // también parejas juntas: «steri strip» ≈ SteryStrip
     const UW = [...U.words, ...U.words.slice(1).map((w, i) => U.words[i] + w)];
+    const wordsOf = t => vozTokens(t).words.filter(w => w.length > 1 && !['r', 'u', 'rea', 'ucsi'].includes(w) && !VOZ_CARRO[w]);
     const out = [];
     for (const loc in inventoryData[area]) {
         inventoryData[area][loc].forEach(item => {
+            const key = vozKey(item.name);
             const N = vozTokens(item.name);
-            const nameWords = N.words.filter(w => w.length > 1 && !['r', 'u', 'rea', 'ucsi'].includes(w));
-            let matched = 0;
-            nameWords.forEach(nw => { if (UW.some(uw => vozWordEq(uw, nw))) matched++; });
-            // opciones (tallas, calibres…): «G (1)» → G; una letra sola vale dicha como «ele», «eme»…
-            let nums = U.nums.slice();
-            const optHits = [];
-            (item.options || []).forEach(o => {
-                const O = vozTokens(o.replace(/\(.*?\)/g, ''));
-                if (O.nums.length) O.words = O.words.filter(w => !['g', 'mg', 'cc', 'ml', 'gr'].includes(w)); // unidades: 1g, 20cc
-                const letter = O.words.length === 1 && !O.nums.length && VOZ_LETTER[O.words[0]];
-                const used = letter ? U.words.filter(uw => letter.includes(uw))
-                    : O.words.length ? U.words.filter(uw => O.words.some(ow => vozWordEq(uw, ow))) : [];
-                const wordHit = letter ? used.length > 0 : O.words.length > 0 && O.words.every(ow => U.words.some(uw => vozWordEq(uw, ow)));
-                const numHit = O.nums.length > 0 && O.nums.every(on => nums.includes(on));
-                if (O.nums.length ? numHit : wordHit) optHits.push({ o, used, byWords: wordHit && !letter, nums: O.nums });
+            const variants = [wordsOf(item.name), ...(VOZ_ALIAS_N[key] || []).map(wordsOf)];
+            // opciones con sus alias
+            const optVars = (item.options || []).map(o => {
+                const base = vozTokens(o.replace(/\(.*?\)/g, ''));
+                if (base.nums.length) base.words = base.words.filter(w => !['g', 'mg', 'cc', 'ml', 'gr'].includes(w)); // unidades: 1g, 20cc
+                const al = (VOZ_OPT_ALIAS_N[key + ID_SEP + vozKey(o)] || []).map(t => ({ words: vozTokens(t).words, nums: [] }));
+                return { o, forms: [base, ...al] };
             });
-            // si dos opciones encajan con las mismas palabras, gana la más completa (Clorh. Alc. > Alcohol)
-            const opts = optHits.filter(h => !optHits.some(k => k !== h && k.used.length > h.used.length && h.used.every(w => k.used.includes(w))));
-            opts.forEach(h => h.nums.forEach(on => { const i = nums.indexOf(on); if (i >= 0) nums.splice(i, 1); }));
-            const optWords = Math.max(0, ...opts.filter(h => h.byWords).map(h => h.used.length));
-            if (!matched && !optWords) return;
-            let score = matched ? matched * 10 - (nameWords.length - matched) * 3 : 4 + optWords * 5;
-            // números del nombre (TET 7,5 · Abocath 18G · Guedel #3 90mm) no son cantidad; el primero dicho identifica
-            const hitNums = N.nums.filter(nn => nums.includes(nn));
-            hitNums.forEach(nn => { score += 6 + (U.nums[0] === nn ? 2 : 0); nums.splice(nums.indexOf(nn), 1); });
-            if (N.nums.length && !hitNums.length) score -= 4;
-            if (opts.length && matched) score += 3;
-            out.push({ area, loc, item, opts: opts.map(h => h.o), qty: nums.length ? Math.round(nums[0]) : null, score });
+            let bestC = null;
+            variants.forEach(nameWords => {
+                let matched = 0;
+                nameWords.forEach(nw => { if (UW.some(uw => vozWordEq(uw, nw))) matched++; });
+                let nums = U.nums.slice();
+                const optHits = [];
+                optVars.forEach(({ o, forms }) => {
+                    let hit = null;
+                    forms.forEach(O => {
+                        const letter = O.words.length === 1 && !O.nums.length && VOZ_LETTER[O.words[0]];
+                        const used = letter ? U.words.filter(uw => letter.includes(uw))
+                            : O.words.length ? U.words.filter(uw => O.words.some(ow => vozWordEq(uw, ow))) : [];
+                        const wordHit = letter ? used.length > 0 : O.words.length > 0 && O.words.every(ow => U.words.some(uw => vozWordEq(uw, ow)));
+                        const numHit = O.nums.length > 0 && O.nums.every(on => nums.includes(on));
+                        if ((O.nums.length ? numHit : wordHit) && (!hit || used.length > hit.used.length))
+                            hit = { o, used, byWords: wordHit && !letter, nums: O.nums };
+                    });
+                    if (hit) optHits.push(hit);
+                });
+                // si dos opciones encajan con las mismas palabras, gana la más completa (Clorh. Alc. > Alcohol)
+                const opts = optHits.filter(h => !optHits.some(k => k !== h && k.used.length > h.used.length && h.used.every(w => k.used.includes(w))));
+                opts.forEach(h => h.nums.forEach(on => { const i = nums.indexOf(on); if (i >= 0) nums.splice(i, 1); }));
+                const optWords = Math.max(0, ...opts.filter(h => h.byWords).map(h => h.used.length));
+                if (!matched && !optWords) return;
+                // las palabras de la opción no penalizan al nombre (Guantes sondaje = opción de Kit sondaje)
+                let score = matched ? matched * 10 - (nameWords.length - matched) * 3 : 4 + optWords * 5;
+                // números del nombre (TET 7,5 · Abocath 18G · Guedel #3 90mm) no son cantidad; el primero dicho identifica
+                const hitNums = N.nums.filter(nn => nums.includes(nn));
+                hitNums.forEach(nn => { score += 6 + (U.nums[0] === nn ? 2 : 0); nums.splice(nums.indexOf(nn), 1); });
+                if (N.nums.length && !hitNums.length) score -= 4;
+                if (opts.length && matched) score += 3 + optWords * 2;
+                if (carroWords.some(w => VOZ_CARRO[w] === loc)) score += 5;
+                const c = { area, loc, item, opts: opts.map(h => h.o), qty: nums.length ? Math.round(nums[0]) : null, score };
+                if (!bestC || c.score > bestC.score) bestC = c;
+            });
+            if (bestC) out.push(bestC);
         });
     }
     return out.sort((a, b) => b.score - a.score);
