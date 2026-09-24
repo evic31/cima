@@ -526,6 +526,40 @@
         }
         #btnGuardar:hover { transform: scale(1.03); }
         #btnGuardar::before { content: '💾'; font-size: 0.95rem; }
+
+        /* ── MODO VOZ ── */
+        #btnVoz {
+            position: fixed; z-index: 9999;
+            bottom: 1.1rem; left: 50%; transform: translateX(-50%);
+            width: 54px; height: 54px; border-radius: 50%;
+            border: none; cursor: pointer; font-size: 1.45rem;
+            background: #fff; box-shadow: 0 4px 16px rgba(88,166,255,0.45);
+            display: flex; align-items: center; justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #btnVoz.on { background: var(--danger); box-shadow: 0 0 0 6px rgba(239,68,68,0.25); animation: vozPulse 1.4s infinite; }
+        @keyframes vozPulse { 50% { box-shadow: 0 0 0 12px rgba(239,68,68,0.12); } }
+        #vozBar {
+            position: fixed; z-index: 9998; left: 0.6rem; right: 0.6rem; bottom: 5rem;
+            background: #fff; border: 1.5px solid var(--border2); border-radius: var(--radius);
+            box-shadow: 0 6px 24px rgba(45,49,66,0.18);
+            padding: 0.55rem 0.75rem; display: none; font-size: 0.85rem;
+        }
+        #vozBar.on { display: block; }
+        #vozBar .vz-ctx { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+        #vozBar .vz-heard { color: var(--text-muted); font-style: italic; margin-top: 0.15rem; min-height: 1.2em; }
+        #vozBar .vz-last { font-weight: 600; margin-top: 0.1rem; min-height: 1.3em; }
+        #vozBar .vz-last.err { color: var(--danger); }
+        #vozBar .vz-row { display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; }
+        #vozBar .vz-btns { display: flex; gap: 0.35rem; flex-shrink: 0; }
+        .item { scroll-margin-top: 115px; }
+        #vozBar button {
+            border: 1.5px solid var(--border2); background: var(--surf2); color: var(--text);
+            border-radius: 999px; padding: 0.2rem 0.7rem; font-size: 0.78rem; font-weight: 600;
+            font-family: 'IBM Plex Sans', sans-serif; cursor: pointer;
+        }
+        .item.voz-flash { animation: vozFlash 1.6s ease; }
+        @keyframes vozFlash { 0%, 40% { box-shadow: inset 0 0 0 2px var(--accent); background: #dbeafe; } }
     </style>
 </head>
 <body>
@@ -544,6 +578,12 @@
 
 <button id="btnSubir" title="Subir al inicio">⬆</button>
 <button id="btnGuardar" title="Guardar checklist">Guardar</button>
+<button id="btnVoz" title="Modo voz: dicta lo que falta">🎤</button>
+<div id="vozBar">
+    <div class="vz-row"><span class="vz-ctx" id="vozCtx"></span><span class="vz-btns"><button id="vozUndo">↶ Deshacer</button><button id="vozHelp">?</button></span></div>
+    <div class="vz-heard" id="vozHeard"></div>
+    <div class="vz-last" id="vozLast"></div>
+</div>
 
 <script>
 // ─────────────────────────────────────────────
@@ -815,6 +855,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAllTabContents();
     switchTab(tabOrder[0]);
     bindFloatingBtns();
+    initVoz();
     bindChecklistChanges();
 });
 
@@ -1552,6 +1593,286 @@ function bindFloatingBtns() {
         setTimeout(() => btnGuardar.textContent = 'Guardar', 1300);
     });
 }
+// ─────────────────────────────────────────────
+// MODO VOZ (manos libres): se dicen los materiales de la pestaña abierta tal como están escritos
+//   «paracetamol 3» → Faltan 3 · «jeringas 10 y 5» → marca 10cc y 5cc · «midazolam» → marca
+//   «anestesia» / «enfermería» / «otros» / «farmacia» / «almacén» → carro preferente
+//   «quirófano 3», «hemodinamia», «reanimación», «UCSI» → cambia de pestaña
+//   «quita X» → desmarca · «deshacer» · «para» → apaga
+// ─────────────────────────────────────────────
+const VOZ_NUM = {
+    un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+    once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17, dieciocho: 18,
+    diecinueve: 19, veinte: 20, veinticinco: 25, treinta: 30, cuarenta: 40, cincuenta: 50, cien: 100, quinientos: 500
+};
+// sinónimos hablados → como está escrito en la app
+const VOZ_SYN = [
+    [/\bsuero fisiologico\b|\bfisiologico\b|\bsuero\b/g, 'sf'], [/\bringer lactato\b|\bringer\b|\blactato\b/g, 'rl'],
+    [/\bglucosalino\b|\bglucosalinos\b/g, 'sgs'], [/\btubos?\b/g, 'tet'], [/\bmascarillas? laringeas?\b/g, 'mascarilla laringea'],
+    [/\bpor ciento\b/g, ''],
+    [/\berre ele\b/g, 'rl'], [/\bese efe\b/g, 'sf'], [/\bese ge ese\b/g, 'sgs'],
+    [/\bcoma cinco\b|\by medio\b|\bymedio\b/g, ' .5']
+];
+const VOZ_STOP = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'en', 'al', 'y', 'e', 'faltan', 'falta', 'hay', 'que', 'mas', 'ml', 'mg', 'cc', 'nº', 'n']);
+// letras de talla dichas en voz alta
+const VOZ_LETTER = { s: ['s', 'ese'], m: ['m', 'eme', 'mediano', 'medianos', 'mediana'], l: ['l', 'ele'], g: ['g', 'ge', 'grande', 'grandes'], p: ['p', 'pe', 'pequeno', 'pequenos', 'pequena', 'pequenas'] };
+
+const vozNorm = t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/(\d),(\d)/g, '$1.$2').replace(/nº|#/g, ' ')
+    .replace(/(\d)([a-z])/g, '$1 $2').replace(/([a-z])(\d)/g, '$1 $2')
+    .replace(/[^a-z0-9.\s]/g, ' ').replace(/\.(?!\d)|(^|[^\d])\./g, '$1 ').replace(/\s+/g, ' ').trim();
+const vozStem = w => w.length > 4 ? w.replace(/(es|s)$/, '') : w;
+function vozLev(a, b) {
+    if (Math.abs(a.length - b.length) > 2) return 9;
+    const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+    for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[a.length][b.length];
+}
+const vozWordEq = (u, n) => {
+    if (u === n) return true;
+    const a = vozStem(u), b = vozStem(n);
+    if (a === b) return true;
+    if (b.length >= 4 && a.length >= 4 && (a.startsWith(b) || b.startsWith(a))) return true;
+    if (b.length === 3 && a.length > 3 && a.startsWith(b)) return true;
+    return b.length >= 5 && vozLev(a, b) <= (b.length >= 8 ? 2 : 1);
+};
+// separa palabras y números (convierte números dichos en palabras)
+function vozTokens(t) {
+    let n = vozNorm(t);
+    VOZ_SYN.forEach(([re, rep]) => { n = n.replace(re, rep); });
+    const words = [], nums = [];
+    n.split(' ').forEach(w => {
+        if (!w) return;
+        if (/^\d+(\.\d+)?$/.test(w)) nums.push(parseFloat(w));
+        else if (/^\.5$/.test(w) && nums.length) nums[nums.length - 1] += 0.5;
+        else if (VOZ_NUM[w] !== undefined) nums.push(VOZ_NUM[w]);
+        else if (!VOZ_STOP.has(w)) words.push(w);
+    });
+    return { words, nums };
+}
+
+let voz = null; // estado del modo voz
+
+function initVoz() {
+    const btn = document.getElementById('btnVoz');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { btn.addEventListener('click', () => alert('Este navegador no admite reconocimiento de voz. En iPhone, prueba desde Safari.')); return; }
+    btn.addEventListener('click', () => voz?.on ? vozStop() : vozStart(SR));
+    document.getElementById('vozUndo').addEventListener('click', vozUndo);
+    document.getElementById('vozHelp').addEventListener('click', () => vozSay(
+        'Di el material como está escrito y la cantidad. Por ejemplo: paracetamol 3, o jeringas 10 y 5. ' +
+        'Di anestesia o enfermería para elegir carro, quirófano 3 para cambiar, quita y el material para desmarcar, deshacer, o para.'));
+}
+
+function vozStart(SR) {
+    const rec = new SR();
+    rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = false; rec.maxAlternatives = 3;
+    voz = { on: true, rec, carro: null, undo: [], pending: null, speaking: false };
+    rec.onresult = e => {
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+            if (!e.results[i].isFinal) continue;
+            const alts = Array.from(e.results[i]).map(a => a.transcript);
+            vozHandle(alts);
+        }
+    };
+    rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { vozShow('', 'Sin permiso para el micrófono', true); vozStop(); } };
+    // el reconocimiento se corta tras silencios: se reengancha solo mientras el modo esté activo
+    rec.onend = () => { if (voz?.on && !voz.speaking) try { rec.start(); } catch {} };
+    try { rec.start(); } catch {}
+    document.getElementById('btnVoz').classList.add('on');
+    document.getElementById('vozBar').classList.add('on');
+    vozShow('', 'Escuchando…');
+    vozSay('Escuchando ' + vozTabName());
+}
+
+function vozStop() {
+    if (!voz) return;
+    voz.on = false;
+    try { voz.rec.abort(); } catch {}
+    window.speechSynthesis?.cancel();
+    saveChecklistState();
+    document.getElementById('btnVoz').classList.remove('on');
+    document.getElementById('vozBar').classList.remove('on');
+}
+
+// habla y deja de escuchar mientras tanto (para no oírse a sí mismo)
+function vozSay(txt) {
+    if (!window.speechSynthesis || !voz?.on) return;
+    voz.speaking = true;
+    try { voz.rec.abort(); } catch {}
+    const u = new SpeechSynthesisUtterance(txt);
+    u.lang = 'es-ES'; u.rate = 1.1;
+    const back = () => { if (!voz?.on) return; voz.speaking = false; try { voz.rec.start(); } catch {} };
+    u.onend = back; u.onerror = back;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+}
+
+const vozTab = () => document.querySelector('.tab.active')?.dataset.tab;
+const vozTabName = () => { const t = vozTab(); return !t || t === 'RESUMEN' || t.includes('Editor') ? '' : t; };
+
+function vozShow(heard, msg, err) {
+    const locs = inventoryData[vozTab()] ? Object.keys(inventoryData[vozTab()]) : [];
+    document.getElementById('vozCtx').textContent = '🎤 ' + (vozTabName() || 'abre un quirófano') + (voz?.carro && locs.includes(voz.carro) ? ' · ' + voz.carro : '');
+    if (heard !== null) document.getElementById('vozHeard').textContent = heard ? '«' + heard + '»' : '';
+    const last = document.getElementById('vozLast');
+    last.textContent = msg || ''; last.classList.toggle('err', !!err);
+}
+
+function vozHandle(alts) {
+    const heard = alts[0].trim();
+    const n = vozNorm(heard);
+    // ── órdenes ──
+    if (/^(para|parar|stop|fin|terminar|apagar)$/.test(n)) { vozSay('Apagado'); setTimeout(vozStop, 900); return vozShow(heard, 'Apagado'); }
+    if (/^(deshacer|deshaz|atras|borra eso|anula)$/.test(n)) return vozUndo(heard);
+    const tabHit = vozTabCommand(n);
+    if (tabHit) {
+        switchTab(tabHit); voz.carro = null; voz.pending = null;
+        vozShow(heard, 'Pestaña ' + tabHit); return vozSay(tabHit);
+    }
+    const area = vozTab();
+    const locs = inventoryData[area] ? Object.keys(inventoryData[area]) : [];
+    if (!locs.length) { vozShow(heard, 'Abre primero un quirófano, REA o UCSI', true); return vozSay('Abre primero un quirófano'); }
+    const nw = n.split(' ');
+    const carroHit = nw.length <= 2 && locs.find(l => vozTokens(l).words.filter(w => w !== 'carro').some(w => vozWordEq(nw[nw.length - 1], w)));
+    if (carroHit) {
+        // respuesta a «¿enfermería o anestesia?» o cambio de carro preferente
+        voz.carro = carroHit;
+        if (voz.pending) { const p = voz.pending; voz.pending = null; const m = p.find(c => c.loc === carroHit); if (m) return vozApply(m, heard); }
+        vozShow(heard, '→ ' + carroHit); return vozSay(carroHit);
+    }
+    const remove = /^(quita|quitar|borra|borrar|desmarca|desmarcar|no)\b/.test(n);
+    // prueba las alternativas que da el reconocedor y se queda con la que mejor encaja
+    let best = null;
+    alts.forEach((a, ai) => {
+        const txt = remove ? vozNorm(a).replace(/^(quita|quitar|borra|borrar|desmarca|desmarcar|no)\s*/, '') : a;
+        const r = vozMatch(area, txt);
+        if (r.length && (!best || r[0].score - ai * 2 > best[0].score)) best = r;
+    });
+    if (!best) { vozShow(heard, 'No lo encuentro en ' + area, true); return vozSay('No lo encuentro'); }
+    // empate entre carros (Guantes, Empapadores, Jeringas…): pregunta
+    const top = best.filter(c => c.score === best[0].score);
+    const names = [...new Set(top.map(c => c.item.name))];
+    if (names.length > 1) {
+        const list = names.slice(0, 4).map(x => x.replace(/\s*\((R|U|REA|UCSI)\)/gi, ''));
+        vozShow(heard, '¿Cuál? ' + list.join(' · '), true);
+        return vozSay('¿Cuál? ' + list.join(', ').replace(/nº/g, 'número ').replace(/,(\d)/g, ' coma $1'));
+    }
+    const pref = top.find(c => c.loc === voz.carro);
+    const distinctLocs = [...new Set(top.map(c => c.loc))];
+    if (!pref && distinctLocs.length > 1) {
+        voz.pending = top.map(c => ({ ...c, remove }));
+        const q = distinctLocs.join(' o ') + '?';
+        vozShow(heard, '¿' + q); return vozSay(distinctLocs.map(l => l.replace('Carro ', '')).join(' o ') + '?');
+    }
+    vozApply({ ...(pref || best[0]), remove }, heard);
+}
+
+function vozTabCommand(n) {
+    const w = n.split(' ');
+    if (w.length > 3) return null;
+    if (/^(quirofano|quirofanos|qx|q)\b/.test(n)) {
+        const num = vozTokens(n).nums[0];
+        const t = `Quirófano ${num}`;
+        return tabOrder.includes(t) ? t : null;
+    }
+    if (/^hemo/.test(n)) return 'Hemodinamia';
+    if (/^(rea|reanimacion|reanima)/.test(n)) return 'Reanimación';
+    if (/^(ucsi|u c s i|uxi|ucs)$/.test(n)) return 'UCSI';
+    if (/^resumen$/.test(n)) return 'RESUMEN';
+    return null;
+}
+
+// candidatos de la pestaña, ordenados por puntuación
+function vozMatch(area, text) {
+    const U = vozTokens(text);
+    if (!U.words.length) return [];
+    // también parejas juntas: «steri strip» ≈ SteryStrip
+    const UW = [...U.words, ...U.words.slice(1).map((w, i) => U.words[i] + w)];
+    const out = [];
+    for (const loc in inventoryData[area]) {
+        inventoryData[area][loc].forEach(item => {
+            const N = vozTokens(item.name);
+            const nameWords = N.words.filter(w => w.length > 1 && !['r', 'u', 'rea', 'ucsi'].includes(w));
+            let matched = 0;
+            nameWords.forEach(nw => { if (UW.some(uw => vozWordEq(uw, nw))) matched++; });
+            // opciones (tallas, calibres…): «G (1)» → G; una letra sola vale dicha como «ele», «eme»…
+            let nums = U.nums.slice();
+            const optHits = [];
+            (item.options || []).forEach(o => {
+                const O = vozTokens(o.replace(/\(.*?\)/g, ''));
+                if (O.nums.length) O.words = O.words.filter(w => !['g', 'mg', 'cc', 'ml', 'gr'].includes(w)); // unidades: 1g, 20cc
+                const letter = O.words.length === 1 && !O.nums.length && VOZ_LETTER[O.words[0]];
+                const used = letter ? U.words.filter(uw => letter.includes(uw))
+                    : O.words.length ? U.words.filter(uw => O.words.some(ow => vozWordEq(uw, ow))) : [];
+                const wordHit = letter ? used.length > 0 : O.words.length > 0 && O.words.every(ow => U.words.some(uw => vozWordEq(uw, ow)));
+                const numHit = O.nums.length > 0 && O.nums.every(on => nums.includes(on));
+                if (O.nums.length ? numHit : wordHit) optHits.push({ o, used, byWords: wordHit && !letter, nums: O.nums });
+            });
+            // si dos opciones encajan con las mismas palabras, gana la más completa (Clorh. Alc. > Alcohol)
+            const opts = optHits.filter(h => !optHits.some(k => k !== h && k.used.length > h.used.length && h.used.every(w => k.used.includes(w))));
+            opts.forEach(h => h.nums.forEach(on => { const i = nums.indexOf(on); if (i >= 0) nums.splice(i, 1); }));
+            const optWords = Math.max(0, ...opts.filter(h => h.byWords).map(h => h.used.length));
+            if (!matched && !optWords) return;
+            let score = matched ? matched * 10 - (nameWords.length - matched) * 3 : 4 + optWords * 5;
+            // números del nombre (TET 7,5 · Abocath 18G · Guedel #3 90mm) no son cantidad; el primero dicho identifica
+            const hitNums = N.nums.filter(nn => nums.includes(nn));
+            hitNums.forEach(nn => { score += 6 + (U.nums[0] === nn ? 2 : 0); nums.splice(nums.indexOf(nn), 1); });
+            if (N.nums.length && !hitNums.length) score -= 4;
+            if (opts.length && matched) score += 3;
+            out.push({ area, loc, item, opts: opts.map(h => h.o), qty: nums.length ? Math.round(nums[0]) : null, score });
+        });
+    }
+    return out.sort((a, b) => b.score - a.score);
+}
+
+function vozApply(c, heard) {
+    const { area, loc, item, opts, qty, remove } = c;
+    const base = [area, loc, item.name].join(ID_SEP);
+    const changes = [];
+    let said;
+    if (item.type === 'number') {
+        const sel = document.getElementById(base);
+        if (!sel) return;
+        const v = remove ? 0 : Math.min(qty ?? 1, item.stock);
+        changes.push({ el: sel, prev: sel.value });
+        sel.value = String(v);
+        said = remove ? `${item.name}, stock completo` : `${item.name}, faltan ${v}` + (qty > item.stock ? `, máximo ${item.stock}` : '');
+    } else if (item.options?.length) {
+        if (!opts.length) {
+            vozShow(heard, `${item.name}: ¿cuál? ${item.options.join(', ')}`, true);
+            return vozSay(`${item.name}, ¿cuál?`);
+        }
+        opts.forEach(o => { const cb = document.getElementById([base, o].join(ID_SEP)); if (cb) { changes.push({ el: cb, prev: cb.checked }); cb.checked = !remove; } });
+        said = `${item.name} ${opts.join(' y ')}` + (remove ? ', quitado' : '');
+    } else {
+        const cb = document.getElementById(base);
+        if (!cb) return;
+        changes.push({ el: cb, prev: cb.checked });
+        cb.checked = !remove;
+        said = item.name + (remove ? ', quitado' : '');
+    }
+    voz.undo.push(changes);
+    voz.carro = loc;
+    saveChecklistState();
+    const row = changes[0]?.el.closest('.item');
+    if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'start' }); row.classList.remove('voz-flash'); void row.offsetWidth; row.classList.add('voz-flash'); }
+    const clean = said.replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
+    vozShow(heard, '✔ ' + clean);
+    vozSay(clean.replace(/nº/g, 'número ').replace(/,(\d)/g, ' coma $1'));
+}
+
+function vozUndo(heard) {
+    const last = voz?.undo.pop();
+    if (!last) { vozShow(typeof heard === 'string' ? heard : null, 'Nada que deshacer', true); return vozSay('Nada que deshacer'); }
+    last.forEach(({ el, prev }) => { if (el.type === 'checkbox') el.checked = prev; else el.value = prev; });
+    saveChecklistState();
+    vozShow(typeof heard === 'string' ? heard : null, '↶ Deshecho');
+    vozSay('Deshecho');
+}
+
 function openRef(key) {
     const d = REF_DATA[key]; if (!d) return;
     document.getElementById('ref-panel-title').textContent = d.title;
