@@ -580,7 +580,7 @@
 <button id="btnGuardar" title="Guardar checklist">Guardar</button>
 <button id="btnVoz" title="Modo voz: dicta lo que falta">🎤</button>
 <div id="vozBar">
-    <div class="vz-row"><span class="vz-ctx" id="vozCtx"></span><span class="vz-btns"><button id="vozUndo">↶ Deshacer</button><button id="vozHelp">?</button></span></div>
+    <div class="vz-row"><span class="vz-ctx" id="vozCtx"></span><span class="vz-btns"><button id="vozUndo">↶ Deshacer</button><button id="vozLogBtn" title="Copiar registro de frases">📋</button><button id="vozHelp">?</button></span></div>
     <div class="vz-heard" id="vozHeard"></div>
     <div class="vz-last" id="vozLast"></div>
 </div>
@@ -1721,6 +1721,20 @@ function vozTokens(t) {
     return { words, nums };
 }
 
+// cómo se leen en alto los nombres (c/c no es «cuenta corriente»)
+const VOZ_SPEAK = [
+    [/\s*\((R|U|REA|UCSI)\)/gi, ''], [/\s*\(\d+\)/g, ''],
+    [/\bc\/c\b/gi, 'con contraste'], [/\bs\/c\b/gi, 'sin contraste'],
+    [/Clorh\./g, 'clorhexidina'], [/Alc\./g, 'alcohólica'], [/Acu\./g, 'acuosa'], [/Oxig\./g, 'oxigenada'],
+    [/G\.Electric/g, 'General Electric'], [/\bAc\. /g, 'ácido '],
+    [/\bSF\b/g, 'fisiológico'], [/\bRL\b/g, 'Ringer lactato'], [/\bSGS\b/g, 'glucosalino'], [/\bTET\b/g, 'tubo'], [/\bBIC\b/g, 'bomba de analgesia'],
+    [/nº|#/g, 'número '], [/(\d),(\d)/g, '$1 coma $2'], [/(\d)\s?m[lL]\b/g, '$1 mililitros'], [/(\d)\s?mg\b/g, '$1 miligramos'],
+    [/(\d)[gG]\b/g, '$1 G'], [/[()]/g, ' '], [/\//g, ' '], [/Carro /g, '']
+];
+const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(t)).replace(/\s+/g, ' ').trim();
+const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
+const VOZ_LOG_KEY = 'vozLog_v1';
+
 let voz = null; // estado del modo voz
 
 function initVoz() {
@@ -1729,6 +1743,13 @@ function initVoz() {
     if (!SR) { btn.addEventListener('click', () => alert('Este navegador no admite reconocimiento de voz. En iPhone, prueba desde Safari.')); return; }
     btn.addEventListener('click', () => voz?.on ? vozStop() : vozStart(SR));
     document.getElementById('vozUndo').addEventListener('click', vozUndo);
+    document.getElementById('vozLogBtn').addEventListener('click', async () => {
+        let txt = '';
+        try { txt = JSON.parse(localStorage.getItem(VOZ_LOG_KEY) || '[]').join('\n'); } catch {}
+        if (!txt) return alert('Registro vacío');
+        try { await navigator.clipboard.writeText(txt); alert('Registro copiado (' + txt.split('\n').length + ' frases). Pégalo en el chat.'); }
+        catch { prompt('Copia el registro:', txt); }
+    });
     document.getElementById('vozHelp').addEventListener('click', () => vozSay(
         'Di el material como está escrito y la cantidad. Por ejemplo: paracetamol 3, o jeringas 10 y 5. ' +
         'Puedes añadir el carro en la frase, por ejemplo: empapadores enfermería. ' +
@@ -1783,6 +1804,11 @@ const vozTab = () => document.querySelector('.tab.active')?.dataset.tab;
 const vozTabName = () => { const t = vozTab(); return !t || t === 'RESUMEN' || t.includes('Editor') ? '' : t; };
 
 function vozShow(heard, msg, err) {
+    if (heard) try {
+        const log = JSON.parse(localStorage.getItem(VOZ_LOG_KEY) || '[]');
+        log.push(`${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} [${vozTabName()}] «${voz?.lastAlts || heard}» → ${msg || ''}`);
+        localStorage.setItem(VOZ_LOG_KEY, JSON.stringify(log.slice(-60)));
+    } catch {}
     const locs = inventoryData[vozTab()] ? Object.keys(inventoryData[vozTab()]) : [];
     document.getElementById('vozCtx').textContent = '🎤 ' + (vozTabName() || 'abre un quirófano') + (voz?.carro && locs.includes(voz.carro) ? ' · ' + voz.carro : '');
     if (heard !== null) document.getElementById('vozHeard').textContent = heard ? '«' + heard + '»' : '';
@@ -1792,6 +1818,7 @@ function vozShow(heard, msg, err) {
 
 function vozHandle(alts) {
     const heard = alts[0].trim();
+    voz.lastAlts = alts.map(a => a.trim()).join(' | ');
     const n = vozNorm(heard);
     // ── órdenes ──
     if (/^(para|parar|stop|fin|terminar|apagar)$/.test(n)) { vozSay('Apagado'); setTimeout(vozStop, 900); return vozShow(heard, 'Apagado'); }
@@ -1799,46 +1826,67 @@ function vozHandle(alts) {
     const tabHit = vozTabCommand(n);
     if (tabHit) {
         switchTab(tabHit); voz.carro = null; voz.pending = null;
-        vozShow(heard, 'Pestaña ' + tabHit); return vozSay(tabHit);
+        vozShow(heard, 'Pestaña ' + tabHit); return vozSay(vozSpeak(tabHit));
     }
     const area = vozTab();
     const locs = inventoryData[area] ? Object.keys(inventoryData[area]) : [];
     if (!locs.length) { vozShow(heard, 'Abre primero un quirófano, REA o UCSI', true); return vozSay('Abre primero un quirófano'); }
-    const nw = n.split(' ').filter(w => w !== 'carro');
-    const carroHit = nw.length === 1 && locs.find(l => vozTokens(l).words.filter(w => w !== 'carro').some(w => vozWordEq(nw[0], w)));
-    if (carroHit) {
-        // respuesta a «¿enfermería o anestesia?» o cambio de carro preferente
-        voz.carro = carroHit;
-        if (voz.pending) { const p = voz.pending; voz.pending = null; const m = p.find(c => c.loc === carroHit); if (m) return vozApply(m, heard); }
-        vozShow(heard, '→ ' + carroHit); return vozSay(carroHit);
-    }
+    const carroAns = vozCarroOf(n, locs);
     const remove = /^(quita|quitar|borra|borrar|desmarca|desmarcar|no)\b/.test(n);
+    const strip = a => remove ? vozNorm(a).replace(/^(quita|quitar|borra|borrar|desmarca|desmarcar|no)\s*/, '') : a;
+
+    // ── respuesta a la pregunta anterior: se junta con lo dicho antes («gasas grandes» + «con contraste») ──
+    if (voz.pending) {
+        const p = voz.pending; voz.pending = null;
+        if (carroAns) voz.carro = carroAns;
+        const r = vozMatch(area, p.text + ' ' + heard).filter(c => p.keys.has(c.loc + ID_SEP + c.item.name));
+        let pool = r.length ? r.filter(c => c.score === r[0].score) : [];
+        if (carroAns) pool = pool.filter(c => c.loc === carroAns);
+        if (p.needOpt) pool = pool.filter(c => c.opts.length);
+        if (pool.length && pool.length < p.n) return vozResolve(pool, heard, p.text + ' ' + heard, p.remove);
+        // no aclara nada → se trata como frase nueva
+    }
+    if (carroAns) {
+        // cambio de carro preferente: «anestesia», «de enfermería», «carro otros»
+        voz.carro = carroAns;
+        vozShow(heard, '→ ' + carroAns); return vozSay(vozSpeak(carroAns));
+    }
     // prueba las alternativas que da el reconocedor y se queda con la que mejor encaja
-    let best = null;
+    let best = null, bestTxt = heard;
     alts.forEach((a, ai) => {
-        const txt = remove ? vozNorm(a).replace(/^(quita|quitar|borra|borrar|desmarca|desmarcar|no)\s*/, '') : a;
-        const r = vozMatch(area, txt);
-        if (r.length && (!best || r[0].score - ai * 2 > best[0].score)) best = r;
+        const r = vozMatch(area, strip(a));
+        if (r.length && (!best || r[0].score - ai * 2 > best[0].score)) { best = r; bestTxt = strip(a); }
     });
     if (!best) { vozShow(heard, 'No lo encuentro en ' + area, true); return vozSay('No lo encuentro'); }
-    // empate entre carros (Guantes, Empapadores, Jeringas…): pregunta
+    vozResolve(best, heard, bestTxt, remove);
+}
+
+// frase que es SOLO un carro/zona (admite «de», «el», «la», «carro»)
+function vozCarroOf(n, locs) {
+    const w = n.split(' ').filter(x => x && !['carro', 'de', 'del', 'el', 'la', 'en', 'para', 'es'].includes(x));
+    if (w.length !== 1) return null;
+    return locs.find(l => vozTokens(l).words.filter(x => x !== 'carro').some(x => vozWordEq(w[0], x))) || null;
+}
+
+// aplica si está claro; si no, pregunta (materiales distintos o mismo material en dos carros)
+function vozResolve(best, heard, text, remove) {
     let top = best.filter(c => c.score === best[0].score);
     const inCarro = top.filter(c => c.loc === voz.carro);
     if (inCarro.length) top = inCarro;
     const names = [...new Map(top.map(c => [vozKey(c.item.name), c.item.name])).values()];
-    if (names.length > 1) {
-        const list = names.slice(0, 4).map(x => x.replace(/\s*\((R|U|REA|UCSI)\)/gi, ''));
-        vozShow(heard, '¿Cuál? ' + list.join(' · '), true);
-        return vozSay('¿Cuál? ' + list.join(', ').replace(/nº/g, 'número ').replace(/,(\d)/g, ' coma $1'));
+    const locsT = [...new Set(top.map(c => c.loc))];
+    if (names.length > 1 || locsT.length > 1) {
+        voz.pending = { text, remove, keys: new Set(top.map(c => c.loc + ID_SEP + c.item.name)), n: top.length };
+        if (names.length > 1) {
+            const list = names.slice(0, 4);
+            vozShow(heard, '¿Cuál? ' + list.map(vozLabel).join(' · '), true);
+            return vozSay('¿Cuál? ' + list.map(vozSpeak).join(', '));
+        }
+        const q = locsT.map(l => l.replace('Carro ', '')).join(' o ');
+        vozShow(heard, '¿' + q + '?', true);
+        return vozSay(vozSpeak(q) + '?');
     }
-    const pref = top.find(c => c.loc === voz.carro);
-    const distinctLocs = [...new Set(top.map(c => c.loc))];
-    if (!pref && distinctLocs.length > 1) {
-        voz.pending = top.map(c => ({ ...c, remove }));
-        const q = distinctLocs.join(' o ') + '?';
-        vozShow(heard, '¿' + q); return vozSay(distinctLocs.map(l => l.replace('Carro ', '')).join(' o ') + '?');
-    }
-    vozApply({ ...(pref || top[0]), remove }, heard);
+    vozApply({ ...top[0], remove }, heard, text);
 }
 
 function vozTabCommand(n) {
@@ -1891,8 +1939,8 @@ function vozMatch(area, text) {
                     forms.forEach(O => {
                         const letter = O.words.length === 1 && !O.nums.length && VOZ_LETTER[O.words[0]];
                         const used = letter ? U.words.filter(uw => letter.includes(uw))
-                            : O.words.length ? U.words.filter(uw => O.words.some(ow => vozWordEq(uw, ow))) : [];
-                        const wordHit = letter ? used.length > 0 : O.words.length > 0 && O.words.every(ow => U.words.some(uw => vozWordEq(uw, ow)));
+                            : O.words.length ? UW.filter(uw => O.words.some(ow => vozWordEq(uw, ow))) : [];
+                        const wordHit = letter ? used.length > 0 : O.words.length > 0 && O.words.every(ow => UW.some(uw => vozWordEq(uw, ow)));
                         const numHit = O.nums.length > 0 && O.nums.every(on => nums.includes(on));
                         if ((O.nums.length ? numHit : wordHit) && (!hit || used.length > hit.used.length))
                             hit = { o, used, byWords: wordHit && !letter, nums: O.nums };
@@ -1921,7 +1969,7 @@ function vozMatch(area, text) {
     return out.sort((a, b) => b.score - a.score);
 }
 
-function vozApply(c, heard) {
+function vozApply(c, heard, text = heard) {
     const { area, loc, item, opts, qty, remove } = c;
     const base = [area, loc, item.name].join(ID_SEP);
     const changes = [];
@@ -1935,8 +1983,9 @@ function vozApply(c, heard) {
         said = remove ? `${item.name}, stock completo` : `${item.name}, faltan ${v}` + (qty > item.stock ? `, máximo ${item.stock}` : '');
     } else if (item.options?.length) {
         if (!opts.length) {
-            vozShow(heard, `${item.name}: ¿cuál? ${item.options.join(', ')}`, true);
-            return vozSay(`${item.name}, ¿cuál?`);
+            voz.pending = { text, remove, keys: new Set([loc + ID_SEP + item.name]), n: 2, needOpt: true };
+            vozShow(heard, `${vozLabel(item.name)}: ¿cuál? ${item.options.join(', ')}`, true);
+            return vozSay(`${vozSpeak(item.name)}, ¿cuál?`);
         }
         opts.forEach(o => { const cb = document.getElementById([base, o].join(ID_SEP)); if (cb) { changes.push({ el: cb, prev: cb.checked }); cb.checked = !remove; } });
         said = `${item.name} ${opts.join(' y ')}` + (remove ? ', quitado' : '');
@@ -1952,9 +2001,8 @@ function vozApply(c, heard) {
     saveChecklistState();
     const row = changes[0]?.el.closest('.item');
     if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'start' }); row.classList.remove('voz-flash'); void row.offsetWidth; row.classList.add('voz-flash'); }
-    const clean = said.replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
-    vozShow(heard, '✔ ' + clean);
-    vozSay(clean.replace(/nº/g, 'número ').replace(/,(\d)/g, ' coma $1'));
+    vozShow(heard, '✔ ' + vozLabel(said));
+    vozSay(vozSpeak(said));
 }
 
 function vozUndo(heard) {
