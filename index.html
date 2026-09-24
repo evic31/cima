@@ -12,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
     <style>
         :root {
             --bg:          #f5ece0;
@@ -560,6 +561,39 @@
         }
         .item.voz-flash { animation: vozFlash 1.6s ease; }
         @keyframes vozFlash { 0%, 40% { box-shadow: inset 0 0 0 2px var(--accent); background: #dbeafe; } }
+        /* ── ⚙️ ORDEN ── */
+        .order-hint { font-size: 0.84rem; color: var(--text-muted); line-height: 1.45; }
+        .order-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 0.8rem; }
+        .order-actions button {
+            padding: 0.45rem 0.95rem; border-radius: 999px; border: 1.5px solid var(--border2);
+            background: var(--surf2); color: var(--text); font-weight: 600; font-size: 0.82rem;
+            font-family: 'IBM Plex Sans', sans-serif; cursor: pointer;
+        }
+        .order-group { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); margin-top: 0.85rem; overflow: hidden; box-shadow: var(--shadow-sm); }
+        .order-group > summary { list-style: none; cursor: pointer; justify-content: space-between; }
+        .order-group > summary::-webkit-details-marker { display: none; }
+        .order-group > summary .og-title { flex: 1; }
+        .order-group > summary .og-title::after { content: ' ▸'; opacity: 0.8; }
+        .order-group[open] > summary .og-title::after { content: ' ▾'; }
+        .og-btns { display: flex; gap: 0.3rem; }
+        .order-list { list-style: none; padding: 0; margin: 0; counter-reset: ord; }
+        .order-list li {
+            display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.5rem 0.3rem 0.35rem;
+            border-bottom: 1px solid var(--border); background: #fff; counter-increment: ord;
+        }
+        .order-list li:last-child { border-bottom: none; }
+        .order-list li::before { content: counter(ord); font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text-muted); min-width: 1.6rem; text-align: right; }
+        .order-list .oh { cursor: grab; color: var(--text-muted); font-size: 1.05rem; padding: 0.2rem 0.3rem; touch-action: none; user-select: none; }
+        .order-list .on { flex: 1; font-size: 0.86rem; line-height: 1.25; }
+        .order-list .on small { display: block; color: var(--text-muted); font-size: 0.72rem; }
+        .ord-btn {
+            width: 34px; height: 30px; border-radius: 7px; border: 1.5px solid var(--border2);
+            background: var(--surf2); color: var(--text); font-size: 0.8rem; cursor: pointer; flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .sub-header .ord-btn { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.5); color: #fff; height: 26px; width: 30px; }
+        .order-list li.moved { animation: vozFlash 1.2s ease; }
+        .order-list li.sortable-ghost { opacity: 0.4; background: #dbeafe; }
     </style>
 </head>
 <body>
@@ -840,7 +874,7 @@ const ID_SEP = '||';
 const tabOrder = [
     "Reanimación","UCSI","Quirófano 1","Quirófano 2","Quirófano 3",
     "Quirófano 4","Quirófano 5","Quirófano 6","Hemodinamia",
-    "Quirófano 8","Quirófano 7","RESUMEN","✏️ Editor"
+    "Quirófano 8","Quirófano 7","RESUMEN","✏️ Editor","⚙️ Orden"
 ];
 
 let checklistState   = {};
@@ -868,6 +902,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && !v
 document.addEventListener('DOMContentLoaded', () => {
     checkUpdate();
     loadAll();
+    loadOrder();
     buildInventory();
     renderTabs();
     renderAllTabContents();
@@ -917,7 +952,7 @@ function buildInventory() {
 function renderTabs() {
     const container = document.getElementById('tabs');
     container.innerHTML = tabOrder.map(t => {
-        const isEditor = t === '✏️ Editor';
+        const isEditor = t === '✏️ Editor' || t === '⚙️ Orden';
         return `<button class="tab${isEditor ? ' tab-editor' : ''}" data-tab="${t}">${t}</button>`;
     }).join('');
     container.addEventListener('click', e => {
@@ -933,6 +968,7 @@ function switchTab(tabName) {
     if (btn) { btn.classList.add('active'); btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
     if (content) content.classList.add('active');
     if (tabName === 'RESUMEN') renderSummary();
+    if (tabName === '⚙️ Orden') renderOrder();
 }
 
 // ─────────────────────────────────────────────
@@ -944,6 +980,7 @@ function renderAllTabContents() {
         const id = `content-${tabName.replace(/[\s✏️]+/g, '-')}`;
         if (tabName === 'RESUMEN') return `<div class="tab-content" id="${id}"></div>`;
         if (tabName === '✏️ Editor') return `<div class="tab-content" id="${id}">${renderEditorHTML()}</div>`;
+        if (tabName === '⚙️ Orden') return `<div class="tab-content" id="${id}"></div>`;
         const areaData = inventoryData[tabName];
         return `<div class="tab-content" id="${id}">${
             areaData
@@ -1027,19 +1064,20 @@ function renderSummary() {
     const el = document.getElementById('content-RESUMEN');
     if (!el) return;
 
-    // build location map
-    const locMap = {};
+    // build location map (+ posición de cada casilla en su pestaña, para listar por área en ese orden)
+    const locMap = {}, tabPos = {};
     for (const area in inventoryData) {
+        let n = 0;
         for (const location in inventoryData[area]) {
             for (const item of inventoryData[area][location]) {
                 const base = [area, location, item.name].join(ID_SEP);
-                if (item.options?.length) item.options.forEach(o => { locMap[[base, o].join(ID_SEP)] = item.storage; });
-                else locMap[base] = item.storage;
+                if (item.options?.length) item.options.forEach(o => { const id = [base, o].join(ID_SEP); locMap[id] = item.storage; tabPos[id] = n++; });
+                else { locMap[base] = item.storage; tabPos[base] = n++; }
             }
         }
     }
 
-    let byArea = {}, byStorage = {};
+    let byArea = {}, byStorage = {}, byMeta = {};
     for (const inputId in checklistState) {
         if (inputId.startsWith('RESUMEN') || inputId.startsWith('Area')) continue;
         const value = checklistState[inputId];
@@ -1048,15 +1086,33 @@ function renderSummary() {
         let display = itemName + (option ? ` (${option})` : '');
         const isNum = !isNaN(parseInt(value));
         if (isNum) display += ` - Faltan: ${value}`;
-        byArea[area].push(display);
+        byArea[area].push({ d: display, r: tabPos[inputId] ?? 1e6 });
         const store = locMap[inputId] || 'Desconocido';
         const fullName = option ? `${itemName} (${option})` : itemName;
-        if (!byStorage[store]) byStorage[store] = {};
+        if (!byStorage[store]) { byStorage[store] = {}; byMeta[store] = {}; }
+        byMeta[store][isNum ? itemName : fullName] = { unit: itemName, opt: isNum ? null : option };
         if (isNum) { byStorage[store][itemName] = (byStorage[store][itemName] || 0) + parseInt(value); }
         else       { byStorage[store][fullName] = (byStorage[store][fullName] || 0) + 1; }
     }
 
+    // por área: áreas en el orden de las pestañas y material en el orden de cada pestaña
+    byArea = Object.fromEntries([...tabOrder.filter(t => byArea[t]), ...Object.keys(byArea).filter(t => !tabOrder.includes(t))]
+        .map(a => [a, byArea[a].sort((x, y) => x.r - y.r).map(x => x.d)]));
     const hasItems = Object.keys(checklistState).length > 0;
+    // lista total en el orden de ⚙️ Orden (ubicaciones y materiales); lo no ordenado, alfabético al final
+    const { cat, opts } = orderCatalog();
+    const storeNames = [...orderedStorages(cat).filter(st => byStorage[st]), ...Object.keys(byStorage).filter(st => !cat[st]).sort()];
+    const storeList = storeNames.map(st => {
+        const pos = new Map(orderedUnits(st, cat).map((u, i) => [u, i]));
+        const entries = Object.entries(byStorage[st]).sort((a, b) => {
+            const ma = byMeta[st][a[0]], mb = byMeta[st][b[0]];
+            const pa = pos.get(ma.unit) ?? 1e6, pb = pos.get(mb.unit) ?? 1e6;
+            if (pa !== pb) return pa - pb;
+            if (ma.unit !== mb.unit) return ma.unit.localeCompare(mb.unit, 'es');
+            return (opts[ma.unit] || []).indexOf(ma.opt) - (opts[mb.unit] || []).indexOf(mb.opt);
+        });
+        return [st, entries];
+    });
 
     el.innerHTML = `
         <div class="summary-actions">
@@ -1070,7 +1126,7 @@ function renderSummary() {
             ${Object.entries(byArea).map(([area, items]) => !items.length ? '' : `
                 <div class="location-group" style="margin:.45rem;border-radius:8px">
                     <h3 class="sub-header desconocido">${area}</h3>
-                    <ul>${items.sort().map(item => {
+                    <ul>${items.map(item => {
                         const aid = ['Area', area, item].join(ID_SEP);
                         const chk = !!summaryAreaTicks[aid];
                         return `<li class="area-item ${chk?'done':''}"><label for="${aid}"><input type="checkbox" class="sum-area-check" id="${aid}" ${chk?'checked':''}><span>${item}</span></label></li>`;
@@ -1080,10 +1136,10 @@ function renderSummary() {
         <div class="summary-section">
             <div class="sub-header desconocido">Lista de Reposición Total</div>
             ${!hasItems ? '<p class="empty-state">No hay nada que reponer.</p>' : ''}
-            ${Object.keys(byStorage).sort().map(loc => `
+            ${storeList.map(([loc, entries]) => `
                 <div class="location-group" style="margin:.45rem;border-radius:8px">
                     <h3 class="sub-header ${getLocationClass(loc)}">${loc}</h3>
-                    <ul>${Object.entries(byStorage[loc]).sort((a,b)=>a[0].localeCompare(b[0])).map(([name, qty]) => {
+                    <ul>${entries.map(([name, qty]) => {
                         const sid = ['RESUMEN', loc, name].join(ID_SEP);
                         const chk = !!summaryTicks[sid];
                         return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span>${name}</span></label><span class="quantity">×${qty}</span></li>`;
@@ -1119,13 +1175,39 @@ function renderSummary() {
 
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('LISTA DE REPOSICION - BLOQUE QUIRURGICO CIMA', 14, y);
+        doc.text('LISTA DE REPOSICIÓN - BLOQUE QUIRÚRGICO CIMA', 14, y);
         y += 8;
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.text(new Date().toLocaleDateString('es-ES'), 14, y);
         y += 10;
 
+        // 1) lista de reposición por ubicación, en el orden de ⚙️ Orden
+        const PDF_TINT = { farmacia: [254, 226, 226], 'almacen-der': [219, 234, 254], 'almacen-izq': [209, 250, 229], desconocido: [226, 232, 240] };
+        storeList.forEach(([loc, entries]) => {
+            if (y > 262) { doc.addPage(); y = 15; }
+            doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+            doc.setFillColor(...(PDF_TINT[getLocationClass(loc)] || PDF_TINT.desconocido));
+            doc.rect(14, y - 5, 182, 8, 'F');
+            doc.text(loc, 16, y);
+            y += 8;
+            doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+            entries.forEach(([name, qty]) => {
+                if (y > 275) { doc.addPage(); y = 15; }
+                doc.setDrawColor(120, 132, 152); doc.setLineWidth(0.3); doc.rect(16, y - 3.2, 3.4, 3.4);
+                doc.text(name.toUpperCase(), 22, y);
+                doc.setFont('helvetica', 'bold'); doc.text('x' + qty, 194, y, { align: 'right' }); doc.setFont('helvetica', 'normal');
+                y += 6.5;
+            });
+            y += 4;
+        });
+
+        // 2) detalle por área (como antes)
+        if (Object.values(byArea).some(a => a.length)) {
+            if (y > 255) { doc.addPage(); y = 15; }
+            y += 2; doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+            doc.text('POR ÁREA', 14, y); y += 8;
+        }
         Object.entries(byArea).forEach(([area, items]) => {
             if (!items.length) return;
             if (y > 270) { doc.addPage(); y = 15; }
@@ -1139,7 +1221,7 @@ function renderSummary() {
 
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            items.sort().forEach(name => {
+            items.forEach(name => {
                 if (y > 275) { doc.addPage(); y = 15; }
                 doc.text(`- ${name.toUpperCase()}`, 18, y);
                 y += 7;
@@ -1583,7 +1665,7 @@ function handleEditorSave(btn) {
 function reRenderChecklistTabs() {
     const main = document.getElementById('tab-contents');
     tabOrder.forEach(tabName => {
-        if (tabName === 'RESUMEN' || tabName === '✏️ Editor') return;
+        if (tabName === 'RESUMEN' || tabName === '✏️ Editor' || tabName === '⚙️ Orden') return;
         const id = `content-${tabName.replace(/[\s✏️]+/g, '-')}`;
         const el = document.getElementById(id);
         if (!el) return;
@@ -1764,7 +1846,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '24-sep 22:20'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '24-sep 23:10'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2071,6 +2153,126 @@ function vozUndo(heard) {
     saveChecklistState();
     vozShow(typeof heard === 'string' ? heard : null, '↶ Deshecho');
     vozSay('Deshecho');
+}
+
+// ─────────────────────────────────────────────
+// ⚙️ ORDEN de la lista de reposición (RESUMEN → Lista de Reposición Total y «Exportar PDF»)
+// Se ordena por material (las opciones van juntas, en su orden: Jeringas 20cc, 10cc…).
+// Se guarda en este móvil; «📋 Copiar orden» → pegarlo en DEFAULT_ORDER lo deja fijo para todos.
+// ─────────────────────────────────────────────
+const ORDER_KEY = 'reposicionOrden_v1';
+const DEFAULT_ORDER = null;
+let repoOrder = null;
+function loadOrder() {
+    try { repoOrder = JSON.parse(localStorage.getItem(ORDER_KEY)) || DEFAULT_ORDER; } catch { repoOrder = DEFAULT_ORDER; }
+    if (repoOrder) repoOrder = { groups: repoOrder.groups || [], items: repoOrder.items || {} };
+}
+function saveOrder() { try { localStorage.setItem(ORDER_KEY, JSON.stringify(repoOrder)); } catch {} }
+
+// materiales por ubicación sacados del inventario actual (con los nombres del Editor)
+function orderCatalog() {
+    const cat = {}, opts = {}, areas = {};
+    for (const area in inventoryData) for (const loc in inventoryData[area]) for (const it of inventoryData[area][loc]) {
+        const st = it.storage || 'Desconocido';
+        (cat[st] ||= new Set()).add(it.name);
+        if (it.options?.length && !opts[it.name]) opts[it.name] = it.options;
+        (areas[it.name] ||= new Set()).add(area.startsWith('Quirófano') || area === 'Hemodinamia' ? 'Quirófanos' : area);
+    }
+    return { cat, opts, areas };
+}
+function orderedStorages(cat) {
+    const saved = (repoOrder?.groups || []).filter(g => cat[g]);
+    return [...saved, ...Object.keys(cat).filter(g => !saved.includes(g)).sort()];
+}
+function orderedUnits(st, cat) {
+    const set = cat[st] || new Set();
+    const saved = (repoOrder?.items?.[st] || []).filter(n => set.has(n));
+    return [...saved, ...[...set].filter(n => !saved.includes(n)).sort((a, b) => a.localeCompare(b, 'es'))];
+}
+
+const escAttr = t => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const orderOpen = new Set();
+function renderOrder() {
+    const el = document.getElementById('content-⚙-Orden');
+    if (!el) return;
+    const { cat, opts, areas } = orderCatalog();
+    el.innerHTML = `<div class="editor-wrap">
+        <div class="editor-search-box">
+            <h2>⚙️ Orden de la lista de reposición</h2>
+            <p class="order-hint">Pon el material en el orden en que lo recoges. Se usa en <b>RESUMEN → Lista de Reposición Total</b> y en <b>🖨️ Exportar PDF</b>.
+            Mueve con <b>▲ ▼</b> o arrastrando desde <b>⋮⋮</b>. Los grupos también se ordenan con sus ▲ ▼.</p>
+            <div class="order-actions">
+                <button id="orderCopy">📋 Copiar orden</button>
+                <button id="orderReset">↺ Volver a alfabético</button>
+            </div>
+        </div>
+        <div id="order-groups">${orderedStorages(cat).map(st => {
+            const units = orderedUnits(st, cat);
+            return `<details class="order-group" data-st="${escAttr(st)}" ${orderOpen.has(st) ? 'open' : ''}>
+                <summary class="sub-header ${getLocationClass(st)}"><span class="og-title">${st} · ${units.length}</span>
+                    <span class="og-btns"><button class="ord-btn" data-act="gup" title="Subir grupo">▲</button><button class="ord-btn" data-act="gdown" title="Bajar grupo">▼</button></span></summary>
+                <ol class="order-list">${units.map(u => `<li data-name="${escAttr(u)}"><span class="oh">⋮⋮</span>
+                    <span class="on">${u}${opts[u] || areas[u] ? `<small>${[opts[u]?.join(' · '), [...(areas[u] || [])].join(', ')].filter(Boolean).join(' — ')}</small>` : ''}</span>
+                    <button class="ord-btn" data-act="up">▲</button><button class="ord-btn" data-act="down">▼</button></li>`).join('')}</ol>
+            </details>`;
+        }).join('')}</div>
+    </div>`;
+
+    // guarda el orden completo de un grupo tal como está en pantalla
+    const commitGroup = det => {
+        repoOrder ||= { groups: [], items: {} };
+        repoOrder.items[det.dataset.st] = [...det.querySelectorAll('.order-list li')].map(li => li.dataset.name);
+        saveOrder();
+    };
+    const commitGroups = () => {
+        repoOrder ||= { groups: [], items: {} };
+        repoOrder.groups = [...el.querySelectorAll('.order-group')].map(d => d.dataset.st);
+        saveOrder();
+    };
+    const flash = node => { node.classList.remove('moved'); void node.offsetWidth; node.classList.add('moved'); };
+
+    el.querySelectorAll('.order-group').forEach(det => {
+        det.addEventListener('toggle', () => det.open ? orderOpen.add(det.dataset.st) : orderOpen.delete(det.dataset.st));
+        if (window.Sortable) Sortable.create(det.querySelector('.order-list'), { handle: '.oh', animation: 150, onEnd: () => commitGroup(det) });
+    });
+    el.querySelector('#order-groups').addEventListener('click', e => {
+        const btn = e.target.closest('.ord-btn');
+        if (!btn) return;
+        e.preventDefault(); e.stopPropagation();   // que no abra/cierre el grupo
+        const act = btn.dataset.act;
+        if (act === 'up' || act === 'down') {
+            const li = btn.closest('li');
+            const sib = act === 'up' ? li.previousElementSibling : li.nextElementSibling;
+            if (!sib) return;
+            act === 'up' ? sib.before(li) : sib.after(li);
+            commitGroup(li.closest('.order-group'));
+            flash(li);
+            li.scrollIntoView({ block: 'nearest' });
+        } else {
+            const det = btn.closest('.order-group');
+            const sib = act === 'gup' ? det.previousElementSibling : det.nextElementSibling;
+            if (!sib) return;
+            act === 'gup' ? sib.before(det) : sib.after(det);
+            commitGroups();
+            det.scrollIntoView({ block: 'nearest' });
+        }
+    });
+    el.querySelector('#orderCopy').addEventListener('click', async () => {
+        if (!repoOrder) return alert('Todavía no has cambiado el orden.');
+        const txt = JSON.stringify(repoOrder);
+        try { await navigator.clipboard.writeText(txt); alert('Orden copiado. Pégalo en el chat para dejarlo fijo en la app.'); }
+        catch { prompt('Copia el orden:', txt); }
+    });
+    const reset = el.querySelector('#orderReset');
+    reset.addEventListener('click', () => {
+        if (reset.dataset.confirm !== '1') {
+            reset.dataset.confirm = '1'; reset.textContent = '⚠️ Pulsa otra vez para confirmar';
+            return setTimeout(() => { if (reset.isConnected) { reset.dataset.confirm = '0'; reset.textContent = '↺ Volver a alfabético'; } }, 3000);
+        }
+        repoOrder = null;
+        try { localStorage.removeItem(ORDER_KEY); } catch {}
+        renderOrder();
+    });
 }
 
 function openRef(key) {
