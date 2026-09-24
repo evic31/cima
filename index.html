@@ -552,7 +552,7 @@
         #vozBar .vz-last.err { color: var(--danger); }
         #vozBar .vz-row { display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; }
         #vozBar .vz-btns { display: flex; gap: 0.35rem; flex-shrink: 0; }
-        .item { scroll-margin-top: 115px; }
+        .item, .location-group { scroll-margin-top: 115px; }
         #vozBar button {
             border: 1.5px solid var(--border2); background: var(--surf2); color: var(--text);
             border-radius: 999px; padding: 0.2rem 0.7rem; font-size: 0.78rem; font-weight: 600;
@@ -848,7 +848,19 @@ let inventoryData    = {};
 // ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
+// auto-actualización: el iPhone guarda la página en caché; si en el servidor hay otra versión, recarga
+function checkUpdate() {
+    fetch(location.pathname + '?t=' + Date.now(), { cache: 'no-store' })
+        .then(r => r.text())
+        .then(t => {
+            const m = t.match(/const APP_BUILD = '(\d[^']*)'/); // empieza por dígito: no encuentra esta misma línea
+            if (m && m[1] !== APP_BUILD) { saveChecklistState(); location.replace(location.pathname + '?v=' + encodeURIComponent(m[1])); }
+        }).catch(() => {});
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !voz?.on) checkUpdate(); });
+
 document.addEventListener('DOMContentLoaded', () => {
+    checkUpdate();
     loadAll();
     buildInventory();
     renderTabs();
@@ -1613,7 +1625,7 @@ const VOZ_SYN = [
     [/\berre ele\b/g, 'rl'], [/\bese efe\b/g, 'sf'], [/\bese ge ese\b/g, 'sgs'],
     [/\bcoma cinco\b|\by medio\b|\bymedio\b/g, ' .5']
 ];
-const VOZ_STOP = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'en', 'al', 'y', 'e', 'faltan', 'falta', 'hay', 'que', 'mas', 'ml', 'mg', 'cc', 'nº', 'n']);
+const VOZ_STOP = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'en', 'al', 'y', 'e', 'faltan', 'falta', 'hay', 'que', 'mas', 'ml', 'mg', 'cc', 'nº', 'n', 'numero', 'num', 'talla']);
 // letras de talla dichas en voz alta
 const VOZ_PEQ = ['pequeno', 'pequenos', 'pequena', 'pequenas'], VOZ_GRA = ['grande', 'grandes'];
 const VOZ_LETTER = { s: ['s', 'ese', ...VOZ_PEQ], m: ['m', 'eme', 'mediano', 'medianos', 'mediana', 'medianas'], l: ['l', 'ele', ...VOZ_GRA], g: ['g', 'ge', ...VOZ_GRA], p: ['p', 'pe', ...VOZ_PEQ] };
@@ -1735,7 +1747,28 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
+const APP_BUILD = '24-sep 21:15'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+
 let voz = null; // estado del modo voz
+
+// carro que se ve en pantalla (el que está bajo la cabecera) = carro con el que se trabaja
+function vozVisibleLoc() {
+    const area = vozTab();
+    const tab = document.querySelector('.tab-content.active');
+    if (!tab || !inventoryData[area]) return null;
+    const line = window.innerHeight * 0.35;
+    const locs = Object.keys(inventoryData[area]);
+    let hit = null;
+    tab.querySelectorAll('.location-group').forEach((g, i) => { if (g.getBoundingClientRect().top < line) hit = locs[i]; });
+    return hit || locs[0];
+}
+const vozPrefLoc = () => vozVisibleLoc() || voz?.carro;
+function vozScrollToLoc(loc) {
+    const area = vozTab();
+    const i = Object.keys(inventoryData[area] || {}).indexOf(loc);
+    const g = document.querySelectorAll('.tab-content.active .location-group')[i];
+    if (g) g.scrollIntoView({ block: 'start' });
+}
 
 function initVoz() {
     const btn = document.getElementById('btnVoz');
@@ -1743,6 +1776,13 @@ function initVoz() {
     if (!SR) { btn.addEventListener('click', () => alert('Este navegador no admite reconocimiento de voz. En iPhone, prueba desde Safari.')); return; }
     btn.addEventListener('click', () => voz?.on ? vozStop() : vozStart(SR));
     document.getElementById('vozUndo').addEventListener('click', vozUndo);
+    // al hacer scroll, la barra muestra el carro que queda en pantalla
+    let vozScrollT = 0;
+    window.addEventListener('scroll', () => {
+        if (!voz?.on) return;
+        clearTimeout(vozScrollT);
+        vozScrollT = setTimeout(() => { const l = document.getElementById('vozLast'); vozShow(null, l.textContent, l.classList.contains('err')); }, 150);
+    }, { passive: true });
     document.getElementById('vozLogBtn').addEventListener('click', async () => {
         let txt = '';
         try { txt = JSON.parse(localStorage.getItem(VOZ_LOG_KEY) || '[]').join('\n'); } catch {}
@@ -1810,7 +1850,8 @@ function vozShow(heard, msg, err) {
         localStorage.setItem(VOZ_LOG_KEY, JSON.stringify(log.slice(-60)));
     } catch {}
     const locs = inventoryData[vozTab()] ? Object.keys(inventoryData[vozTab()]) : [];
-    document.getElementById('vozCtx').textContent = '🎤 ' + (vozTabName() || 'abre un quirófano') + (voz?.carro && locs.includes(voz.carro) ? ' · ' + voz.carro : '');
+    const pl = vozPrefLoc();
+    document.getElementById('vozCtx').textContent = '🎤 ' + (vozTabName() || 'abre un quirófano') + (pl && locs.includes(pl) ? ' · ' + pl : '') + ' · v' + APP_BUILD;
     if (heard !== null) document.getElementById('vozHeard').textContent = heard ? '«' + heard + '»' : '';
     const last = document.getElementById('vozLast');
     last.textContent = msg || ''; last.classList.toggle('err', !!err);
@@ -1848,7 +1889,7 @@ function vozHandle(alts) {
     }
     if (carroAns) {
         // cambio de carro preferente: «anestesia», «de enfermería», «carro otros»
-        voz.carro = carroAns;
+        voz.carro = carroAns; vozScrollToLoc(carroAns);
         vozShow(heard, '→ ' + carroAns); return vozSay(vozSpeak(carroAns));
     }
     // prueba las alternativas que da el reconocedor y se queda con la que mejor encaja
@@ -1871,7 +1912,8 @@ function vozCarroOf(n, locs) {
 // aplica si está claro; si no, pregunta (materiales distintos o mismo material en dos carros)
 function vozResolve(best, heard, text, remove) {
     let top = best.filter(c => c.score === best[0].score);
-    const inCarro = top.filter(c => c.loc === voz.carro);
+    const pref = vozPrefLoc();
+    const inCarro = top.filter(c => c.loc === pref);
     if (inCarro.length) top = inCarro;
     const names = [...new Map(top.map(c => [vozKey(c.item.name), c.item.name])).values()];
     const locsT = [...new Set(top.map(c => c.loc))];
