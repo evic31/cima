@@ -592,37 +592,43 @@
 const DEFAULT_INVENTORY = {
     "Reanimación": {
         "FARMACIA": [
+            { name: "Atropina (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Efedrina (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "Midazolam (R)", type: "checkbox", storage: "FARMACIA" },
-            { name: "Metamizol (R)", type: "checkbox", storage: "FARMACIA" },
-            { name: "Tramadol (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Hidrocortisona (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "Dexketoprofeno (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Metamizol (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "Metoclopramida (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "Ondansetrón 4mg (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "Ondansetrón 8mg (R)", type: "checkbox", storage: "FARMACIA" },
-            { name: "Paracetamol (R)", type: "number", stock: 10, storage: "FARMACIA" },
-            { name: "Atropina (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Tramadol (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Propofol (R)", type: "checkbox", storage: "FARMACIA" },
+            { name: "Urapidilo (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "SF 10ml (R)", type: "checkbox", storage: "FARMACIA" },
-            { name: "SF 500ml", type: "number", stock: 3, storage: "FARMACIA" },
+            { name: "Paracetamol (R)", type: "checkbox", storage: "FARMACIA" },
             { name: "SF 100ml", type: "number", stock: 20, storage: "FARMACIA" },
-            { name: "SGS", type: "number", stock: 10, storage: "FARMACIA" },
             { name: "RL", type: "number", stock: 10, storage: "FARMACIA" },
-            { name: "Glucosado 5%", type: "number", stock: 2, storage: "FARMACIA" }
-
+            { name: "SF 500ml", type: "number", stock: 3, storage: "FARMACIA" },
+            { name: "Gelafundina", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "Glucosado 5%", type: "number", stock: 2, storage: "FARMACIA" },
+            { name: "SGS", type: "number", stock: 12, storage: "FARMACIA" },
+            { name: "Alcohol (R)", type: "checkbox", storage: "FARMACIA" }
         ],
         "ALMACÉN": [
-            { name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Guantes (REA)", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Apósito vía (REA)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { name: "Aguja carga (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Llave 3p (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Abocath (REA)", type: "checkbox", options: ["18G","20G","22G"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Tapón via (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Abocath (REA)", type: "checkbox", options: ["18G","20G","22G"], storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "BIC", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Alargadera (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Sistemas (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Gasas (REA)", type: "checkbox", options: ["Grandes","Pequeñas"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "BIC", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Gafas Nasales (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Guedel (REA)", type: "checkbox", options: ["Verde","Amarillo","Rojo"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Empapadores (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Guantes (REA)", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
+            { name: "Empapadores (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" }
         ]
     },
     "UCSI": {
@@ -1758,7 +1764,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '24-sep 22:05'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '24-sep 22:20'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
