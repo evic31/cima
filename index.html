@@ -1657,11 +1657,12 @@ const VOZ_ALIAS = {
     'Salbutamol inhalado': ['ventolin'],
     'Diclofenaco': ['voltaren'],
     'Metoclopramida': ['primperan'],
-    'Ac. Tranexámico': ['tranexamico', 'acido tranexamico'],
+    'Ac. Tranexámico': ['tranexamico', 'acido tranexamico', 'tranesamico', 'acido tranesamico'],
     'Bupivacaina 0,25': ['bupi'], 'Bupivacaina 0.5': ['bupi'],
     'Lidocaina 2%': ['lido'], 'Mepivacaina 2%': ['mepi'],
     'Levobupivacaina': ['levobupi', 'levo'],
     'Sevorane': ['sevo', 'sevoflurano'],
+    'Frova': ['froba'],
     'Sondas Aspiración #16 (Naranja)': ['receptal naranja', 'sonda naranja'],
     'Sondas Aspiración #14 (Verde)': ['receptal verde', 'sonda verde'],
     'Sondas Aspiración #12 (Blanco)': ['receptal blanco', 'sonda blanca'],
@@ -1711,7 +1712,8 @@ function vozLev(a, b) {
 }
 const vozWordEq = (u, n) => {
     if (u === n) return true;
-    const a = vozStem(u), b = vozStem(n);
+    // b y v suenan igual: el iPhone escribe «froba» por Frova
+    const a = vozStem(u).replace(/v/g, 'b'), b = vozStem(n).replace(/v/g, 'b');
     if (a === b) return true;
     if (b.length >= 4 && a.length >= 4 && (a.startsWith(b) || b.startsWith(a))) return true;
     if (b.length === 3 && a.length > 3 && a.startsWith(b)) return true;
@@ -1747,7 +1749,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '24-sep 21:15'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '24-sep 21:40'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
