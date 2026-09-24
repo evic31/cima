@@ -854,7 +854,7 @@ const DEFAULT_INVENTORY = {
             { g:1, name: "Set aspiración anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 2 ──
             { g:2, name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
-            { g:2, name: "Taburete", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Taburete", type: "number", stock: 4, storage: "BLOQUE QUIRÚRGICO" },
             { g:2, name: "Bomba infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
         ]
     }
@@ -1847,7 +1847,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-sep 09:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-sep 09:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2162,11 +2162,39 @@ function vozUndo(heard) {
 // Se guarda en este móvil; «📋 Copiar orden» → pegarlo en DEFAULT_ORDER lo deja fijo para todos.
 // ─────────────────────────────────────────────
 const ORDER_KEY = 'reposicionOrden_v1';
-const DEFAULT_ORDER = null;
+const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvil se suma por encima, grupo a grupo
+    groups: [],
+    items: {
+        'ALMACÉN PASILLO DERECHO': [
+            "Gasas pequeñas s/c", "Gasas Pequeñas c/c", "Gasas grandes s/c", "Gasas Grandes c/c", "Gasas (UCSI)", "Gasas (REA)",
+            "Gafas Nasales", "Gafas Nasales (REA)", "Filtro", "Capnografo", "Guantes Esteriles (nº8,5)", "Guantes Esteriles (nº8)",
+            "Guantes Esteriles (nº7,5)", "Guantes Esteriles (nº7)", "Guantes Esteriles (nº6,5)", "Guantes Esteriles (nº6)",
+            "Empapadores", "Empapadores (UCSI)", "Empapadores (REA)", "Bisturi", "Bisturi eléctrico", "BIC", "Abocath 22G",
+            "Abocath 20G", "Abocath 18G", "Abocath 16G", "Abocath 14G", "Abocath (UCSI)", "Abocath (REA)",
+            "Mascarilla Laringea (nº5)", "Mascarilla Laringea (nº4)", "Mascarilla Laringea (nº3)", "Yankauer", "Mango Lampara",
+            "Placa bisturi", "Rasca", "Rotulador", "Goma aspiración", "TET (nº8)", "TET (nº7,5)", "TET (nº7)", "TET (nº6,5)",
+            "Set anestesia", "Set aspiración anestesia", "Receptal aspiración PETIT", "Receptales aspiración", "Receptal aspiración",
+            "Guedel #5 11mm (celeste/ naranja)", "Guedel #4 10mm (rojo)", "Guedel #3 90mm (amarillo)", "Guedel #2 80mm (verde)",
+            "Guedel (REA)", "Jeringas bomba", "Sistema jeringa", "Sistemas (REA)", "Sistemas (UCSI)", "Tapón via (REA)", "Tapon via",
+            "Llave 3p (UCSI)", "Llave 3p (REA)", "Sistema estandar", "Alargadera", "Alargadera (UCSI)", "Alargadera (REA)",
+            "Llave 3Pasos", "Jeringa cono ancho", "Botes anatomia", "Aguja carga (UCSI)", "Aguja carga (REA)", "Vendas gasa",
+            "Smart", "Jeringas (UCSI)", "Jeringas", "Agujas", "Mefix pequeño", "Mefix", "Esparadrapo", "Electrodos",
+            "Cal sodada DRAGER", "Cal sodada G.Electric", "Guantes (UCSI)", "Guantes (REA)", "Guantes",
+            "Sondas Aspiración #12 (Blanco)", "Sondas Aspiración #10 (Negro)", "Sondas Aspiración #14 (Verde)",
+            "Sondas Aspiración #16 (Naranja)"
+        ]
+    }
+};
 let repoOrder = null;
 function loadOrder() {
-    try { repoOrder = JSON.parse(localStorage.getItem(ORDER_KEY)) || DEFAULT_ORDER; } catch { repoOrder = DEFAULT_ORDER; }
-    if (repoOrder) repoOrder = { groups: repoOrder.groups || [], items: repoOrder.items || {} };
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(ORDER_KEY)); } catch {}
+    // fijo + lo del móvil: cada grupo ordenado en el móvil sustituye al fijo de ese grupo
+    const def = DEFAULT_ORDER || { groups: [], items: {} };
+    repoOrder = {
+        groups: saved?.groups?.length ? saved.groups : [...(def.groups || [])],
+        items: { ...JSON.parse(JSON.stringify(def.items || {})), ...(saved?.items || {}) }
+    };
 }
 function saveOrder() { try { localStorage.setItem(ORDER_KEY, JSON.stringify(repoOrder)); } catch {} }
 
@@ -2204,7 +2232,7 @@ function renderOrder() {
             Mueve con <b>▲ ▼</b> (uno a uno), <b>⇈ ⇊</b> (al principio / al final) o arrastrando desde <b>⋮⋮</b>. Los grupos también se ordenan con sus ▲ ▼.</p>
             <div class="order-actions">
                 <button id="orderCopy">📋 Copiar orden</button>
-                <button id="orderReset">↺ Volver a alfabético</button>
+                <button id="orderReset">↺ Volver al orden fijado</button>
             </div>
         </div>
         <div id="order-groups">${orderedStorages(cat).map(st => {
@@ -2265,7 +2293,6 @@ function renderOrder() {
         }
     });
     el.querySelector('#orderCopy').addEventListener('click', async () => {
-        if (!repoOrder) return alert('Todavía no has cambiado el orden.');
         const txt = JSON.stringify(repoOrder);
         try { await navigator.clipboard.writeText(txt); alert('Orden copiado. Pégalo en el chat para dejarlo fijo en la app.'); }
         catch { prompt('Copia el orden:', txt); }
@@ -2274,10 +2301,10 @@ function renderOrder() {
     reset.addEventListener('click', () => {
         if (reset.dataset.confirm !== '1') {
             reset.dataset.confirm = '1'; reset.textContent = '⚠️ Pulsa otra vez para confirmar';
-            return setTimeout(() => { if (reset.isConnected) { reset.dataset.confirm = '0'; reset.textContent = '↺ Volver a alfabético'; } }, 3000);
+            return setTimeout(() => { if (reset.isConnected) { reset.dataset.confirm = '0'; reset.textContent = '↺ Volver al orden fijado'; } }, 3000);
         }
-        repoOrder = null;
         try { localStorage.removeItem(ORDER_KEY); } catch {}
+        loadOrder();
         renderOrder();
     });
 }
