@@ -1847,7 +1847,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-sep 09:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-sep 10:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2182,6 +2182,11 @@ const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvi
             "Cal sodada DRAGER", "Cal sodada G.Electric", "Guantes (UCSI)", "Guantes (REA)", "Guantes",
             "Sondas Aspiración #12 (Blanco)", "Sondas Aspiración #10 (Negro)", "Sondas Aspiración #14 (Verde)",
             "Sondas Aspiración #16 (Naranja)"
+        ],
+        'ALMACÉN PASILLO IZQUIERDO': [
+            "Bata esteril", "Sábana Adhesiva", "Funda Mayo", "Bolsa instrumental", "Pegatina", "Paño utilidades",
+            "Paño adhesivo", "Kit sondaje", "SteryStrip", "Aposito via", "Aposito via (UCSI)", "Apósito vía (REA)",
+            "Otros liquidos", "Sevorane", "SF 100ml irrigación", "SF 500ml irrigación", "Frova"
         ]
     }
 };
