@@ -311,6 +311,9 @@
             gap: 0.45rem;
             cursor: pointer;
         }
+        #content-RESUMEN .total-item { justify-content: flex-start; }
+        #content-RESUMEN .total-item .quantity { min-width: 2.4rem; text-align: center; }
+        #content-RESUMEN .total-item.done .quantity { opacity: 0.45; }
         #content-RESUMEN .sum-check,
         #content-RESUMEN .sum-area-check {
             width: 1.05em; height: 1.05em;
@@ -1149,7 +1152,7 @@ function renderSummary() {
                     <ul>${entries.map(([name, qty]) => {
                         const sid = ['RESUMEN', loc, name].join(ID_SEP);
                         const chk = !!summaryTicks[sid];
-                        return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span>${name}</span></label><span class="quantity">×${qty}</span></li>`;
+                        return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span class="quantity">×${qty}</span><span>${name}</span></label></li>`;
                     }).join('')}</ul>
                 </div>`).join('')}
         </div>`;
@@ -1860,7 +1863,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '29-sep 20:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '29-sep 20:15'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
