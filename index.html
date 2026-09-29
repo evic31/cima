@@ -1087,7 +1087,7 @@ function renderSummary() {
         let display = itemName + (option ? ` (${option})` : '');
         const isNum = !isNaN(parseInt(value));
         if (isNum) display += ` - Faltan: ${value}`;
-        byArea[area].push({ d: display, r: tabPos[inputId] ?? 1e6 });
+        byArea[area].push({ d: display, r: tabPos[inputId] ?? 1e6, n: itemName + (option ? ` (${option})` : ''), q: isNum ? parseInt(value) : null });
         const store = locMap[inputId] || 'Desconocido';
         const fullName = option ? `${itemName} (${option})` : itemName;
         if (!byStorage[store]) { byStorage[store] = {}; byMeta[store] = {}; }
@@ -1097,8 +1097,10 @@ function renderSummary() {
     }
 
     // por área: áreas en el orden de las pestañas y material en el orden de cada pestaña
-    byArea = Object.fromEntries([...tabOrder.filter(t => byArea[t]), ...Object.keys(byArea).filter(t => !tabOrder.includes(t))]
-        .map(a => [a, byArea[a].sort((x, y) => x.r - y.r).map(x => x.d)]));
+    const areaNames = [...tabOrder.filter(t => byArea[t]), ...Object.keys(byArea).filter(t => !tabOrder.includes(t))];
+    areaNames.forEach(a => byArea[a].sort((x, y) => x.r - y.r));
+    const areaRows = areaNames.map(a => [a, byArea[a].map(x => ({ name: x.n, qty: x.q }))]); // para el PDF
+    byArea = Object.fromEntries(areaNames.map(a => [a, byArea[a].map(x => x.d)]));
     const hasItems = Object.keys(checklistState).length > 0;
     // lista total en el orden de ⚙️ Orden (ubicaciones y materiales); lo no ordenado, alfabético al final
     const { cat, opts } = orderCatalog();
@@ -1169,66 +1171,73 @@ function renderSummary() {
             }, 3000);
         }
     });
+    // PDF de lo que falta: tabla compacta a 2 columnas, casilla + cantidad pegada al material
     document.getElementById('btn-pdf').addEventListener('click', () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        let y = 15;
+        const M = 12, W = 210 - 2 * M, GAP = 6, COLW = (W - GAP) / 2, RH = 6, BOTTOM = 285, TOP = 14;
+        const QTY_W = 10;
+        let y = TOP;
+        const fit = (txt, maxW, size) => {
+            let sz = size; doc.setFontSize(sz);
+            while (doc.getTextWidth(txt) > maxW && sz > 7) { sz -= 0.25; doc.setFontSize(sz); }
+            while (doc.getTextWidth(txt) > maxW && txt.length > 3) txt = txt.slice(0, -2) + '…';
+            return txt;
+        };
+        const newPage = () => { doc.addPage(); y = TOP; };
 
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('LISTA DE REPOSICIÓN - BLOQUE QUIRÚRGICO CIMA', 14, y);
-        y += 8;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text(new Date().toLocaleDateString('es-ES'), 14, y);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(45, 49, 66);
+        doc.text('LISTA DE REPOSICIÓN · BLOQUE QUIRÚRGICO CIMA', M, y + 3);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(107, 120, 153);
+        doc.text(new Date().toLocaleDateString('es-ES'), 210 - M, y + 3, { align: 'right' });
         y += 10;
 
-        // 1) lista de reposición por ubicación, en el orden de ⚙️ Orden
+        const heading = t => {
+            if (y + 20 > BOTTOM) newPage();
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(45, 49, 66);
+            doc.text(t, M, y + 3); y += 6;
+        };
+        // un grupo (ubicación o área): banda + filas en 2 columnas, de arriba abajo y luego a la derecha
+        const group = (label, tint, rows) => {
+            let i = 0, cont = false;
+            while (i < rows.length) {
+                if (y + 7.5 + RH * 2 > BOTTOM) newPage();
+                doc.setFillColor(...tint); doc.rect(M, y, W, 6.5, 'F');
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(45, 49, 66);
+                doc.text(label + (cont ? '  (cont.)' : ''), M + 2, y + 4.6);
+                y += 7.5;
+                const cap = Math.max(1, Math.floor((BOTTOM - y) / RH));
+                const chunk = rows.slice(i, i + cap * 2);
+                const nRows = Math.ceil(chunk.length / 2);
+                chunk.forEach((r, k) => {
+                    const col = Math.floor(k / nRows), row = k - col * nRows;
+                    const x = M + col * (COLW + GAP), yy = y + row * RH;
+                    if (row % 2) { doc.setFillColor(244, 247, 251); doc.rect(x, yy, COLW, RH, 'F'); }
+                    doc.setDrawColor(210, 218, 230); doc.setLineWidth(0.15); doc.line(x, yy + RH, x + COLW, yy + RH);
+                    doc.setDrawColor(100, 116, 139); doc.setLineWidth(0.3); doc.rect(x + 1.3, yy + 1.3, 3.4, 3.4);
+                    const ty = yy + RH - 1.7;
+                    if (r.qty != null) {
+                        doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(29, 78, 216);
+                        doc.text('×' + r.qty, x + 6.5, ty);
+                    }
+                    doc.setFont('helvetica', 'normal'); doc.setTextColor(45, 49, 66);
+                    doc.text(fit(r.name, COLW - 6.5 - QTY_W - 1, 9.5), x + 6.5 + QTY_W, ty);
+                });
+                y += nRows * RH + 3.5;
+                i += chunk.length;
+                if (i < rows.length) { newPage(); cont = true; }
+            }
+        };
+
+        // 1) por ubicación, en el orden de ⚙️ Orden
         const PDF_TINT = { farmacia: [254, 226, 226], 'almacen-der': [219, 234, 254], 'almacen-izq': [209, 250, 229], desconocido: [226, 232, 240] };
-        storeList.forEach(([loc, entries]) => {
-            if (y > 262) { doc.addPage(); y = 15; }
-            doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-            doc.setFillColor(...(PDF_TINT[getLocationClass(loc)] || PDF_TINT.desconocido));
-            doc.rect(14, y - 5, 182, 8, 'F');
-            doc.text(loc, 16, y);
-            y += 8;
-            doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-            entries.forEach(([name, qty]) => {
-                if (y > 275) { doc.addPage(); y = 15; }
-                doc.setDrawColor(120, 132, 152); doc.setLineWidth(0.3); doc.rect(16, y - 3.2, 3.4, 3.4);
-                doc.text(name.toUpperCase(), 22, y);
-                doc.setFont('helvetica', 'bold'); doc.text('x' + qty, 194, y, { align: 'right' }); doc.setFont('helvetica', 'normal');
-                y += 6.5;
-            });
-            y += 4;
-        });
+        if (storeList.length) heading('POR UBICACIÓN');
+        storeList.forEach(([loc, entries]) => group(loc, PDF_TINT[getLocationClass(loc)] || PDF_TINT.desconocido, entries.map(([name, qty]) => ({ name, qty }))));
 
-        // 2) detalle por área (como antes)
-        if (Object.values(byArea).some(a => a.length)) {
-            if (y > 255) { doc.addPage(); y = 15; }
-            y += 2; doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-            doc.text('POR ÁREA', 14, y); y += 8;
-        }
-        Object.entries(byArea).forEach(([area, items]) => {
-            if (!items.length) return;
-            if (y > 270) { doc.addPage(); y = 15; }
-
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.setFillColor(220, 230, 255);
-            doc.rect(14, y - 5, 182, 8, 'F');
-            doc.text(area.toUpperCase(), 16, y);
-            y += 8;
-
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            items.forEach(name => {
-                if (y > 275) { doc.addPage(); y = 15; }
-                doc.text(`- ${name.toUpperCase()}`, 18, y);
-                y += 7;
-            });
-            y += 4;
-        });
+        // 2) por área, en el orden de cada pestaña
+        const withRows = areaRows.filter(([, rows]) => rows.length);
+        if (withRows.length) { y += 2; heading('POR ÁREA'); }
+        withRows.forEach(([area, rows]) => group(area.toUpperCase(), [226, 232, 240], rows));
 
         doc.save('reposicion-cima.pdf');
     });
@@ -1847,7 +1856,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-sep 10:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '29-sep 10:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
