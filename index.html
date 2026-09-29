@@ -1107,8 +1107,12 @@ function renderSummary() {
     const storeNames = [...orderedStorages(cat).filter(st => byStorage[st]), ...Object.keys(byStorage).filter(st => !cat[st]).sort()];
     const storeList = storeNames.map(st => {
         const pos = new Map(orderedUnits(st, cat).map((u, i) => [u, i]));
+        // Farmacia: lo de REA «(R)» y UCSI «(U)» va al final, en bloque (primero R, luego U), manteniendo su orden
+        const block = u => st !== 'FARMACIA' ? 0 : /\(R\)\s*$/.test(u) ? 1 : /\(U\)\s*$/.test(u) ? 2 : 0;
         const entries = Object.entries(byStorage[st]).sort((a, b) => {
             const ma = byMeta[st][a[0]], mb = byMeta[st][b[0]];
+            const ba = block(ma.unit), bb = block(mb.unit);
+            if (ba !== bb) return ba - bb;
             const pa = pos.get(ma.unit) ?? 1e6, pb = pos.get(mb.unit) ?? 1e6;
             if (pa !== pb) return pa - pb;
             if (ma.unit !== mb.unit) return ma.unit.localeCompare(mb.unit, 'es');
@@ -1856,7 +1860,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '29-sep 10:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '29-sep 20:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
