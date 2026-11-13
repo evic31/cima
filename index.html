@@ -1865,7 +1865,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '29-sep 20:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 00:56'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -1892,7 +1892,8 @@ function initVoz() {
     const btn = document.getElementById('btnVoz');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { btn.addEventListener('click', () => alert('Este navegador no admite reconocimiento de voz. En iPhone, prueba desde Safari.')); return; }
-    btn.addEventListener('click', () => voz?.on ? vozStop() : vozStart(SR));
+    // si el micro se quedó en pausa (Safari no deja rearrancarlo solo), un toque lo reanuda
+    btn.addEventListener('click', () => voz?.on ? (voz.paused ? vozResume() : vozStop()) : vozStart(SR));
     document.getElementById('vozUndo').addEventListener('click', vozUndo);
     // al hacer scroll, la barra muestra el carro que queda en pantalla
     let vozScrollT = 0;
@@ -1917,22 +1918,44 @@ function initVoz() {
 function vozStart(SR) {
     const rec = new SR();
     rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = false; rec.maxAlternatives = 3;
-    voz = { on: true, rec, carro: null, undo: [], pending: null, speaking: false };
+    voz = { on: true, rec, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false };
     rec.onresult = e => {
+        voz.oido = true;
         for (let i = e.resultIndex; i < e.results.length; i++) {
             if (!e.results[i].isFinal) continue;
+            // mientras la app habla (y un instante después) no se hace caso: es su propia voz
+            if (voz.speaking || Date.now() < voz.mudoHasta) continue;
             const alts = Array.from(e.results[i]).map(a => a.transcript);
             vozHandle(alts);
         }
     };
-    rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { vozShow('', 'Sin permiso para el micrófono', true); vozStop(); } };
+    rec.onerror = e => {
+        if (e.error !== 'not-allowed' && e.error !== 'service-not-allowed') return;
+        if (!voz.oido) { vozShow('', 'Sin permiso para el micrófono', true); return vozStop(); }
+        vozPausa();   // ya funcionaba: Safari no deja rearrancar sin un toque
+    };
     // el reconocimiento se corta tras silencios: se reengancha solo mientras el modo esté activo
-    rec.onend = () => { if (voz?.on && !voz.speaking) try { rec.start(); } catch {} };
+    // (14-nov) ya NO se corta para hablar: rearrancar sin toque en iPhone daba «sin permiso» y apagaba el modo voz
+    rec.onend = () => { if (voz?.on && !voz.paused) try { rec.start(); } catch { vozPausa(); } };
     try { rec.start(); } catch {}
     document.getElementById('btnVoz').classList.add('on');
     document.getElementById('vozBar').classList.add('on');
     vozShow('', 'Escuchando…');
     vozSay('Escuchando ' + vozTabName());
+}
+
+function vozPausa() {
+    if (!voz?.on) return;
+    voz.paused = true;
+    document.getElementById('btnVoz').classList.remove('on');
+    vozShow('', 'Toca 🎤 para seguir', true);
+}
+function vozResume() {
+    if (!voz?.on) return;
+    voz.paused = false;
+    try { voz.rec.start(); } catch {}
+    document.getElementById('btnVoz').classList.add('on');
+    vozShow('', 'Escuchando…');
 }
 
 function vozStop() {
@@ -1945,14 +1968,13 @@ function vozStop() {
     document.getElementById('vozBar').classList.remove('on');
 }
 
-// habla y deja de escuchar mientras tanto (para no oírse a sí mismo)
+// habla sin apagar el micro: lo que se oiga mientras tanto se ignora (para no oírse a sí mismo)
 function vozSay(txt) {
     if (!window.speechSynthesis || !voz?.on) return;
     voz.speaking = true;
-    try { voz.rec.abort(); } catch {}
     const u = new SpeechSynthesisUtterance(txt);
     u.lang = 'es-ES'; u.rate = 1.1;
-    const back = () => { if (!voz?.on) return; voz.speaking = false; try { voz.rec.start(); } catch {} };
+    const back = () => { if (!voz) return; voz.speaking = false; voz.mudoHasta = Date.now() + 700; };
     u.onend = back; u.onerror = back;
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
