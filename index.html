@@ -855,7 +855,6 @@ const DEFAULT_INVENTORY = {
         ],
         "Otros": [
             // ── BLOQUE 1 ──
-            { g:1, name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
             { g:1, name: "Set anestesia", type: "checkbox", options: ["Tubuladura","Filtro","Capnografo"], storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Cal sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Cal sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
@@ -863,6 +862,7 @@ const DEFAULT_INVENTORY = {
             { g:1, name: "Receptal aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Set aspiración anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 2 ──
+            { g:2, name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
             { g:2, name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
             { g:2, name: "Taburete", type: "number", stock: 4, storage: "BLOQUE QUIRÚRGICO" },
             { g:2, name: "Bomba infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
@@ -1818,7 +1818,8 @@ const VOZ_OPT_ALIAS = {
     'Kit sondaje||Jeringa Kit Sondaje': ['jeringa sondaje'],
     'Kit sondaje||Guante sondaje': ['guante sondaje', 'guantes sondaje'],
     'Kit sondaje||Sonda Vesical': ['sonda vesical'],
-    'SteryStrip||Azul (2)': ['azul'], 'SteryStrip||Naranja (2)': ['naranja']
+    'SteryStrip||Azul (2)': ['azul'], 'SteryStrip||Naranja (2)': ['naranja'],
+    'Agujas||Naranja': ['aguja naranja', 'aguja subcutanea', 'subcutanea']
 };
 const vozKey = n => vozNorm(String(n).replace(/\((R|U|REA|UCSI)\)/gi, ''));
 const VOZ_ALIAS_N = {}, VOZ_OPT_ALIAS_N = {};
@@ -1890,7 +1891,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 16:20'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 16:35'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
