@@ -955,14 +955,29 @@ function buildInventory() {
     });
     delete inventoryData.template_quirofano;
     // aplicar edits guardados
+    let arreglados = false;
     for (const editKey in inventoryEdits) {
         const [area, location, origName] = editKey.split(ID_SEP);
         if (!inventoryData[area]?.[location]) continue;
         const item = inventoryData[area][location].find(i => i.name === origName);
         if (!item) continue;
         const edit = inventoryEdits[editKey];
+        // el editor antiguo ponía el nombre en MAYÚSCULAS al guardar solo el stock («Pegatina» → «PEGATINA»): se deshace
+        if (edit.name && edit.name !== origName && edit.name.toLocaleUpperCase('es') === origName.toLocaleUpperCase('es')) {
+            const mal = [area, location, edit.name].join(ID_SEP), bien = [area, location, origName].join(ID_SEP);
+            for (const k of Object.keys(checklistState)) if (k === mal || k.startsWith(mal + ID_SEP)) { checklistState[bien + k.slice(mal.length)] = checklistState[k]; delete checklistState[k]; }
+            delete edit.name;
+            if (!Object.keys(edit).length) delete inventoryEdits[editKey];
+            arreglados = true;
+            continue;
+        }
         if (edit.name !== undefined) item.name = edit.name;
         if (edit.stock !== undefined && item.type === 'number') item.stock = edit.stock;
+    }
+    if (arreglados) {
+        localStorage.setItem(INVENTORY_EDIT_KEY, JSON.stringify(inventoryEdits));
+        localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
+        return buildInventory(); // vuelve a aplicar los stocks de lo arreglado
     }
 }
 
@@ -1881,7 +1896,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 17:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 17:20'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2406,15 +2421,16 @@ function saveOrder() { try { localStorage.setItem(ORDER_KEY, JSON.stringify(repo
 
 // materiales por ubicación sacados del inventario actual (con los nombres del Editor)
 function orderCatalog() {
-    const cat = {}, opts = {}, areas = {};
+    const cat = {}, opts = {}, areas = {}, optsSt = {};
     for (const area in inventoryData) for (const loc in inventoryData[area]) for (const it of inventoryData[area][loc]) {
         const st = it.storage || 'Desconocido';
         (cat[st] ||= new Set()).add(it.name);
         Object.values(it.optStorage || {}).forEach(o => (cat[o] ||= new Set()).add(it.name));
+        if (it.options?.length) it.options.forEach(o => { const s2 = storageOf(it, o); const l = ((optsSt[s2] ||= {})[it.name] ||= []); if (!l.includes(o)) l.push(o); });
         if (it.options?.length && !opts[it.name]) opts[it.name] = it.options;
         (areas[it.name] ||= new Set()).add(area.startsWith('Quirófano') || area === 'Hemodinamia' ? 'Quirófanos' : area);
     }
-    return { cat, opts, areas };
+    return { cat, opts, areas, optsSt };
 }
 function orderedStorages(cat) {
     const saved = (repoOrder?.groups || []).filter(g => cat[g]);
@@ -2431,7 +2447,7 @@ const orderOpen = new Set();
 function renderOrder() {
     const el = document.getElementById('content-⚙-Orden');
     if (!el) return;
-    const { cat, opts, areas } = orderCatalog();
+    const { cat, areas, optsSt } = orderCatalog();
     el.innerHTML = `<div class="editor-wrap">
         <div class="editor-search-box">
             <h2>⚙️ Orden de la lista de reposición</h2>
@@ -2443,7 +2459,7 @@ function renderOrder() {
             </div>
         </div>
         <div id="order-groups">${orderedStorages(cat).map(st => {
-            const units = orderedUnits(st, cat);
+            const units = orderedUnits(st, cat), opts = optsSt[st] || {}; // solo las opciones que están en esta ubicación
             return `<details class="order-group" data-st="${escAttr(st)}" ${orderOpen.has(st) ? 'open' : ''}>
                 <summary class="sub-header ${getLocationClass(st)}"><span class="og-title">${st} · ${units.length}</span>
                     <span class="og-btns"><button class="ord-btn" data-act="gup" title="Subir grupo">▲</button><button class="ord-btn" data-act="gdown" title="Bajar grupo">▼</button></span></summary>
