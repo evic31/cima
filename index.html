@@ -1865,7 +1865,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 06:36'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 06:44'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -1927,34 +1927,46 @@ function vozEv(t) {
     } catch {}
 }
 
+/* ── Motor de voz (14-nov, iOS 27) ──
+   El iPhone no deja sonar la voz mientras el micro escucha. Por turnos, como en septiembre pero bien:
+   apaga el micro → ESPERA a que esté apagado del todo → habla → vuelve a encender el micro.
+   (En septiembre hablaba nada más apagar; con iOS 27 la voz salía muda, no avisaba del final y el micro
+   no volvía: «coge un producto y se para».) Todo queda en el registro 📋. */
 function vozNuevoRec(SR) {
     const rec = new SR();
     rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = false; rec.maxAlternatives = 3;
-    rec.onstart = () => { voz.vivo = true; clearTimeout(voz.vigia); };
+    rec.onstart = () => {
+        voz.vivo = true; clearTimeout(voz.vigia);
+        if (voz.saludo) { const t = voz.saludo; voz.saludo = null; vozSay(t); }   // el saludo, cuando el micro ya tiene permiso
+    };
     rec.onresult = e => {
         voz.oido = true;
         for (let i = e.resultIndex; i < e.results.length; i++) {
             if (!e.results[i].isFinal) continue;
-            // mientras la app habla (y un instante después) no se hace caso: es su propia voz
             if (voz.speaking || Date.now() < voz.mudoHasta) { vozEv('ignorado (la app hablaba): «' + e.results[i][0].transcript + '»'); continue; }
             const alts = Array.from(e.results[i]).map(a => a.transcript);
             vozHandle(alts);
         }
     };
     rec.onerror = e => {
+        if (e.error === 'aborted' && voz.trasFin) return;          // lo hemos apagado nosotros para hablar
         vozEv('error ' + e.error);
         if (e.error !== 'not-allowed' && e.error !== 'service-not-allowed') return;
         if (!voz.oido) { vozShow('', 'Sin permiso para el micrófono', true); return vozStop(); }
-        vozPausa();   // ya funcionaba: Safari no deja rearrancar sin un toque
+        vozPausa();
     };
-    // el reconocimiento se corta tras silencios: se reengancha solo mientras el modo esté activo
-    // (14-nov) ya NO se corta para hablar: rearrancar sin toque en iPhone daba «sin permiso» y apagaba el modo voz
-    rec.onend = () => { voz.vivo = false; vozEv('fin del micro'); if (voz?.on && !voz.paused && voz.rec === rec) vozArranca(true); };
+    rec.onend = () => {
+        voz.vivo = false;
+        if (voz.trasFin) { const f = voz.trasFin; voz.trasFin = null; clearTimeout(voz.esperaT); return f(); }   // ya apagado: ahora sí, hablar
+        vozEv('fin del micro');
+        // el reconocimiento se corta tras silencios: se reengancha solo mientras el modo esté activo
+        if (voz?.on && !voz.paused && !voz.speaking && voz.rec === rec) vozArranca(true);
+    };
     return rec;
 }
-// arranca el micro; si en 2 s no ha arrancado (Safari a veces no hace nada), pide un toque en vez de quedarse muerto
+// arranca el micro; si en 2 s no ha arrancado, pide un toque (por voz) en vez de quedarse muerto
 function vozArranca(auto) {
-    if (!voz?.on) return;
+    if (!voz?.on || voz.paused) return;
     try { voz.rec.start(); }
     catch (e) {
         vozEv('no arranca (' + (e.name || e) + '), pruebo otro');
@@ -1962,27 +1974,29 @@ function vozArranca(auto) {
     }
     if (auto) vozEv('rearranco solo');
     clearTimeout(voz.vigia);
-    voz.vigia = setTimeout(() => { if (voz?.on && !voz.vivo && !voz.paused) { vozEv('no arrancó en 2 s'); vozPausa(); } }, 2000);
+    voz.vigia = setTimeout(() => { if (voz?.on && !voz.vivo && !voz.paused && !voz.speaking) { vozEv('no arrancó en 2 s'); vozPausa(); } }, 2000);
 }
 
 function vozStart(SR) {
-    voz = { on: true, SR, rec: null, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false, vivo: false, vigia: 0 };
+    voz = { on: true, SR, rec: null, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false, vivo: false, vigia: 0, trasFin: null, saludo: null };
+    // iPhone: la voz solo se «desbloquea» si se usa dentro del toque → frase vacía y muda ahora
+    try { const u0 = new SpeechSynthesisUtterance(' '); u0.volume = 0; speechSynthesis.speak(u0); } catch {}
     voz.rec = vozNuevoRec(SR);
     vozEv('— modo voz v' + APP_BUILD + (VOZ_IOS ? ' (iPhone)' : ''));
-    vozArranca(false);
+    voz.saludo = 'Escuchando ' + vozTabName();
+    vozArranca(false);        // dentro del toque: así el iPhone pide/usa el permiso del micro
     document.getElementById('btnVoz').classList.add('on');
     document.getElementById('vozBar').classList.add('on');
     vozShow('', 'Escuchando…');
-    vozSay('Escuchando ' + vozTabName());
 }
 
 function vozPausa() {
     if (!voz?.on || voz.paused) return;
     voz.paused = true;
     vozEv('pausa: toca 🎤');
-    vozSay('Toca el micro para seguir');   // por voz: no hace falta mirar la pantalla
     document.getElementById('btnVoz').classList.remove('on');
     vozShow('', 'Toca 🎤 para seguir', true);
+    vozSay('Toca el micro para seguir');   // por voz: no hace falta mirar la pantalla
 }
 function vozResume() {
     if (!voz?.on) return;
@@ -1996,7 +2010,8 @@ function vozResume() {
 function vozStop() {
     if (!voz) return;
     voz.on = false;
-    clearTimeout(voz.vigia);
+    clearTimeout(voz.vigia); clearTimeout(voz.ttsT); clearTimeout(voz.esperaT);
+    voz.trasFin = null;
     vozEv('— apagado');
     try { voz.rec.abort(); } catch {}
     window.speechSynthesis?.cancel();
@@ -2005,22 +2020,38 @@ function vozStop() {
     document.getElementById('vozBar').classList.remove('on');
 }
 
-// habla sin apagar el micro: lo que se oiga mientras tanto se ignora (para no oírse a sí mismo)
+// habla por turnos: micro apagado del todo → voz → micro otra vez
 function vozSay(txt) {
     if (!window.speechSynthesis || !voz?.on) return;
     voz.speaking = true;
-    const u = new SpeechSynthesisUtterance(txt);
-    u.lang = 'es-ES'; u.rate = 1.1;
-    // (14-nov) en iOS 27 el aviso de «terminé de hablar» puede no llegar nunca y la app se quedaba sorda:
-    // por si acaso, deja de ignorar al cabo del tiempo que tarda en decir la frase
-    let hecho = false;
-    const back = motivo => { if (hecho || !voz) return; hecho = true; clearTimeout(voz.ttsT); if (motivo) vozEv(motivo); voz.speaking = false; voz.mudoHasta = Date.now() + 500; };
-    u.onend = () => back(); u.onerror = e => back('voz error ' + (e.error || ''));
-    clearTimeout(voz.ttsT);
-    voz.ttsT = setTimeout(() => back('la voz no avisó de que terminó'), Math.min(5000, 500 + txt.length * 65));
-    // cancel() justo antes de speak() hace que Safari a veces no diga nada: solo si hay algo sonando
-    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
-    speechSynthesis.speak(u);
+    clearTimeout(voz.ttsT); clearTimeout(voz.esperaT);
+    const decir = () => {
+        if (!voz?.on) return;
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'es-ES'; u.rate = 1.1;
+        let hecho = false, sono = false;
+        const back = motivo => {
+            if (hecho || !voz) return; hecho = true; clearTimeout(voz.ttsT);
+            if (motivo) vozEv(motivo);
+            voz.speaking = false; voz.mudoHasta = Date.now() + 300;
+            vozArranca(false);                         // vuelve a escuchar (si no está en pausa)
+        };
+        u.onstart = () => { sono = true; clearTimeout(voz.ttsT); voz.ttsT = setTimeout(() => back('la voz sonó pero no avisó del final'), Math.min(6000, 700 + txt.length * 75)); };
+        u.onend = () => back(); u.onerror = e => back('voz error ' + (e.error || ''));
+        // si no llega a sonar en 1,5 s, no esperamos más: a escuchar
+        voz.ttsT = setTimeout(() => { if (!sono) back('la voz no sonó: «' + txt + '»'); }, 1500);
+        if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+        speechSynthesis.speak(u);
+    };
+    if (voz.vivo) {
+        voz.trasFin = decir;                           // se dice cuando el micro avise de que ya está apagado
+        try { voz.rec.abort(); } catch {}
+        voz.esperaT = setTimeout(() => { if (voz?.trasFin) { const f = voz.trasFin; voz.trasFin = null; vozEv('el micro no avisó de que se apagó; hablo igual'); f(); } }, 1000);
+    } else {
+        clearTimeout(voz.vigia);
+        try { voz.rec.abort(); } catch {}
+        decir();
+    }
 }
 
 const vozTab = () => document.querySelector('.tab.active')?.dataset.tab;
