@@ -689,7 +689,7 @@ const DEFAULT_INVENTORY = {
             { name: "Gasas (REA)", type: "checkbox", options: ["Grandes","Pequeñas"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Gafas Nasales (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Guedel (REA)", type: "checkbox", options: ["Verde","Amarillo","Rojo"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Empapadores (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" }
+            { name: "Empapador (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" }
         ]
     },
     "UCSI": {
@@ -720,7 +720,7 @@ const DEFAULT_INVENTORY = {
             { name: "Alargadera (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Sistemas (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Gasas (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Empapadores (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Empapador (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Aposito via (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { name: "Guantes (UCSI)", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
         ]
@@ -763,7 +763,7 @@ const DEFAULT_INVENTORY = {
             { g:3, name: "SF 500ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:3, name: "SF 100ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:3, name: "Kit sondaje", type: "checkbox", options: ["Sonda Vesical","Cathegel","Paño Kit Sondaje","Guante sondaje","Jeringa Kit Sondaje"], storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:3, name: "Empapadores", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Empapador", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Botes anatomia", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Receptal aspiración", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" }
         ],
@@ -855,7 +855,7 @@ const DEFAULT_INVENTORY = {
             { g:5, name: "Amiodarona", type: "number", stock: 2, storage: "FARMACIA" },
             // ── BLOQUE 6 ──
             { g: 6, name: "Guantes", type: "checkbox", options: ["S", "M", "L"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g: 6, name: "Empapadores", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Empapador", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Gasas grandes s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Gasas pequeñas s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Sondas Aspiración #16 (Naranja)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
@@ -1878,7 +1878,7 @@ setTimeout(() => {
     Object.entries(VOZ_ALIAS).forEach(([k, v]) => { VOZ_ALIAS_N[vozKey(k)] = v; });
     Object.entries(VOZ_OPT_ALIAS).forEach(([k, v]) => { const [a, o] = k.split(ID_SEP); VOZ_OPT_ALIAS_N[vozKey(a) + ID_SEP + vozKey(o)] = v; });
 });
-// palabras de carro/zona que se pueden decir dentro de la frase: «empapadores enfermería»
+// palabras de carro/zona que se pueden decir dentro de la frase: «empapador enfermería»
 const VOZ_CARRO = { enfermeria: 'Carro Enfermeria', anestesia: 'Carro Anestesia', otros: 'Otros', farmacia: 'FARMACIA', almacen: 'ALMACÉN' };
 
 const vozNorm = t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -1942,7 +1942,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 19:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 19:55'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2003,7 +2003,7 @@ function initVoz() {
     });
     document.getElementById('vozHelp').addEventListener('click', () => vozSay(
         'Di el material como está escrito y la cantidad. Por ejemplo: paracetamol 3, o jeringas 10 y 5. ' +
-        'Puedes añadir el carro en la frase, por ejemplo: empapadores enfermería. ' +
+        'Puedes añadir el carro en la frase, por ejemplo: empapador enfermería. ' +
         'Di anestesia o enfermería para elegir carro, quirófano 3 para cambiar, quita y el material para desmarcar, deshacer, o para.'));
 }
 
@@ -2255,9 +2255,52 @@ function vozCarroOf(n, locs) {
     return locs.find(l => vozTokens(l).words.filter(x => x !== 'carro').some(x => vozWordEq(w[0], x))) || null;
 }
 
+// Producto repetido en los dos carros (Empapador, Guantes S/M/L, Contenedor agujas, Mefix pequeño…):
+// sin preguntar, la 1.ª vez va al carro de enfermería (se revisa primero) y, si ya está marcado ahí, al de anestesia.
+const VOZ_GEMELOS = ['Carro Enfermeria', 'Carro Anestesia'];
+const vozUnidadDe = (item, opt) => vozKey(opt ? (item.optUnit?.[opt] || item.name + ' ' + opt) : (item.unidad || item.name));
+function vozMarcado(area, loc, item, opts) {
+    const base = [area, loc, item.name].join(ID_SEP);
+    if (opts.length) return opts.every(o => document.getElementById([base, o].join(ID_SEP))?.checked);
+    const el = document.getElementById(base);
+    return !!el && (el.type === 'checkbox' ? el.checked : parseInt(el.value) > 0);
+}
+function vozGemelo(top, heard, text, remove) {
+    const c0 = top[0];
+    if (!VOZ_GEMELOS.includes(c0.loc) || !inventoryData[c0.area]) return false;
+    if (vozTokens(text).words.some(w => VOZ_CARRO[w])) return false;          // dijo el carro: se respeta
+    // con varias opciones y sin decir cuál (Guantes): primero la talla («¿cuál?»), sin preguntar el carro; luego se reparte
+    if (c0.item.options?.length && !c0.opts.length) {
+        const ambos = top.filter(c => VOZ_GEMELOS.includes(c.loc) && vozKey(c.item.name) === vozKey(c0.item.name));
+        if (new Set(ambos.map(c => c.loc)).size < 2) return false;
+        voz.pending = { text, remove, keys: new Set(ambos.map(c => c.loc + ID_SEP + c.item.name)), n: ambos.length + 1, needOpt: true };
+        vozShow(heard, `${vozLabel(c0.item.name)}: ¿cuál? ${c0.item.options.join(', ')}`, true);
+        vozSay(`${vozSpeak(c0.item.name)}, ¿cuál?`);
+        return true;
+    }
+    if (c0.opts.length > 1) return false;
+    const id = vozUnidadDe(c0.item, c0.opts[0]);
+    if (top.some(c => vozUnidadDe(c.item, c.opts[0]) !== id && c.item.name !== c0.item.name)) return false;
+    const pares = VOZ_GEMELOS.map(loc => {
+        for (const it of inventoryData[c0.area][loc] || []) {
+            if (!it.options?.length && vozUnidadDe(it) === id) return { ...c0, loc, item: it, opts: [] };
+            const o = (it.options || []).find(o => vozUnidadDe(it, o) === id);
+            if (o) return { ...c0, loc, item: it, opts: [o] };
+        }
+        return null;
+    });
+    if (!pares[0] || !pares[1]) return false;
+    const [enf, ane] = pares;
+    const enfLleno = vozMarcado(c0.area, enf.loc, enf.item, enf.opts), aneLleno = vozMarcado(c0.area, ane.loc, ane.item, ane.opts);
+    const elegido = remove ? (aneLleno ? ane : enf) : (enfLleno ? ane : enf);
+    vozApply({ ...elegido, remove }, heard, text);
+    return true;
+}
+
 // aplica si está claro; si no, pregunta (materiales distintos o mismo material en dos carros)
 function vozResolve(best, heard, text, remove) {
     let top = best.filter(c => c.score === best[0].score);
+    if (vozGemelo(top, heard, text, remove)) return;
     const pref = vozPrefLoc();
     const inCarro = top.filter(c => c.loc === pref);
     if (inCarro.length) top = inCarro;
@@ -2416,7 +2459,7 @@ const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvi
             "Gasas pequeñas s/c", "Gasas Pequeñas c/c", "Gasas grandes s/c", "Gasas Grandes c/c", "Gasas (UCSI)", "Gasas (REA)",
             "Gafas Nasales", "Gafas Nasales (REA)", "Filtro", "Capnografo", "Guantes Esteriles (nº8,5)", "Guantes Esteriles (nº8)",
             "Guantes Esteriles (nº7,5)", "Guantes Esteriles (nº7)", "Guantes Esteriles (nº6,5)", "Guantes Esteriles (nº6)",
-            "Empapadores", "Empapadores (UCSI)", "Empapadores (REA)", "Bisturi", "Bisturi eléctrico", "BIC", "Abocath 22G",
+            "Empapador", "Empapador (UCSI)", "Empapador (REA)", "Bisturi", "Bisturi eléctrico", "BIC", "Abocath 22G",
             "Abocath 20G", "Abocath 18G", "Abocath 16G", "Abocath 14G", "Abocath (UCSI)", "Abocath (REA)",
             "Mascarilla Laringea (nº5)", "Mascarilla Laringea (nº4)", "Mascarilla Laringea (nº3)", "Yankauer", "Mango Lampara",
             "Placa bisturi", "Rasca", "Rotulador", "Goma aspiración", "TET (nº8)", "TET (nº7,5)", "TET (nº7)", "TET (nº6,5)",
