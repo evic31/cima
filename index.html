@@ -1865,7 +1865,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 06:44'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 06:55'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -1902,13 +1902,27 @@ function initVoz() {
         clearTimeout(vozScrollT);
         vozScrollT = setTimeout(() => { const l = document.getElementById('vozLast'); vozShow(null, l.textContent, l.classList.contains('err')); }, 150);
     }, { passive: true });
-    document.getElementById('vozLogBtn').addEventListener('click', async () => {
+    document.getElementById('vozLogBtn').addEventListener('click', () => {
         let txt = '';
         try { txt = JSON.parse(localStorage.getItem(VOZ_LOG_KEY) || '[]').join('\n'); } catch {}
-        if (!txt) return alert('Registro vacío');
-        txt = navigator.userAgent + '\n' + txt;
-        try { await navigator.clipboard.writeText(txt); alert('Registro copiado (' + txt.split('\n').length + ' frases). Pégalo en el chat.'); }
-        catch { prompt('Copia el registro:', txt); }
+        txt = navigator.userAgent + '\n' + (txt || '(vacío)');
+        // (14-nov) el portapapeles fallaba en iOS 27: el registro sale en pantalla, seleccionado, y se copia en el mismo toque
+        let ov = document.getElementById('vozLogOv');
+        if (!ov) {
+            ov = document.createElement('div'); ov.id = 'vozLogOv';
+            ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+            ov.innerHTML = '<div style="background:#fff;border-radius:12px;padding:12px;width:100%;max-width:600px;display:flex;flex-direction:column;gap:10px">' +
+                '<textarea readonly style="width:100%;height:55vh;font:13px ui-monospace,Menlo,monospace;border:1px solid #bbb;border-radius:8px;padding:8px"></textarea>' +
+                '<div id="vozLogMsg" style="text-align:center;font-weight:600"></div>' +
+                '<button style="font-size:18px;padding:10px;border-radius:10px;border:1.5px solid #0b57d0;background:#eaf1fd;color:#0b57d0;font-weight:700">✕</button></div>';
+            ov.querySelector('button').onclick = () => ov.remove();
+            document.body.appendChild(ov);
+        }
+        const ta = ov.querySelector('textarea'); ta.value = txt;
+        ta.focus(); ta.select(); ta.setSelectionRange(0, txt.length);
+        let ok = false; try { ok = document.execCommand('copy'); } catch {}
+        ov.querySelector('#vozLogMsg').textContent = ok ? 'Copiado ✓ — pégalo en el chat' : 'Mantén pulsado el texto → Seleccionar todo → Copiar';
+        if (!ok) try { navigator.clipboard.writeText(txt).then(() => { ov.querySelector('#vozLogMsg').textContent = 'Copiado ✓ — pégalo en el chat'; }); } catch {}
     });
     document.getElementById('vozHelp').addEventListener('click', () => vozSay(
         'Di el material como está escrito y la cantidad. Por ejemplo: paracetamol 3, o jeringas 10 y 5. ' +
@@ -1934,19 +1948,27 @@ function vozEv(t) {
    no volvía: «coge un producto y se para».) Todo queda en el registro 📋. */
 function vozNuevoRec(SR) {
     const rec = new SR();
-    rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = false; rec.maxAlternatives = 3;
+    // (14-nov) iOS 27 ya no hace lo que hacía el dictado de Siri (texto en vivo, tintín, cerrar la frase al callarte):
+    // lo hace la app. interimResults = ver lo que dices mientras lo dices.
+    rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
     rec.onstart = () => {
-        voz.vivo = true; clearTimeout(voz.vigia);
+        voz.vivo = true; voz.cerrado = false; clearTimeout(voz.vigia);
         if (voz.saludo) { const t = voz.saludo; voz.saludo = null; vozSay(t); }   // el saludo, cuando el micro ya tiene permiso
     };
     rec.onresult = e => {
         voz.oido = true;
+        if (voz.cerrado || voz.rec !== rec) return;            // esa frase ya se dio por terminada
+        clearTimeout(voz.cierreT);
+        let parcial = '';
         for (let i = e.resultIndex; i < e.results.length; i++) {
-            if (!e.results[i].isFinal) continue;
-            if (voz.speaking || Date.now() < voz.mudoHasta) { vozEv('ignorado (la app hablaba): «' + e.results[i][0].transcript + '»'); continue; }
-            const alts = Array.from(e.results[i]).map(a => a.transcript);
-            vozHandle(alts);
+            const r = e.results[i];
+            if (voz.speaking || Date.now() < voz.mudoHasta) { if (r.isFinal) vozEv('ignorado (la app hablaba): «' + r[0].transcript + '»'); continue; }
+            if (r.isFinal) { vozCierra(Array.from(r).map(a => a.transcript), 'frase'); return; }
+            parcial += r[0].transcript;
         }
+        if (!parcial.trim()) return;
+        document.getElementById('vozHeard').textContent = '«' + parcial.trim() + '…»';   // en vivo, tal como lo dices
+        voz.cierreT = setTimeout(() => vozCierra([parcial], 'silencio 1 s'), 1000);
     };
     rec.onerror = e => {
         if (e.error === 'aborted' && voz.trasFin) return;          // lo hemos apagado nosotros para hablar
@@ -1965,6 +1987,17 @@ function vozNuevoRec(SR) {
     return rec;
 }
 // arranca el micro; si en 2 s no ha arrancado, pide un toque (por voz) en vez de quedarse muerto
+// da la frase por terminada (la cierra el iPhone o 1 s de silencio) y la procesa una sola vez
+function vozCierra(alts, como) {
+    if (!voz?.on || voz.cerrado) return;
+    clearTimeout(voz.cierreT);
+    if (!alts.some(a => a && a.trim())) return;
+    voz.cerrado = true;
+    if (como !== 'frase') vozEv('frase cerrada por ' + como);
+    vozHandle(alts);
+    // si la respuesta no ha apagado el micro para hablar, se reinicia para empezar limpio la siguiente frase
+    if (!voz.speaking && voz.on) { try { voz.rec.abort(); } catch {} }
+}
 function vozArranca(auto) {
     if (!voz?.on || voz.paused) return;
     try { voz.rec.start(); }
@@ -1979,8 +2012,9 @@ function vozArranca(auto) {
 
 function vozStart(SR) {
     voz = { on: true, SR, rec: null, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false, vivo: false, vigia: 0, trasFin: null, saludo: null };
-    // iPhone: la voz solo se «desbloquea» si se usa dentro del toque → frase vacía y muda ahora
+    // iPhone: la voz y el sonido solo se «desbloquean» si se usan dentro del toque → frase vacía y muda ahora
     try { const u0 = new SpeechSynthesisUtterance(' '); u0.volume = 0; speechSynthesis.speak(u0); } catch {}
+    try { vozAC = vozAC || new (window.AudioContext || window.webkitAudioContext)(); vozAC.resume(); } catch {}
     voz.rec = vozNuevoRec(SR);
     vozEv('— modo voz v' + APP_BUILD + (VOZ_IOS ? ' (iPhone)' : ''));
     voz.saludo = 'Escuchando ' + vozTabName();
@@ -2010,7 +2044,7 @@ function vozResume() {
 function vozStop() {
     if (!voz) return;
     voz.on = false;
-    clearTimeout(voz.vigia); clearTimeout(voz.ttsT); clearTimeout(voz.esperaT);
+    clearTimeout(voz.vigia); clearTimeout(voz.ttsT); clearTimeout(voz.esperaT); clearTimeout(voz.cierreT);
     voz.trasFin = null;
     vozEv('— apagado');
     try { voz.rec.abort(); } catch {}
@@ -2020,7 +2054,23 @@ function vozStop() {
     document.getElementById('vozBar').classList.remove('on');
 }
 
-// habla por turnos: micro apagado del todo → voz → micro otra vez
+let vozAC = null;
+function vozDing() {
+    try {
+        const ac = vozAC; if (!ac) return 0;
+        if (ac.state !== 'running') ac.resume();
+        const t = ac.currentTime + 0.02;
+        [[1046.5, 0], [1568, 0.11]].forEach(([f, d]) => {
+            const o = ac.createOscillator(), g = ac.createGain();
+            o.type = 'sine'; o.frequency.value = f;
+            g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(0.35, t + d + 0.015); g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.28);
+            o.connect(g).connect(ac.destination); o.start(t + d); o.stop(t + d + 0.3);
+        });
+        return 380;
+    } catch { return 0; }
+}
+
+// habla por turnos: micro apagado del todo → (tintín) → voz → micro otra vez
 function vozSay(txt) {
     if (!window.speechSynthesis || !voz?.on) return;
     voz.speaking = true;
@@ -2039,9 +2089,10 @@ function vozSay(txt) {
         u.onstart = () => { sono = true; clearTimeout(voz.ttsT); voz.ttsT = setTimeout(() => back('la voz sonó pero no avisó del final'), Math.min(6000, 700 + txt.length * 75)); };
         u.onend = () => back(); u.onerror = e => back('voz error ' + (e.error || ''));
         // si no llega a sonar en 1,5 s, no esperamos más: a escuchar
-        voz.ttsT = setTimeout(() => { if (!sono) back('la voz no sonó: «' + txt + '»'); }, 1500);
+        const ding = voz.ding ? vozDing() : 0; voz.ding = false;
+        voz.ttsT = setTimeout(() => { if (!sono) back('la voz no sonó: «' + txt + '»'); }, 1500 + ding);
         if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
-        speechSynthesis.speak(u);
+        setTimeout(() => speechSynthesis.speak(u), ding);
     };
     if (voz.vivo) {
         voz.trasFin = decir;                           // se dice cuando el micro avise de que ya está apagado
@@ -2258,6 +2309,7 @@ function vozApply(c, heard, text = heard) {
     const row = changes[0]?.el.closest('.item');
     if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'start' }); row.classList.remove('voz-flash'); void row.offsetWidth; row.classList.add('voz-flash'); }
     vozShow(heard, '✔ ' + vozLabel(said));
+    voz.ding = true;            // tintín de confirmación antes de decir el producto
     vozSay(vozSpeak(said));
 }
 
