@@ -779,10 +779,10 @@ const DEFAULT_INVENTORY = {
             // ── BLOQUE 2 ──
             { g:2, name: "Filtro", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Gafas Nasales", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "TET (nº8)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "TET (nº7,5)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "TET (nº7)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "TET (nº6,5)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "TET (nº7)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "TET (nº7,5)", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "TET (nº8)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Electrodos", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Sulky", type: "number", stock: 1, storage: "FARMACIA" },
             { g:2, name: "Pomada ocular", type: "number", stock: 1, storage: "FARMACIA" },
@@ -1900,7 +1900,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 18:05'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 18:15'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
