@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reposición BLOQUE QUIRÚRGICO · CIMA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
     <style>
@@ -250,9 +250,10 @@
             padding: 0.42rem 0.6rem;
             border-radius: 7px;
             border: 1.5px solid var(--border);
-            font-size: 0.83rem;
-            font-family: 'Space Mono', monospace;
-            min-width: 125px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-variant-numeric: tabular-nums;
             background: var(--surf2);
             color: var(--text);
             cursor: pointer;
@@ -337,7 +338,7 @@
             padding: 1px 8px;
             border-radius: 999px;
             font-size: 0.76rem;
-            font-family: 'Space Mono', monospace;
+            font-family: 'IBM Plex Sans', sans-serif; font-variant-numeric: tabular-nums;
             font-weight: 500;
             flex-shrink: 0;
         }
@@ -451,7 +452,7 @@
         }
         .ef-name { text-transform: uppercase; }
         .editor-field input[type="number"] {
-            font-family: 'Space Mono', monospace;
+            font-family: 'IBM Plex Sans', sans-serif; font-variant-numeric: tabular-nums;
             max-width: 110px;
         }
         .editor-field input:focus { border-color: var(--warning); outline: none; }
@@ -591,7 +592,7 @@
             border-bottom: 1px solid var(--border); background: #fff; counter-increment: ord;
         }
         .order-list li:last-child { border-bottom: none; }
-        .order-list li::before { content: counter(ord); font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--text-muted); min-width: 1.6rem; text-align: right; }
+        .order-list li::before { content: counter(ord); font-family: 'IBM Plex Sans', sans-serif; font-variant-numeric: tabular-nums; font-size: 0.68rem; color: var(--text-muted); min-width: 1.6rem; text-align: right; }
         .order-list .oh { cursor: grab; color: var(--text-muted); font-size: 1.05rem; padding: 0.2rem 0.3rem; touch-action: none; user-select: none; }
         .order-list .on { flex: 1; font-size: 0.86rem; line-height: 1.25; }
         .order-list .on small { display: block; color: var(--text-muted); font-size: 0.72rem; }
@@ -1034,7 +1035,7 @@ function renderItem(tabName, locationName, item) {
         }).join('');
     } else {
         const val = checklistState[baseId] || '0';
-        let opts = `<option value="0">Stock OK (${item.stock})</option>`;
+        let opts = `<option value="0">OK (${item.stock})</option>`;
         for (let i = 1; i <= item.stock; i++) opts += `<option value="${i}" ${val == i ? 'selected' : ''}>Faltan ${i}</option>`;
         html = `<div class="number-group"><select id="${baseId}">${opts}</select></div>`;
     }
@@ -1889,7 +1890,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 15:45'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 16:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2538,7 +2539,7 @@ function closeRef() {
     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999;align-items:center;justify-content:center">
     <div onclick="event.stopPropagation()"
         style="background:#fff;border-radius:12px;padding:24px 28px;max-width:320px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
-        <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--blue);margin-bottom:8px;letter-spacing:.08em">
+        <div style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:var(--blue);margin-bottom:8px;letter-spacing:.08em">
             REVISIÓN & REPOSICIÓN INTERACTIVA BQ</div>
         <div style="font-size:13px;color:var(--txt);line-height:1.7">
         Elaborado por Eduardo FPV<br>
@@ -2546,7 +2547,7 @@ function closeRef() {
         CIMA Barcelona · 2026
         </div>
         <div onclick="document.getElementById('info-modal').style.display='none'"
-            style="margin-top:16px;font-family:'Space Mono',monospace;font-size:10px;color:var(--txt2);cursor:pointer">cerrar
+            style="margin-top:16px;font-family:'IBM Plex Sans',sans-serif;font-size:10px;color:var(--txt2);cursor:pointer">cerrar
         </div>
     </div>
 </div>
