@@ -187,6 +187,10 @@
         .item.item-fila { flex-direction: row; align-items: center; gap: 0.75rem; }
         .item.item-fila .item-name { flex: 1; width: auto; min-width: 0; }
         .item.item-fila .item-controls { width: auto; flex-shrink: 0; justify-content: flex-end; }
+        /* nombres de opción largos: el nombre y las casillas comparten la primera línea; el resto, a la derecha y a su medida */
+        .item.item-abajo { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; }
+        .item.item-abajo .item-name { width: auto; margin-right: auto; padding-right: 0.35rem; }
+        .item.item-abajo .item-controls { display: contents; }
         .item-controls.rejilla { display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--filas), auto); direction: rtl; gap: 0.35rem 0.4rem; }
         .item-controls.rejilla .checkbox-group { direction: ltr; display: flex; }
         .item-controls.rejilla .checkbox-group label { flex: 1; }
@@ -750,6 +754,7 @@ const DEFAULT_INVENTORY = {
             { g:2, name: "Rasca", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Bisturi eléctrico", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Rotulador", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Alargo bisturí", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Jeringa cono ancho", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 3 ──
             { g:3, name: "SF 500ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
@@ -1067,7 +1072,7 @@ function renderItem(tabName, locationName, item) {
     const filas = item.type === 'checkbox' && item.options?.length > 1 ? filasOpciones(item.options) : 1;
     const enFila = filas > 0; // a la derecha del nombre; 0 = no cabe, va debajo
     const rejilla = filas > 1 ? ` rejilla" style="--filas:${filas}` : '';
-    return `<div class="item ${gClass}${enFila ? ' item-fila' : ''}"><span class="item-name">${item.name}</span><div class="item-controls${rejilla}">${html}</div></div>`;
+    return `<div class="item ${gClass}${enFila ? ' item-fila' : ' item-abajo'}"><span class="item-name">${item.name}</span><div class="item-controls${rejilla}">${html}</div></div>`;
 }
 
 // Casillas de varias opciones al lado del nombre: en columnas de arriba abajo y de derecha a izquierda
@@ -1078,8 +1083,7 @@ function filasOpciones(opts) {
     if (opts.every(o => o.length <= 2) && opts.reduce((w, o) => w + ancho(o) + 8, -8) <= MAX) return 1; // S M L en una línea
     if (total(2) <= MAX) return 2;
     if (total(3) <= MAX) return 3;
-    if (total(opts.length) <= MAX) return opts.length; // nombres largos: una sola columna, una encima de otra
-    return 0;
+    return 0; // nombres largos (Antisépticos, Kit sondaje): debajo del nombre, cada casilla a su medida, a la derecha
 }
 
 // ─────────────────────────────────────────────
@@ -1896,7 +1900,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 17:35'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 18:05'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2378,7 +2382,7 @@ const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvi
             "Guedel #5 11mm (celeste/ naranja)", "Guedel #4 10mm (rojo)", "Guedel #3 90mm (amarillo)", "Guedel #2 80mm (verde)",
             "Guedel (REA)", "Jeringas bomba", "Sistema jeringa", "Sistemas (REA)", "Sistemas (UCSI)", "Tapón via (REA)", "Tapon via",
             "Llave 3p (UCSI)", "Llave 3p (REA)", "Sistema estandar", "Alargadera", "Alargadera (UCSI)", "Alargadera (REA)",
-            "Llave 3Pasos", "Jeringa cono ancho", "Botes anatomia", "Aguja carga (UCSI)", "Aguja carga (REA)", "Vendas gasa",
+            "Llave 3Pasos", "Alargo bisturí", "Jeringa cono ancho", "Botes anatomia", "Aguja carga (UCSI)", "Aguja carga (REA)", "Vendas gasa",
             "Smart", "Jeringas (UCSI)", "Jeringas", "Agujas", "Mefix pequeño", "Mefix", "Esparadrapo", "Electrodos",
             "Cal sodada DRAGER", "Cal sodada G.Electric", "Guantes (UCSI)", "Guantes (REA)", "Guantes",
             "Sondas Aspiración #12 (Blanco)", "Sondas Aspiración #10 (Negro)", "Sondas Aspiración #14 (Verde)",
