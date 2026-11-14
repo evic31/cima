@@ -929,6 +929,10 @@ function checkUpdate() {
         }).catch(() => {});
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !voz?.on) checkUpdate(); });
+// al salir de la app con un nombre o stock a medio escribir en el Editor: guardarlo (el blur dispara el change)
+const guardaEditorAbierto = () => { const a = document.activeElement; if (a && a.closest && a.closest('.ed-row')) a.blur(); };
+document.addEventListener('visibilitychange', () => { if (document.hidden) guardaEditorAbierto(); });
+window.addEventListener('pagehide', guardaEditorAbierto);
 
 document.addEventListener('DOMContentLoaded', () => {
     checkUpdate();
@@ -967,6 +971,8 @@ function buildInventory() {
     delete inventoryData.template_quirofano;
     // aplicar edits guardados
     let arreglados = false;
+    let mayusHecho = false;
+    try { mayusHecho = !!localStorage.getItem('mayusArreglo_v1'); } catch (e) {}
     for (const editKey in inventoryEdits) {
         const [area, location, origName] = editKey.split(ID_SEP);
         if (!inventoryData[area]?.[location]) continue;
@@ -974,7 +980,8 @@ function buildInventory() {
         if (!item) continue;
         const edit = inventoryEdits[editKey];
         // el editor antiguo ponía el nombre en MAYÚSCULAS al guardar solo el stock («Pegatina» → «PEGATINA»): se deshace
-        if (edit.name && edit.name !== origName && edit.name.toLocaleUpperCase('es') === origName.toLocaleUpperCase('es')) {
+        // solo nombres ENTEROS en mayúsculas y una única vez: las correcciones tuyas (p. ej. «Mefix Pequeño») se respetan
+        if (!mayusHecho && edit.name && edit.name !== origName && edit.name === edit.name.toLocaleUpperCase('es') && origName !== origName.toLocaleUpperCase('es') && edit.name.toLocaleUpperCase('es') === origName.toLocaleUpperCase('es')) {
             const mal = [area, location, edit.name].join(ID_SEP), bien = [area, location, origName].join(ID_SEP);
             for (const k of Object.keys(checklistState)) if (k === mal || k.startsWith(mal + ID_SEP)) { checklistState[bien + k.slice(mal.length)] = checklistState[k]; delete checklistState[k]; }
             delete edit.name;
@@ -986,6 +993,7 @@ function buildInventory() {
         if (edit.stock !== undefined && item.type === 'number') item.stock = edit.stock;
         if (edit.off) item.off = true;
     }
+    if (!mayusHecho) try { localStorage.setItem('mayusArreglo_v1', '1'); } catch (e) {}
     if (arreglados) {
         localStorage.setItem(INVENTORY_EDIT_KEY, JSON.stringify(inventoryEdits));
         localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
@@ -1964,7 +1972,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 14:55'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 15:07'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
