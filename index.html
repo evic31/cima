@@ -1807,6 +1807,8 @@ const VOZ_SYN = [
     [/\bsuero fisiologico\b|\bfisiologico\b|\bsuero\b/g, 'sf'], [/\bringer lactato\b|\bringer\b|\blactato\b/g, 'rl'],
     [/\bglucosalino\b|\bglucosalinos\b/g, 'sgs'], [/\btubos?\b/g, 'tet'], [/\bmascarillas? laringeas?\b/g, 'mascarilla laringea'],
     [/\bpor ciento\b/g, ''],
+    // Mefix: cómo lo suele escribir el iPhone
+    [/\b(netflix|nefix|mefisto|mefis|mefi|mefik|mefic|mefil|metfix|methix|mephix|mex|meeks|me fix|me fis|me fixe|me fixed|me fijo|me fijas|me fixes)\b/g, 'mefix'],
     [/\berre ele\b/g, 'rl'], [/\bese efe\b/g, 'sf'], [/\bese ge ese\b/g, 'sgs'],
     [/\bcoma cinco\b|\by medio\b|\bymedio\b/g, ' .5']
 ];
@@ -1938,7 +1940,7 @@ const VOZ_SPEAK = [
     [/\bc\/c\b/gi, 'con contraste'], [/\bs\/c\b/gi, 'sin contraste'],
     [/Clorh\./g, 'clorhexidina'], [/Alc\./g, 'alcohólica'], [/Acu\./g, 'acuosa'], [/Oxig\./g, 'oxigenada'],
     [/G\.Electric/g, 'General Electric'], [/\bAc\. /g, 'ácido '],
-    [/\bSF lavados\b/g, 'suero de lavados'], [/\bSF\b/g, 'fisiológico'], [/\bRL\b/g, 'Ringer lactato'], [/\bSGS\b/g, 'glucosalino'], [/\bTET\b/g, 'tubo'], [/\bBIC\b/g, 'bomba de analgesia'],
+    [/\bSF lavados\b/g, 'suero de lavados'], [/\bMefix G\b/g, 'Mefix grande'], [/\bMefix P\b/g, 'Mefix pequeño'], [/\bSF\b/g, 'fisiológico'], [/\bRL\b/g, 'Ringer lactato'], [/\bSGS\b/g, 'glucosalino'], [/\bTET\b/g, 'tubo'], [/\bBIC\b/g, 'bomba de analgesia'],
     [/nº|#/g, 'número '], [/(\d),(\d)/g, '$1 coma $2'], [/(\d)\s?m[lL]\b/g, '$1 mililitros'], [/(\d)\s?mg\b/g, '$1 miligramos'],
     [/(\d)[gG]\b/g, '$1 G'], [/(\d)\s?L\b/g, '$1 litros'], [/[()]/g, ' '], [/\//g, ' '], [/Carro /g, '']
 ];
@@ -1946,7 +1948,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 20:40'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 20:55'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
