@@ -865,7 +865,7 @@ const DEFAULT_INVENTORY = {
             { g: 6, name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g: 6, name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g: 6, name: "Alcohol", type: "checkbox", storage: "FARMACIA" },
-            { g: 6, name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA" },
+            { g: 6, name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA", unidad: "Contenedor Agujas" },
             { g: 6, name: "Jeringas", type: "checkbox", options: ["20cc", "10cc", "5cc", "3cc"], storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Agujas", type: "checkbox", options: ["Carga", "Azul", "Verde", "Amarilla", "Naranja"], storage: "ALMACÉN PASILLO DERECHO" },
 
@@ -1142,7 +1142,7 @@ function renderSummary() {
             for (const item of inventoryData[area][location]) {
                 const base = [area, location, item.name].join(ID_SEP);
                 if (item.options?.length) item.options.forEach(o => { const id = [base, o].join(ID_SEP); locMap[id] = storageOf(item, o); tabPos[id] = n++; if (item.optUnit?.[o]) unitMap[id] = item.optUnit[o]; });
-                else { locMap[base] = item.storage; tabPos[base] = n++; }
+                else { locMap[base] = item.storage; tabPos[base] = n++; if (item.unidad) unitMap[base] = item.unidad; } // unidad: suma con otro producto
             }
         }
     }
@@ -1942,7 +1942,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 19:15'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 19:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2470,7 +2470,7 @@ function orderCatalog() {
     const cat = {}, opts = {}, areas = {}, optsSt = {};
     for (const area in inventoryData) for (const loc in inventoryData[area]) for (const it of inventoryData[area][loc]) {
         const st = it.storage || 'Desconocido';
-        (cat[st] ||= new Set()).add(it.name);
+        (cat[st] ||= new Set()).add(it.unidad || it.name);
         Object.values(it.optStorage || {}).forEach(o => (cat[o] ||= new Set()).add(it.name));
         if (it.options?.length) it.options.forEach(o => { const s2 = storageOf(it, o); const l = ((optsSt[s2] ||= {})[it.name] ||= []); if (!l.includes(o)) l.push(o); });
         if (it.options?.length && !opts[it.name]) opts[it.name] = it.options;
