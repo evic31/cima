@@ -474,6 +474,15 @@
         .editor-save-btn.saved {
             background: var(--success);
         }
+        .ed-grupo { margin-top: 1rem; }
+        .ed-grupo h3 { font-size: 1rem; font-weight: 600; text-align: center; color: var(--text); padding: 0.4rem; background: var(--bg); border-radius: 8px; }
+        .ed-loc { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-align: center; margin: 0.7rem 0 0.2rem; }
+        .ed-row { display: flex; gap: 0.5rem; align-items: center; padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
+        .ed-row input { border: 1.5px solid var(--border); border-radius: 7px; padding: 0.4rem 0.55rem; font-family: 'IBM Plex Sans', sans-serif; font-size: 16px; background: #fff; color: var(--text); transition: border-color 0.2s, background 0.2s; }
+        .ed-row input:focus { border-color: var(--warning); outline: none; }
+        .ed-name { flex: 1; min-width: 0; }
+        .ed-stock { width: 64px; flex-shrink: 0; text-align: center; font-variant-numeric: tabular-nums; }
+        .ed-row.ok input { border-color: var(--success); background: #f0fdf4; }
         .editor-no-results {
             text-align: center;
             color: var(--text-muted);
@@ -1576,68 +1585,60 @@ function renderEditorHTML() {
             <h2>✏️ Editor de Productos</h2>
             <div class="search-input-wrap">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="editorSearch" placeholder="Busca un producto… ej: Propofol, Bisturi, TET…" autocomplete="off" autocorrect="off" spellcheck="false">
+                <input type="text" id="editorSearch" placeholder="Filtrar…" autocomplete="off" autocorrect="off" spellcheck="false">
             </div>
-            <div id="editor-results"><p class="editor-hint">Escribe para buscar en todos los quirófanos y áreas.</p></div>
+            <div id="editor-results"></div>
         </div>
     </div>`;
+}
+
+// Listado completo editable: Reanimación, UCSI y Quirófanos (Q1–Q8 + Hemodinamia comparten material:
+// una sola fila cambia todos a la vez). Se guarda solo al cambiar un campo.
+function renderEditorList(q = '') {
+    const resultsEl = document.getElementById('editor-results');
+    if (!resultsEl) return;
+    q = q.trim().toLowerCase();
+    const grupos = {}, porClave = {};
+    for (const area in inventoryData) {
+        const esQ = area.startsWith('Quirófano') || area === 'Hemodinamia';
+        const g = esQ ? 'Quirófanos' : area;
+        for (const location in inventoryData[area]) {
+            for (const item of inventoryData[area][location]) {
+                if (q && !item.name.toLowerCase().includes(q)) continue;
+                const k = g + ID_SEP + location + ID_SEP + item.name;
+                if (porClave[k]) { porClave[k].areas.push(area); porClave[k].stocks.push(item.stock); continue; }
+                porClave[k] = { areas: [area], location, item, stocks: [item.stock] };
+                ((grupos[g] ||= {})[location] ||= []).push(porClave[k]);
+            }
+        }
+    }
+    const orden = ['Reanimación', 'UCSI', 'Quirófanos'].filter(g => grupos[g]).concat(Object.keys(grupos).filter(g => !['Reanimación', 'UCSI', 'Quirófanos'].includes(g)));
+    if (!orden.length) { resultsEl.innerHTML = '<p class="editor-no-results">Sin resultados.</p>'; return; }
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    resultsEl.innerHTML = orden.map(g => `
+        <section class="ed-grupo">
+            <h3>${g === 'Quirófanos' ? 'Quirófanos · Q1–Q8 y HEM' : g}</h3>
+            ${Object.entries(grupos[g]).map(([loc, filas]) => `
+                <div class="ed-loc">${loc}</div>
+                ${filas.map(({ areas, location, item, stocks }) => {
+                    const sMin = Math.min(...stocks), sMax = Math.max(...stocks);
+                    const stock = item.type !== 'number' ? ''
+                        : `<input class="ed-stock" type="number" inputmode="numeric" min="1" max="999" value="${sMin === sMax ? sMin : ''}" placeholder="${sMin}–${sMax}">`;
+                    return `<div class="ed-row" data-areas="${esc(areas.join(ID_SEP))}" data-location="${esc(location)}" data-name="${esc(item.name)}" data-type="${item.type}">
+                        <input class="ed-name" type="text" value="${esc(item.name)}" autocomplete="off" autocorrect="off" spellcheck="false">${stock}
+                    </div>`;
+                }).join('')}`).join('')}
+        </section>`).join('');
 }
 
 function bindEditor() {
     const input = document.getElementById('editorSearch');
     if (!input) return;
-    input.addEventListener('input', () => {
-        const q = input.value.trim().toLowerCase();
-        const resultsEl = document.getElementById('editor-results');
-        if (q.length < 2) {
-            resultsEl.innerHTML = '<p class="editor-hint">Escribe al menos 2 caracteres para buscar.</p>';
-            return;
-        }
-        // Collect matches: iterate inventoryData but match against original names too
-        const matches = [];
-        for (const area in inventoryData) {
-            for (const location in inventoryData[area]) {
-                for (const item of inventoryData[area][location]) {
-                    if (item.name.toLowerCase().includes(q)) {
-                        // find original name from DEFAULT (antes de edits)
-                        const editKey = findEditKey(area, location, item.name);
-                        matches.push({ area, location, item, editKey });
-                    }
-                }
-            }
-        }
-        if (!matches.length) {
-            resultsEl.innerHTML = '<p class="editor-no-results">No se encontraron productos con ese nombre.</p>';
-            return;
-        }
-        resultsEl.innerHTML = matches.slice(0, 20).map(({ area, location, item, editKey }, idx) => {
-            const isNum = item.type === 'number';
-            const badge = isNum
-                ? `<span class="editor-type-badge badge-number">stock</span>`
-                : `<span class="editor-type-badge badge-check">check</span>`;
-            return `
-            <div class="editor-result-item" data-idx="${idx}" data-edit-key="${editKey}" data-original-name="${item.name}" data-type="${item.type}">
-                <div class="editor-result-meta">
-                    <span>${area}</span><span>${location}</span>${badge}
-                </div>
-                <div class="editor-fields">
-                    <div class="editor-field">
-                        <label>Nombre del producto</label>
-                        <input type="text" class="ef-name" value="${item.name}" placeholder="Nombre">
-                    </div>
-                    ${isNum ? `<div class="editor-field">
-                        <label>Stock máximo</label>
-                        <input type="number" class="ef-stock" value="${item.stock}" min="1" max="999" placeholder="Stock">
-                    </div>` : ''}
-                    <button class="editor-save-btn">Guardar</button>
-                </div>
-            </div>`;
-        }).join('');
-
-        // bind save buttons
-        resultsEl.querySelectorAll('.editor-save-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleEditorSave(btn));
-        });
+    renderEditorList();
+    input.addEventListener('input', () => renderEditorList(input.value));
+    document.getElementById('editor-results').addEventListener('change', e => {
+        const row = e.target.closest('.ed-row');
+        if (row) saveEditorRow(row);
     });
 }
 
@@ -1660,49 +1661,38 @@ function findEditKey(area, location, currentName) {
     return [area, location, currentName].join(ID_SEP);
 }
 
-function handleEditorSave(btn) {
-    const card = btn.closest('.editor-result-item');
-    const editKey  = card.dataset.editKey;
-    const origName = card.dataset.originalName;
-    const type     = card.dataset.type;
+function saveEditorRow(row) {
+    const areas    = row.dataset.areas.split(ID_SEP);
+    const location = row.dataset.location;
+    const origName = row.dataset.name;
+    const type     = row.dataset.type;
+    const newName  = row.querySelector('.ed-name').value.trim() || origName;
+    const stockEl  = row.querySelector('.ed-stock');
+    const newStock = stockEl && stockEl.value !== '' ? parseInt(stockEl.value) : null;
+    const cambiaStock = type === 'number' && newStock > 0;
+    if (newName === origName && !cambiaStock) { row.querySelector('.ed-name').value = origName; return; }
 
-    const newName  = card.querySelector('.ef-name')?.value.trim().toUpperCase();
-    const newStock = card.querySelector('.ef-stock') ? parseInt(card.querySelector('.ef-stock').value) : null;
-
-    if (!newName) return;
-
-    // Actualiza edits en memoria
-    if (!inventoryEdits[editKey]) inventoryEdits[editKey] = {};
-    inventoryEdits[editKey].name = newName;
-    if (type === 'number' && newStock > 0) {
-        inventoryEdits[editKey].stock = newStock;
-
-        // Resetear a 0 el estado del checklist para este item en TODOS los quirófanos
-        // El editKey es area||location||origName → necesitamos limpiar checklistState
-        const [area, location] = editKey.split(ID_SEP);
-        const keysToDelete = Object.keys(checklistState).filter(k => {
-            const parts = k.split(ID_SEP);
-            // el nombre puede haber cambiado, buscar por area y location
-            return parts[0] === area && parts[1] === location && parts[2] === origName;
-        });
-        keysToDelete.forEach(k => delete checklistState[k]);
-        localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
-    }
-
-    // Guardar edits
+    areas.forEach(area => {
+        const editKey = findEditKey(area, location, origName);
+        const ed = inventoryEdits[editKey] ||= {};
+        if (newName !== origName) ed.name = newName;
+        if (cambiaStock) {
+            ed.stock = newStock;
+            // resetear lo marcado de este producto en esa área (el máximo ha cambiado)
+            Object.keys(checklistState).forEach(k => {
+                const parts = k.split(ID_SEP);
+                if (parts[0] === area && parts[1] === location && parts[2] === origName) delete checklistState[k];
+            });
+        }
+    });
+    if (cambiaStock) localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
     localStorage.setItem(INVENTORY_EDIT_KEY, JSON.stringify(inventoryEdits));
-
-    // Reconstruir inventario y rerenderizar pestañas de checklist
     buildInventory();
     reRenderChecklistTabs();
-
-    // feedback visual
-    btn.textContent = '✔ Guardado';
-    btn.classList.add('saved');
-    // actualiza el campo origName del card para futuras ediciones en la misma sesión
-    card.dataset.originalName = newName;
-    card.dataset.editKey = [editKey.split(ID_SEP)[0], editKey.split(ID_SEP)[1], newName].join(ID_SEP);
-    setTimeout(() => { btn.textContent = 'Guardar'; btn.classList.remove('saved'); }, 1500);
+    row.dataset.name = newName;
+    if (stockEl && cambiaStock) { stockEl.placeholder = ''; }
+    row.classList.add('ok');
+    setTimeout(() => row.classList.remove('ok'), 1200);
 }
 
 // Rerenderiza solo las pestañas del checklist (no Editor ni RESUMEN)
@@ -1891,7 +1881,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 16:35'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 17:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
