@@ -1865,7 +1865,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 06:55'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 13:29'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -1934,12 +1934,31 @@ function initVoz() {
 const VOZ_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 // registro de lo que hace el micro (sale con 📋 junto a las frases) para saber por qué se corta
 function vozEv(t) {
+    const linea = `${new Date().toLocaleTimeString('es-ES')} · ${t}`;
     try {
         const log = JSON.parse(localStorage.getItem(VOZ_LOG_KEY) || '[]');
-        log.push(`${new Date().toLocaleTimeString('es-ES')} · ${t}`);
+        log.push(linea);
         localStorage.setItem(VOZ_LOG_KEY, JSON.stringify(log.slice(-80)));
     } catch {}
+    vozRemoto(linea);
 }
+// (14-nov) el registro se manda solo al servidor de Edu (solo material y micro, sin pacientes) para diagnosticar sin copiar nada
+const VOZ_REMOTO = 'https://mydriv.xyz/repolog.php';
+const VOZ_SESION = Math.random().toString(36).slice(2, 7);
+let vozCola = [], vozColaT = 0, vozUAenviado = false;
+function vozRemoto(linea) {
+    if (!vozUAenviado) { vozCola.push('sesión ' + VOZ_SESION + ' · ' + navigator.userAgent); vozUAenviado = true; }
+    vozCola.push(linea);
+    if (!vozColaT) vozColaT = setTimeout(vozEnvia, 4000);
+}
+function vozEnvia() {
+    clearTimeout(vozColaT); vozColaT = 0;
+    if (!vozCola.length) return;
+    const txt = vozCola.join('\n').slice(0, 7900); vozCola = [];
+    try { if (!navigator.sendBeacon(VOZ_REMOTO, txt)) fetch(VOZ_REMOTO, { method: 'POST', body: txt, keepalive: true, mode: 'no-cors' }); } catch {}
+}
+window.addEventListener('pagehide', vozEnvia);
+document.addEventListener('visibilitychange', () => { if (document.hidden) vozEnvia(); });
 
 /* ── Motor de voz (14-nov, iOS 27) ──
    El iPhone no deja sonar la voz mientras el micro escucha. Por turnos, como en septiembre pero bien:
@@ -2111,7 +2130,8 @@ const vozTabName = () => { const t = vozTab(); return !t || t === 'RESUMEN' || t
 function vozShow(heard, msg, err) {
     if (heard) try {
         const log = JSON.parse(localStorage.getItem(VOZ_LOG_KEY) || '[]');
-        log.push(`${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} [${vozTabName()}] «${voz?.lastAlts || heard}» → ${msg || ''}`);
+        const ln = `${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} [${vozTabName()}] «${voz?.lastAlts || heard}» → ${msg || ''}`;
+        log.push(ln); vozRemoto(ln);
         localStorage.setItem(VOZ_LOG_KEY, JSON.stringify(log.slice(-60)));
     } catch {}
     const locs = inventoryData[vozTab()] ? Object.keys(inventoryData[vozTab()]) : [];
