@@ -1809,6 +1809,13 @@ const VOZ_SYN = [
     [/\bpor ciento\b/g, ''],
     // «set» de aspiración: el iPhone escribe «7», «sed», «sec»… (y el 7 se tomaba como cantidad)
     [/\b(7|siete|sed|sec|sez|zet|zed|cet|ser)\s+(de\s+)?aspiracion\b/g, 'set aspiracion'],
+    // Nobecutan y Yankauer: cómo los suele escribir el iPhone
+    [/\b(no ?be ?cutan|no ?ve ?cutan|nobel ?cutan|novel ?cutan|nove ?kutan|nobe ?kutan|no ?be ?cuta|no ?ve ?cuta|nobecut|novecut|nove cuta)\b/g, 'nobecutan'],
+    [/\b(yan ?kauer|yan ?cauer|yan ?kawer|yan ?cawer|yan ?kower|yan ?cower|yan ?cuer|jan ?kauer|jan ?cauer|llan ?kauer|llan ?cauer|yankee|yanqui|yanker|yonkauer|yancower|yankower)\b/g, 'yankauer'],
+    // Gelafundina: el iPhone escribe «gelatina» (y acababa en Pegatina); también se dice Gelaspan
+    [/\b(gelatinas?|gela fundina|gelafundina|gelafundinas|gelaspan|gela span|gelas pan|gelaspam|helaspan|gelafuncina)\b/g, 'gelafundina'],
+    // Sulky: el iPhone escribe «Ski»
+    [/\b(skis?|sulki|sulkis|sulqui|sulquis|sul ki|sul qui|suki|sully|sulli|silky|sulkys)\b/g, 'sulky'],
     // Mefix: cómo lo suele escribir el iPhone
     [/\b(netflix|nefix|mefisto|mefis|mefi|mefik|mefic|mefil|metfix|methix|mephix|mex|meeks|me fix|me fis|me fixe|me fixed|me fijo|me fijas|me fixes)\b/g, 'mefix'],
     [/\berre ele\b/g, 'rl'], [/\bese efe\b/g, 'sf'], [/\bese ge ese\b/g, 'sgs'],
@@ -1950,7 +1957,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 14:46'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 14:48'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2214,7 +2221,8 @@ function vozShow(heard, msg, err) {
 function vozHandle(alts) {
     const heard = alts[0].trim();
     voz.lastAlts = alts.map(a => a.trim()).join(' | ');
-    const n = vozNorm(heard);
+    let n = vozNorm(heard);
+    VOZ_SYN.forEach(([re, rep]) => { n = n.replace(re, rep); }); // «no ve cután» = Nobecutan, no la orden «no»
     // ── órdenes ──
     if (/^(para|parar|stop|fin|terminar|apagar)$/.test(n)) { vozSay('Apagado'); setTimeout(vozStop, 900); return vozShow(heard, 'Apagado'); }
     if (/^(deshacer|deshaz|atras|borra eso|anula)$/.test(n)) return vozUndo(heard);
