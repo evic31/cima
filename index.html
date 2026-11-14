@@ -1865,7 +1865,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 05:35'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 06:36'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -1936,7 +1936,7 @@ function vozNuevoRec(SR) {
         for (let i = e.resultIndex; i < e.results.length; i++) {
             if (!e.results[i].isFinal) continue;
             // mientras la app habla (y un instante después) no se hace caso: es su propia voz
-            if (voz.speaking || Date.now() < voz.mudoHasta) continue;
+            if (voz.speaking || Date.now() < voz.mudoHasta) { vozEv('ignorado (la app hablaba): «' + e.results[i][0].transcript + '»'); continue; }
             const alts = Array.from(e.results[i]).map(a => a.transcript);
             vozHandle(alts);
         }
@@ -2011,9 +2011,15 @@ function vozSay(txt) {
     voz.speaking = true;
     const u = new SpeechSynthesisUtterance(txt);
     u.lang = 'es-ES'; u.rate = 1.1;
-    const back = () => { if (!voz) return; voz.speaking = false; voz.mudoHasta = Date.now() + 700; };
-    u.onend = back; u.onerror = back;
-    speechSynthesis.cancel();
+    // (14-nov) en iOS 27 el aviso de «terminé de hablar» puede no llegar nunca y la app se quedaba sorda:
+    // por si acaso, deja de ignorar al cabo del tiempo que tarda en decir la frase
+    let hecho = false;
+    const back = motivo => { if (hecho || !voz) return; hecho = true; clearTimeout(voz.ttsT); if (motivo) vozEv(motivo); voz.speaking = false; voz.mudoHasta = Date.now() + 500; };
+    u.onend = () => back(); u.onerror = e => back('voz error ' + (e.error || ''));
+    clearTimeout(voz.ttsT);
+    voz.ttsT = setTimeout(() => back('la voz no avisó de que terminó'), Math.min(5000, 500 + txt.length * 65));
+    // cancel() justo antes de speak() hace que Safari a veces no diga nada: solo si hay algo sonando
+    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
     speechSynthesis.speak(u);
 }
 
