@@ -184,6 +184,9 @@
             border-bottom: 1px solid var(--border);
         }
         .item:last-child { border-bottom: none; }
+        .item.item-fila { flex-direction: row; align-items: center; gap: 0.75rem; }
+        .item.item-fila .item-name { flex: 1; width: auto; min-width: 0; }
+        .item.item-fila .item-controls { width: auto; flex-shrink: 0; justify-content: flex-end; }
         .item.g-1, .item.g-3, .item.g-5 { background: #ffffff; }
         .item.g-2, .item.g-4            { background: #ffffff; }
         /* Carro Enfermeria — verde menta en impares */
@@ -1030,7 +1033,8 @@ function renderItem(tabName, locationName, item) {
         html = `<div class="number-group"><select id="${baseId}">${opts}</select></div>`;
     }
     const gClass = item.g ? `g-${item.g}` : '';
-    return `<div class="item ${gClass}"><span class="item-name">${item.name}</span><div class="item-controls">${html}</div></div>`;
+    const enFila = item.type !== 'checkbox' || !(item.options?.length > 1); // desplegable o una sola casilla: a la derecha del nombre
+    return `<div class="item ${gClass}${enFila ? ' item-fila' : ''}"><span class="item-name">${item.name}</span><div class="item-controls">${html}</div></div>`;
 }
 
 // ─────────────────────────────────────────────
@@ -1865,7 +1869,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 13:42'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 14:20'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
