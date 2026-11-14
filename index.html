@@ -1807,6 +1807,8 @@ const VOZ_SYN = [
     [/\bsuero fisiologico\b|\bfisiologico\b|\bsuero\b/g, 'sf'], [/\bringer lactato\b|\bringer\b|\blactato\b/g, 'rl'],
     [/\bglucosalino\b|\bglucosalinos\b/g, 'sgs'], [/\btubos?\b/g, 'tet'], [/\bmascarillas? laringeas?\b/g, 'mascarilla laringea'],
     [/\bpor ciento\b/g, ''],
+    // «set» de aspiración: el iPhone escribe «7», «sed», «sec»… (y el 7 se tomaba como cantidad)
+    [/\b(7|siete|sed|sec|sez|zet|zed|cet|ser)\s+(de\s+)?aspiracion\b/g, 'set aspiracion'],
     // Mefix: cómo lo suele escribir el iPhone
     [/\b(netflix|nefix|mefisto|mefis|mefi|mefik|mefic|mefil|metfix|methix|mephix|mex|meeks|me fix|me fis|me fixe|me fixed|me fijo|me fijas|me fixes)\b/g, 'mefix'],
     [/\berre ele\b/g, 'rl'], [/\bese efe\b/g, 'sf'], [/\bese ge ese\b/g, 'sgs'],
@@ -1948,7 +1950,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 14:44'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 14:46'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2397,6 +2399,8 @@ function vozMatch(area, text) {
                 if (N.nums.length && !hitNums.length) score -= 4;
                 if (opts.length && matched) score += 3 + optWords * 2;
                 if (carroWords.some(w => VOZ_CARRO[w] === loc)) score += 5;
+                // la palabra de carro forma parte del nombre («Set aspiración anestesia»): cuenta como acierto del nombre
+                score += N.words.filter(w => VOZ_CARRO[w] && carroWords.includes(w)).length * 10;
                 const c = { area, loc, item, opts: opts.map(h => h.o), qty: nums.length ? Math.round(nums[0]) : null, score };
                 if (!bestC || c.score > bestC.score) bestC = c;
             });
