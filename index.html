@@ -1865,7 +1865,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 00:56'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 05:31'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -1906,19 +1906,31 @@ function initVoz() {
         let txt = '';
         try { txt = JSON.parse(localStorage.getItem(VOZ_LOG_KEY) || '[]').join('\n'); } catch {}
         if (!txt) return alert('Registro vacío');
+        txt = navigator.userAgent + '\n' + txt;
         try { await navigator.clipboard.writeText(txt); alert('Registro copiado (' + txt.split('\n').length + ' frases). Pégalo en el chat.'); }
         catch { prompt('Copia el registro:', txt); }
     });
-    document.getElementById('vozHelp').addEventListener('click', () => vozSay(
+    document.getElementById('vozHelp').addEventListener('click', () => (VOZ_IOS ? alert : vozSay)(
         'Di el material como está escrito y la cantidad. Por ejemplo: paracetamol 3, o jeringas 10 y 5. ' +
         'Puedes añadir el carro en la frase, por ejemplo: empapadores enfermería. ' +
         'Di anestesia o enfermería para elegir carro, quirófano 3 para cambiar, quita y el material para desmarcar, deshacer, o para.'));
 }
 
-function vozStart(SR) {
+// iPhone/iPad: si la web habla, iOS cambia el audio y cierra el micro → allí la confirmación es solo en pantalla
+const VOZ_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// registro de lo que hace el micro (sale con 📋 junto a las frases) para saber por qué se corta
+function vozEv(t) {
+    try {
+        const log = JSON.parse(localStorage.getItem(VOZ_LOG_KEY) || '[]');
+        log.push(`${new Date().toLocaleTimeString('es-ES')} · ${t}`);
+        localStorage.setItem(VOZ_LOG_KEY, JSON.stringify(log.slice(-80)));
+    } catch {}
+}
+
+function vozNuevoRec(SR) {
     const rec = new SR();
     rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = false; rec.maxAlternatives = 3;
-    voz = { on: true, rec, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false };
+    rec.onstart = () => { voz.vivo = true; clearTimeout(voz.vigia); };
     rec.onresult = e => {
         voz.oido = true;
         for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -1930,14 +1942,34 @@ function vozStart(SR) {
         }
     };
     rec.onerror = e => {
+        vozEv('error ' + e.error);
         if (e.error !== 'not-allowed' && e.error !== 'service-not-allowed') return;
         if (!voz.oido) { vozShow('', 'Sin permiso para el micrófono', true); return vozStop(); }
         vozPausa();   // ya funcionaba: Safari no deja rearrancar sin un toque
     };
     // el reconocimiento se corta tras silencios: se reengancha solo mientras el modo esté activo
     // (14-nov) ya NO se corta para hablar: rearrancar sin toque en iPhone daba «sin permiso» y apagaba el modo voz
-    rec.onend = () => { if (voz?.on && !voz.paused) try { rec.start(); } catch { vozPausa(); } };
-    try { rec.start(); } catch {}
+    rec.onend = () => { voz.vivo = false; vozEv('fin del micro'); if (voz?.on && !voz.paused && voz.rec === rec) vozArranca(true); };
+    return rec;
+}
+// arranca el micro; si en 2 s no ha arrancado (Safari a veces no hace nada), pide un toque en vez de quedarse muerto
+function vozArranca(auto) {
+    if (!voz?.on) return;
+    try { voz.rec.start(); }
+    catch (e) {
+        vozEv('no arranca (' + (e.name || e) + '), pruebo otro');
+        try { voz.rec = vozNuevoRec(voz.SR); voz.rec.start(); } catch (e2) { vozEv('tampoco (' + (e2.name || e2) + ')'); return vozPausa(); }
+    }
+    if (auto) vozEv('rearranco solo');
+    clearTimeout(voz.vigia);
+    voz.vigia = setTimeout(() => { if (voz?.on && !voz.vivo && !voz.paused) { vozEv('no arrancó en 2 s'); vozPausa(); } }, 2000);
+}
+
+function vozStart(SR) {
+    voz = { on: true, SR, rec: null, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false, vivo: false, vigia: 0 };
+    voz.rec = vozNuevoRec(SR);
+    vozEv('— modo voz v' + APP_BUILD + (VOZ_IOS ? ' (iPhone)' : ''));
+    vozArranca(false);
     document.getElementById('btnVoz').classList.add('on');
     document.getElementById('vozBar').classList.add('on');
     vozShow('', 'Escuchando…');
@@ -1945,15 +1977,17 @@ function vozStart(SR) {
 }
 
 function vozPausa() {
-    if (!voz?.on) return;
+    if (!voz?.on || voz.paused) return;
     voz.paused = true;
+    vozEv('pausa: toca 🎤');
     document.getElementById('btnVoz').classList.remove('on');
     vozShow('', 'Toca 🎤 para seguir', true);
 }
 function vozResume() {
     if (!voz?.on) return;
     voz.paused = false;
-    try { voz.rec.start(); } catch {}
+    vozEv('toque: reanudo');
+    vozArranca(false);
     document.getElementById('btnVoz').classList.add('on');
     vozShow('', 'Escuchando…');
 }
@@ -1961,6 +1995,8 @@ function vozResume() {
 function vozStop() {
     if (!voz) return;
     voz.on = false;
+    clearTimeout(voz.vigia);
+    vozEv('— apagado');
     try { voz.rec.abort(); } catch {}
     window.speechSynthesis?.cancel();
     saveChecklistState();
@@ -1970,7 +2006,7 @@ function vozStop() {
 
 // habla sin apagar el micro: lo que se oiga mientras tanto se ignora (para no oírse a sí mismo)
 function vozSay(txt) {
-    if (!window.speechSynthesis || !voz?.on) return;
+    if (!window.speechSynthesis || !voz?.on || VOZ_IOS) return;
     voz.speaking = true;
     const u = new SpeechSynthesisUtterance(txt);
     u.lang = 'es-ES'; u.rate = 1.1;
