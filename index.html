@@ -1816,6 +1816,9 @@ const VOZ_SYN = [
     [/\b(gelatinas?|gela fundina|gelafundina|gelafundinas|gelaspan|gela span|gelas pan|gelaspam|helaspan|gelafuncina)\b/g, 'gelafundina'],
     // Sulky: el iPhone escribe «Ski»
     [/\b(skis?|sulki|sulkis|sulqui|sulquis|sul ki|sul qui|suki|sully|sulli|silky|sulkys)\b/g, 'sulky'],
+    // lo que escribió su iPhone (14-nov): «B cutaneo» = Nobecutan, «tower P» = Yankauer P
+    [/\b((no|b|be|ve|de|ne)\s?cutane[oa]s?|cutane[oa]s?|becutane[oa]|vecutane[oa]|nobecutane[oa])\b/g, 'nobecutan'],
+    [/\b((yan|jan|llan|ian)\s?(tower|tauer|tawer|tower)|towers?|tauer|kauer|cauer|kower|cower|taguer|yantower)\b/g, 'yankauer'],
     // Mefix: cómo lo suele escribir el iPhone
     [/\b(netflix|nefix|mefisto|mefis|mefi|mefik|mefic|mefil|metfix|methix|mephix|mex|meeks|me fix|me fis|me fixe|me fixed|me fijo|me fijas|me fixes)\b/g, 'mefix'],
     [/\berre ele\b/g, 'rl'], [/\bese efe\b/g, 'sf'], [/\bese ge ese\b/g, 'sgs'],
@@ -1957,7 +1960,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 14:48'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 14:50'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
