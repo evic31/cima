@@ -719,12 +719,12 @@ const DEFAULT_INVENTORY = {
             { g:1, name: "Contenedor Agujas", type: "number", stock: 1, storage: "ALMACÉN LIMPIEZA" },
             { g:1, name: "Gasas Grandes c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Gasas Pequeñas c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Guantes Esteriles (nº8,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Guantes Esteriles (nº8)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Guantes Esteriles (nº7,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Guantes Esteriles (nº7)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Guantes Esteriles (nº6,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Guantes Esteriles (nº6)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº6,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº7)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº7,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº8)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Guantes Esteriles (nº8,5)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 2 ──
             { g:2, name: "Sábana Adhesiva", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:2, name: "Funda Mayo", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
@@ -1889,7 +1889,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 15:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 15:45'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
