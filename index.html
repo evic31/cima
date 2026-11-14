@@ -1844,7 +1844,7 @@ const VOZ_ALIAS = {
     'Salbutamol inhalado': ['ventolin'],
     'Diclofenaco': ['voltaren'],
     'Metoclopramida': ['primperan'],
-    'Ac. Tranexámico': ['tranexamico', 'acido tranexamico', 'tranesamico', 'acido tranesamico'],
+    'Ac. Tranexámico': ['tranexamico', 'acido tranexamico', 'tranesamico', 'acido tranesamico', 'amchafibrin', 'anchafibrin', 'amchafibrina', 'anchafibrina', 'amcha fibrin', 'ancha fibrin'],
     'Bupivacaina 0,25': ['bupi', 'bupy'], 'Bupivacaina 0.5': ['bupi', 'bupy'],
     'Lidocaina 2%': ['lido'], 'Mepivacaina 2%': ['mepi'],
     'Levobupivacaina': ['levobupi', 'levo'],
@@ -1946,7 +1946,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 20:25'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 20:40'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
