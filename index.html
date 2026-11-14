@@ -712,7 +712,7 @@ const DEFAULT_INVENTORY = {
         "Carro Enfermeria": [
             // ── BLOQUE 1 ──
             { g:1, name: "Bisturi", type: "checkbox", options: ["nº10","nº11","nº15","nº22","nº24"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Antisepticos", type: "checkbox", options: ["Betadine","Clorh. Alc.","Clorh. Alc. Tintada","Clorh. Acu.","Clorh. Acu. Tintada","Alcohol"], storage: "FARMACIA" },
+            { g:1, name: "Antisepticos", type: "checkbox", options: ["Betadine","Clorh. Alc.","Clorh. Alc. Tintada","Clorh. Acu.","Clorh. Acu. Tintada","Alcohol"], storage: "FARMACIA", optStorage: { "Betadine": "ALMACÉN PASILLO IZQUIERDO", "Clorh. Acu.": "ALMACÉN PASILLO IZQUIERDO", "Clorh. Acu. Tintada": "ALMACÉN PASILLO IZQUIERDO" } },
             { g:1, name: "Otros liquidos", type: "checkbox", options: ["Agua Oxig.","Nobecutan"], storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:1, name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO" },
@@ -1005,6 +1005,9 @@ function renderAllTabContents() {
 // ─────────────────────────────────────────────
 // CHECKLIST RENDER
 // ─────────────────────────────────────────────
+// ubicación de una opción concreta (p. ej. Betadine va al pasillo izquierdo aunque el resto de antisépticos sea Farmacia)
+const storageOf = (item, opt) => (opt && item.optStorage?.[opt]) || item.storage;
+
 function getLocationClass(s) {
     const l = s.toLowerCase();
     if (l.includes('farmacia')) return 'farmacia';
@@ -1096,7 +1099,7 @@ function renderSummary() {
         for (const location in inventoryData[area]) {
             for (const item of inventoryData[area][location]) {
                 const base = [area, location, item.name].join(ID_SEP);
-                if (item.options?.length) item.options.forEach(o => { const id = [base, o].join(ID_SEP); locMap[id] = item.storage; tabPos[id] = n++; });
+                if (item.options?.length) item.options.forEach(o => { const id = [base, o].join(ID_SEP); locMap[id] = storageOf(item, o); tabPos[id] = n++; });
                 else { locMap[base] = item.storage; tabPos[base] = n++; }
             }
         }
@@ -1346,7 +1349,7 @@ function renderManualSheet(RH) {
                 isNum: item.type === 'number', stocks, uniform: stocks.every(s => s === stocks[0])
             };
             const opts = item.options?.length ? item.options : [null];
-            opts.forEach((opt, oi) => rows.push({ ...base, opt, first: oi === 0, last: oi === opts.length - 1, n: opts.length }));
+            opts.forEach((opt, oi) => rows.push({ ...base, storage: storageOf(item, opt), stChange: oi === 0 || storageOf(item, opt) !== storageOf(item, opts[oi - 1]), opt, first: oi === 0, last: oi === opts.length - 1, n: opts.length }));
         });
     });
 
@@ -1451,9 +1454,9 @@ function renderManualSheet(RH) {
         doc.setFont('helvetica', 'normal');
         if (r.first) {
             doc.text(fit(r.name, NAME_W - 2 - optW, NAME_PT), x0 + 1.2, ty);
-            drawUB(r.storage, x0 + NAME_W + UB_W / 2, ty);
             if (r.isNum) { doc.setFontSize(5.8); doc.text(r.uniform ? String(r.stocks[0]) : 'var', x0 + NAME_W + UB_W + STK_W / 2, ty, { align: 'center' }); }
         }
+        if (r.stChange) drawUB(r.storage, x0 + NAME_W + UB_W / 2, ty); // también cuando cambia entre opciones (antisépticos)
         quis.forEach((q, i) => {
             const cx = qx(x0, i);
             if (!r.isNum) box(cx + Q_W / 2, y0);
@@ -1886,7 +1889,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 15:05'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 15:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2415,6 +2418,7 @@ function orderCatalog() {
     for (const area in inventoryData) for (const loc in inventoryData[area]) for (const it of inventoryData[area][loc]) {
         const st = it.storage || 'Desconocido';
         (cat[st] ||= new Set()).add(it.name);
+        Object.values(it.optStorage || {}).forEach(o => (cat[o] ||= new Set()).add(it.name));
         if (it.options?.length && !opts[it.name]) opts[it.name] = it.options;
         (areas[it.name] ||= new Set()).add(area.startsWith('Quirófano') || area === 'Hemodinamia' ? 'Quirófanos' : area);
     }
