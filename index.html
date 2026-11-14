@@ -1865,7 +1865,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 05:31'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 05:35'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -1910,13 +1910,13 @@ function initVoz() {
         try { await navigator.clipboard.writeText(txt); alert('Registro copiado (' + txt.split('\n').length + ' frases). Pégalo en el chat.'); }
         catch { prompt('Copia el registro:', txt); }
     });
-    document.getElementById('vozHelp').addEventListener('click', () => (VOZ_IOS ? alert : vozSay)(
+    document.getElementById('vozHelp').addEventListener('click', () => vozSay(
         'Di el material como está escrito y la cantidad. Por ejemplo: paracetamol 3, o jeringas 10 y 5. ' +
         'Puedes añadir el carro en la frase, por ejemplo: empapadores enfermería. ' +
         'Di anestesia o enfermería para elegir carro, quirófano 3 para cambiar, quita y el material para desmarcar, deshacer, o para.'));
 }
 
-// iPhone/iPad: si la web habla, iOS cambia el audio y cierra el micro → allí la confirmación es solo en pantalla
+// iPhone/iPad (solo para el registro): la confirmación sigue siendo por voz, como siempre
 const VOZ_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 // registro de lo que hace el micro (sale con 📋 junto a las frases) para saber por qué se corta
 function vozEv(t) {
@@ -1980,6 +1980,7 @@ function vozPausa() {
     if (!voz?.on || voz.paused) return;
     voz.paused = true;
     vozEv('pausa: toca 🎤');
+    vozSay('Toca el micro para seguir');   // por voz: no hace falta mirar la pantalla
     document.getElementById('btnVoz').classList.remove('on');
     vozShow('', 'Toca 🎤 para seguir', true);
 }
@@ -2006,7 +2007,7 @@ function vozStop() {
 
 // habla sin apagar el micro: lo que se oiga mientras tanto se ignora (para no oírse a sí mismo)
 function vozSay(txt) {
-    if (!window.speechSynthesis || !voz?.on || VOZ_IOS) return;
+    if (!window.speechSynthesis || !voz?.on) return;
     voz.speaking = true;
     const u = new SpeechSynthesisUtterance(txt);
     u.lang = 'es-ES'; u.rate = 1.1;
