@@ -744,7 +744,7 @@ const DEFAULT_INVENTORY = {
             { g:2, name: "Paño utilidades", type: "number", stock: 3, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:2, name: "Paño adhesivo", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:2, name: "Bolsa instrumental", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:2, name: "Pegatina", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Pegatina", type: "number", stock: 4, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:2, name: "Goma aspiración", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Yankauer", type: "checkbox", options: ["G (1)","M (1)","P (1)"], storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Rasca", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
@@ -1896,7 +1896,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 17:20'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 17:35'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
