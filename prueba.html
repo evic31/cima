@@ -27,10 +27,10 @@ function habla(txt,maxMs){return new Promise(res=>{
   speechSynthesis.speak(u);L('speak(«'+txt+'») llamado');
   setTimeout(()=>{if(!fin){L(empezo?'voz empezó pero NO avisó del final':'voz NUNCA empezó');res(empezo?'sinfin':'nada')}},maxMs||4000);});}
 let rec,oido=[];
-function nuevo(){const r=new SR();r.lang='es-ES';r.continuous=true;r.interimResults=false;
+function nuevo(cont){const r=new SR();r.lang='es-ES';r.continuous=cont!==false;r.interimResults=true;L('micro nuevo · continuo='+r.continuous);
   ['start','audiostart','speechstart','end'].forEach(ev=>r.addEventListener(ev,()=>L('micro '+ev)));
   r.onerror=e=>L('micro ERROR '+e.error);
-  r.onresult=e=>{const x=e.results[e.results.length-1][0].transcript;oido.push(x);L('micro OYE «'+x+'»')};return r;}
+  r.onresult=e=>{const R=e.results[e.results.length-1],x=R[0].transcript;if(R.isFinal){oido.push(x);L('micro FRASE CERRADA «'+x+'»')}else L('micro oye a medias «'+x+'»')};return r;}
 function arranca(){try{rec.start();L('start() sin fallo')}catch(e){L('start() FALLA '+e.name)}}
 function finMicro(ms){return new Promise(res=>{let h=false;const f=()=>{if(!h){h=true;res()}};rec.addEventListener('end',f,{once:true});setTimeout(()=>{if(!h)L('micro no avisó de end');f()},ms)})}
 document.getElementById('go').onclick=async()=>{
@@ -50,7 +50,7 @@ document.getElementById('go').onclick=async()=>{
   try{rec.abort()}catch(e){}
   await finMicro(1500);
   await habla('tres');
-  rec=nuevo();arranca();                    // sin toque
+  rec=nuevo(false);arranca();               // sin toque, modo frase a frase
   await esp(6000);
   L('oído total: '+oido.length+' → '+oido.join(' | '));
   try{rec.abort()}catch(e){}
