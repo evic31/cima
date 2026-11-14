@@ -850,7 +850,7 @@ const DEFAULT_INVENTORY = {
             { g: 6, name: "Alcohol", type: "number", stock: 1, storage: "FARMACIA" },
             { g: 6, name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA" },
             { g: 6, name: "Jeringas", type: "checkbox", options: ["20cc", "10cc", "5cc", "3cc"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g: 6, name: "Agujas", type: "checkbox", options: ["Carga", "Azul", "Verde", "Amarilla"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Agujas", type: "checkbox", options: ["Carga", "Azul", "Verde", "Amarilla", "Naranja"], storage: "ALMACÉN PASILLO DERECHO" },
 
         ],
         "Otros": [
@@ -1890,7 +1890,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 16:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 16:20'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
