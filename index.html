@@ -688,6 +688,7 @@ const DEFAULT_INVENTORY = {
             { name: "Sistemas (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Gasas (REA)", type: "checkbox", options: ["Grandes","Pequeñas"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Gafas Nasales (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Mascarilla O2 (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Guedel (REA)", type: "checkbox", options: ["Verde","Amarillo","Rojo"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Empapador (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" }
         ]
@@ -719,7 +720,7 @@ const DEFAULT_INVENTORY = {
             { name: "Abocath (UCSI)", type: "checkbox", options: ["18G","20G","22G"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Alargadera (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Sistemas (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Gasas (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Gasas (UCSI)", type: "checkbox", options: ["Grandes","Pequeñas"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Empapador (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Aposito via (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { name: "Guantes (UCSI)", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
@@ -1817,6 +1818,7 @@ const VOZ_LETTER = { s: ['s', 'ese', ...VOZ_PEQ], m: ['m', 'eme', 'mediano', 'me
 // clave = nombre del material tal cual en la app (sin (R)/(U)/(REA)/(UCSI)); valor = otras formas de decirlo.
 // Si el alias no lleva número, vale el del nombre: «zofran 4» → Ondansetron 4mg.
 const VOZ_ALIAS = {
+    'Mascarilla O2 (REA)': ['mascarilla oxigeno', 'mascarilla de oxigeno', 'mascarilla o dos', 'mascarilla o2'],
     'Otros liquidos': ['liquidos'],
     'Mefix': ['aposito en rollo', 'aposito rollo'],
     'Mefix pequeño': ['aposito en rollo', 'aposito rollo'],
@@ -1942,7 +1944,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 19:55'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 20:10'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2457,7 +2459,7 @@ const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvi
     items: {
         'ALMACÉN PASILLO DERECHO': [
             "Gasas pequeñas s/c", "Gasas Pequeñas c/c", "Gasas grandes s/c", "Gasas Grandes c/c", "Gasas (UCSI)", "Gasas (REA)",
-            "Gafas Nasales", "Gafas Nasales (REA)", "Filtro", "Capnografo", "Guantes Esteriles (nº8,5)", "Guantes Esteriles (nº8)",
+            "Gafas Nasales", "Gafas Nasales (REA)", "Mascarilla O2 (REA)", "Filtro", "Capnografo", "Guantes Esteriles (nº8,5)", "Guantes Esteriles (nº8)",
             "Guantes Esteriles (nº7,5)", "Guantes Esteriles (nº7)", "Guantes Esteriles (nº6,5)", "Guantes Esteriles (nº6)",
             "Empapador", "Empapador (UCSI)", "Empapador (REA)", "Bisturi", "Bisturi eléctrico", "BIC", "Abocath 22G",
             "Abocath 20G", "Abocath 18G", "Abocath 16G", "Abocath 14G", "Abocath (UCSI)", "Abocath (REA)",
