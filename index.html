@@ -487,6 +487,9 @@
         .ed-name { flex: 1; min-width: 0; }
         .ed-stock { width: 64px; flex-shrink: 0; text-align: center; font-variant-numeric: tabular-nums; }
         .ed-row.ok input { border-color: var(--success); background: #f0fdf4; }
+        .ed-off { flex-shrink: 0; width: 40px; height: 38px; border: 1.5px solid var(--border); border-radius: 7px; background: #fff; font-size: 18px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .ed-row.off input { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
+        .ed-row.off .ed-off { background: #fee2e2; border-color: #fca5a5; }
         .editor-no-results {
             text-align: center;
             color: var(--text-muted);
@@ -794,7 +797,7 @@ const DEFAULT_INVENTORY = {
             // ── BLOQUE 3 ──
             { g:3, name: "Sistema jeringa", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Jeringas bomba", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Vendas gasa", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Venda gasa", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Sistema estandar", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Alargadera", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Aposito via", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
@@ -828,14 +831,14 @@ const DEFAULT_INVENTORY = {
             { g:4, name: "Dexclorferinamina", type: "number", stock: 1, storage: "FARMACIA" },
             { g:4, name: "Furosemida", type: "number", stock: 2, storage: "FARMACIA" },
             { g:4, name: "Solu Moderin 125mg", type: "number", stock: 1, storage: "FARMACIA" },
-            { g:4, name: "Metilprednisona 20mg", type: "number", stock: 1, storage: "FARMACIA" },
-            { g:4, name: "Metilprednisona 40mg", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:4, name: "Metilprednisona 20mg", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:4, name: "Metilprednisona 40mg", type: "number", stock: 2, storage: "FARMACIA" },
             { g:4, name: "Salbutamol inhalado", type: "number", stock: 1, storage: "FARMACIA" },
             { g:4, name: "Diclofenaco", type: "number", stock: 2, storage: "FARMACIA" },
             { g:4, name: "Metoclopramida", type: "number", stock: 5, storage: "FARMACIA" },
             // ── BLOQUE 5 ──
             { g:5, name: "Adrenalina", type: "number", stock: 4, storage: "FARMACIA" },
-            { g:5, name: "Ac. Tranexámico", type: "number", stock: 2, storage: "FARMACIA" },
+            { g:5, name: "Ac. Tranexámico", type: "number", stock: 4, storage: "FARMACIA" },
             { g:5, name: "Bupivacaina 0,25", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Bupivacaina 0.5", type: "number", stock: 2, storage: "FARMACIA" },
             { g:5, name: "Efedrina", type: "number", stock: 2, storage: "FARMACIA" },
@@ -909,6 +912,7 @@ let summaryAreaTicks = {};
 let inventoryEdits   = {};
 // inventoryData: copia viva de DEFAULT_INVENTORY con quirófanos expandidos y edits aplicados
 let inventoryData    = {};
+let inventoryFull    = {}; // incluye los productos desactivados (solo para el Editor)
 
 // ─────────────────────────────────────────────
 // INIT
@@ -978,11 +982,19 @@ function buildInventory() {
         }
         if (edit.name !== undefined) item.name = edit.name;
         if (edit.stock !== undefined && item.type === 'number') item.stock = edit.stock;
+        if (edit.off) item.off = true;
     }
     if (arreglados) {
         localStorage.setItem(INVENTORY_EDIT_KEY, JSON.stringify(inventoryEdits));
         localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
         return buildInventory(); // vuelve a aplicar los stocks de lo arreglado
+    }
+    // productos desactivados en el Editor: fuera de las pestañas, la voz, el resumen, el orden y las hojas
+    inventoryFull = inventoryData;
+    inventoryData = {};
+    for (const area in inventoryFull) {
+        inventoryData[area] = {};
+        for (const loc in inventoryFull[area]) inventoryData[area][loc] = inventoryFull[area][loc].filter(i => !i.off);
     }
 }
 
@@ -1618,11 +1630,11 @@ function renderEditorList(q = '') {
     if (!resultsEl) return;
     q = q.trim().toLowerCase();
     const grupos = {}, porClave = {};
-    for (const area in inventoryData) {
+    for (const area in inventoryFull) {
         const esQ = area.startsWith('Quirófano') || area === 'Hemodinamia';
         const g = esQ ? 'Quirófanos' : area;
-        for (const location in inventoryData[area]) {
-            for (const item of inventoryData[area][location]) {
+        for (const location in inventoryFull[area]) {
+            for (const item of inventoryFull[area][location]) {
                 if (q && !item.name.toLowerCase().includes(q)) continue;
                 const k = g + ID_SEP + location + ID_SEP + item.name;
                 if (porClave[k]) { porClave[k].areas.push(area); porClave[k].stocks.push(item.stock); continue; }
@@ -1643,8 +1655,8 @@ function renderEditorList(q = '') {
                     const sMin = Math.min(...stocks), sMax = Math.max(...stocks);
                     const stock = item.type !== 'number' ? ''
                         : `<input class="ed-stock" type="number" inputmode="numeric" min="1" max="999" value="${sMin === sMax ? sMin : ''}" placeholder="${sMin}–${sMax}">`;
-                    return `<div class="ed-row" data-areas="${esc(areas.join(ID_SEP))}" data-location="${esc(location)}" data-name="${esc(item.name)}" data-type="${item.type}">
-                        <input class="ed-name" type="text" value="${esc(item.name)}" autocomplete="off" autocorrect="off" spellcheck="false">${stock}
+                    return `<div class="ed-row${item.off ? ' off' : ''}" data-areas="${esc(areas.join(ID_SEP))}" data-location="${esc(location)}" data-name="${esc(item.name)}" data-type="${item.type}">
+                        <input class="ed-name" type="text" value="${esc(item.name)}" autocomplete="off" autocorrect="off" spellcheck="false">${stock}<button class="ed-off" type="button">${item.off ? '🚫' : '👁'}</button>
                     </div>`;
                 }).join('')}`).join('')}
         </section>`).join('');
@@ -1659,6 +1671,34 @@ function bindEditor() {
         const row = e.target.closest('.ed-row');
         if (row) saveEditorRow(row);
     });
+    document.getElementById('editor-results').addEventListener('click', e => {
+        const btn = e.target.closest('.ed-off');
+        if (btn) toggleEditorRow(btn.closest('.ed-row'));
+    });
+}
+
+// 👁 / 🚫 desactiva un producto (en Quirófanos, los 9 a la vez) sin borrarlo; se reactiva igual
+function toggleEditorRow(row) {
+    const areas = row.dataset.areas.split(ID_SEP), location = row.dataset.location, name = row.dataset.name;
+    const apagar = !row.classList.contains('off');
+    areas.forEach(area => {
+        const editKey = findEditKey(area, location, name);
+        const ed = inventoryEdits[editKey] ||= {};
+        if (apagar) {
+            ed.off = true;
+            Object.keys(checklistState).forEach(k => {
+                const parts = k.split(ID_SEP);
+                if (parts[0] === area && parts[1] === location && parts[2] === name) delete checklistState[k];
+            });
+        } else delete ed.off;
+        if (!Object.keys(ed).length) delete inventoryEdits[editKey];
+    });
+    localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
+    localStorage.setItem(INVENTORY_EDIT_KEY, JSON.stringify(inventoryEdits));
+    buildInventory();
+    reRenderChecklistTabs();
+    row.classList.toggle('off', apagar);
+    row.querySelector('.ed-off').textContent = apagar ? '🚫' : '👁';
 }
 
 // Encuentra el editKey correcto buscando en DEFAULT_INVENTORY el item con nombre actual
@@ -1900,7 +1940,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 18:15'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 18:40'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2382,7 +2422,7 @@ const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvi
             "Guedel #5 11mm (celeste/ naranja)", "Guedel #4 10mm (rojo)", "Guedel #3 90mm (amarillo)", "Guedel #2 80mm (verde)",
             "Guedel (REA)", "Jeringas bomba", "Sistema jeringa", "Sistemas (REA)", "Sistemas (UCSI)", "Tapón via (REA)", "Tapon via",
             "Llave 3p (UCSI)", "Llave 3p (REA)", "Sistema estandar", "Alargadera", "Alargadera (UCSI)", "Alargadera (REA)",
-            "Llave 3Pasos", "Alargo bisturí", "Jeringa cono ancho", "Botes anatomia", "Aguja carga (UCSI)", "Aguja carga (REA)", "Vendas gasa",
+            "Llave 3Pasos", "Alargo bisturí", "Jeringa cono ancho", "Botes anatomia", "Aguja carga (UCSI)", "Aguja carga (REA)", "Venda gasa",
             "Smart", "Jeringas (UCSI)", "Jeringas", "Agujas", "Mefix pequeño", "Mefix", "Esparadrapo", "Electrodos",
             "Cal sodada DRAGER", "Cal sodada G.Electric", "Guantes (UCSI)", "Guantes (REA)", "Guantes",
             "Sondas Aspiración #12 (Blanco)", "Sondas Aspiración #10 (Negro)", "Sondas Aspiración #14 (Verde)",
