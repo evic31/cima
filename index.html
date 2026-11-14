@@ -674,14 +674,14 @@ const DEFAULT_INVENTORY = {
             { name: "Glucosado 5%", type: "number", stock: 2, storage: "FARMACIA" },
             { name: "SGS", type: "number", stock: 12, storage: "FARMACIA" },
             { name: "Alcohol (R)", type: "checkbox", storage: "FARMACIA" },
-            { name: "SF lavados 3L (R)", type: "checkbox", storage: "FARMACIA" }
+            { name: "SF Lavados 3L (R)", type: "checkbox", storage: "FARMACIA" }
         ],
         "ALMACÉN": [
             { name: "Guantes (REA)", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Apósito vía (REA)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { name: "Aguja carga (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Apósito Vía (REA)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Aguja Carga (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Llave 3p (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Tapón via (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Tapón Vía (REA)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Jeringas", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Abocath (REA)", type: "checkbox", options: ["18G","20G","22G"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "BIC", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
@@ -716,14 +716,14 @@ const DEFAULT_INVENTORY = {
         ],
         "ALMACÉN": [
             { name: "Jeringas (UCSI)", type: "checkbox", options: ["20cc","10cc","5cc","3cc"], storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Aguja carga (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { name: "Aguja Carga (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Llave 3p (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Abocath (UCSI)", type: "checkbox", options: ["18G","20G","22G"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Alargadera (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Sistemas (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Gasas (UCSI)", type: "checkbox", options: ["Grandes","Pequeñas"], storage: "ALMACÉN PASILLO DERECHO" },
             { name: "Empapador (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { name: "Aposito via (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { name: "Apósito Vía (UCSI)", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { name: "Guantes (UCSI)", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" }
         ]
     },
@@ -732,9 +732,9 @@ const DEFAULT_INVENTORY = {
             // ── BLOQUE 1 ──
             { g:1, name: "Bisturi", type: "checkbox", options: ["nº10","nº11","nº15","nº22","nº24"], storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Antisepticos", type: "checkbox", options: ["Betadine","Clorh. Alc.","Clorh. Alc. Tintada","Clorh. Acu.","Clorh. Acu. Tintada","Alcohol"], storage: "FARMACIA", optStorage: { "Betadine": "ALMACÉN PASILLO IZQUIERDO", "Clorh. Acu.": "ALMACÉN PASILLO IZQUIERDO", "Clorh. Acu. Tintada": "ALMACÉN PASILLO IZQUIERDO" }, optUnit: { "Alcohol": "Alcohol" } },
-            { g:1, name: "Otros liquidos", type: "checkbox", options: ["Agua Oxig.","Nobecutan"], storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:1, name: "Otros Líquidos", type: "checkbox", options: ["Agua Oxig.","Nobecutan"], storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:1, name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO", optUnit: { "P": "Mefix pequeño" } },
+            { g:1, name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO", optUnit: { "P": "Mefix Pequeño" } },
             { g:1, name: "Contenedor Agujas", type: "number", stock: 1, storage: "ALMACÉN LIMPIEZA" },
             { g:1, name: "Gasas Grandes c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Gasas Pequeñas c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
@@ -747,27 +747,27 @@ const DEFAULT_INVENTORY = {
             // ── BLOQUE 2 ──
             { g:2, name: "Sábana Adhesiva", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:2, name: "Funda Mayo", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:2, name: "Bata esteril", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:2, name: "Placa bisturi", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Bata Estéril", type: "number", stock: 2, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Placa Bisturí", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Mango Lampara", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Paño utilidades", type: "number", stock: 3, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:2, name: "Paño adhesivo", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:2, name: "Bolsa instrumental", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Paño Utilidades", type: "number", stock: 3, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Paño Adhesivo", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:2, name: "Bolsa Instrumental", type: "number", stock: 1, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:2, name: "Pegatina", type: "number", stock: 4, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:2, name: "Goma aspiración", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Goma Aspiración", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Yankauer", type: "checkbox", options: ["G (1)","M (1)","P (1)"], storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Rasca", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Bisturi eléctrico", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Bisturí Eléctrico", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Rotulador", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Alargo bisturí", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Jeringa cono ancho", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Alargo Bisturí", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Jeringa Cono Ancho", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 3 ──
-            { g:3, name: "SF 500ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:3, name: "SF 100ml irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g:3, name: "Kit sondaje", type: "checkbox", options: ["Sonda Vesical","Cathegel","Paño Kit Sondaje","Guante sondaje","Jeringa Kit Sondaje"], storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "SF 500ml Irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "SF 100ml Irrigación", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "Kit Sondaje", type: "checkbox", options: ["Sonda Vesical","Cathegel","Paño Kit Sondaje","Guante sondaje","Jeringa Kit Sondaje"], storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:3, name: "Empapador", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Botes anatomia", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Receptal aspiración", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" }
+            { g:3, name: "Botes Anatomía", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Receptal Aspiración", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" }
         ],
         "Carro Anestesia": [
             // ── BLOQUE 1 ── (Filtro bajado al final, tras Mascarilla nº3)
@@ -790,19 +790,19 @@ const DEFAULT_INVENTORY = {
             { g:2, name: "TET (nº8)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Electrodos", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:2, name: "Sulky", type: "number", stock: 1, storage: "FARMACIA" },
-            { g:2, name: "Pomada ocular", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:2, name: "Pomada Ocular", type: "number", stock: 1, storage: "FARMACIA" },
             { g:2, name: "Capnografo", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Guedel #2 80mm (verde)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Guedel #3 90mm (amarillo)", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Guedel #4 10mm (rojo)", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:2, name: "Guedel #5 11mm (celeste/ naranja)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel #2 80mm (Verde)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel #3 90mm (Amarillo)", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel #4 10mm (Rojo)", type: "number", stock: 3, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:2, name: "Guedel #5 11mm (Celeste/ Naranja)", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 3 ──
-            { g:3, name: "Sistema jeringa", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Jeringas bomba", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Venda gasa", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Sistema estandar", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Sistema Jeringa", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Jeringas Bomba", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Venda Gasa", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Sistema Estándar", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Alargadera", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Aposito via", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
+            { g:3, name: "Apósito Vía", type: "number", stock: 5, storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:3, name: "Smart", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "SteryStrip", type: "checkbox", options: ["Azul (2)","Naranja (2)"], storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:3, name: "Abocath 18G", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
@@ -811,8 +811,8 @@ const DEFAULT_INVENTORY = {
             { g:3, name: "Abocath 16G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Abocath 14G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Llave 3Pasos", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Tapon via", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Mefix pequeño", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Tapón Vía", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Mefix Pequeño", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Esparadrapo", type: "checkbox", options: ["Plastico","Tela","Papel"], storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 4 ──
             { g:4, name: "Atropina", type: "number", stock: 10, storage: "FARMACIA" },
@@ -835,7 +835,7 @@ const DEFAULT_INVENTORY = {
             { g:4, name: "Solu Moderin 125mg", type: "number", stock: 1, storage: "FARMACIA" },
             { g:4, name: "Metilprednisona 20mg", type: "number", stock: 2, storage: "FARMACIA" },
             { g:4, name: "Metilprednisona 40mg", type: "number", stock: 2, storage: "FARMACIA" },
-            { g:4, name: "Salbutamol inhalado", type: "number", stock: 1, storage: "FARMACIA" },
+            { g:4, name: "Salbutamol Inhalado", type: "number", stock: 1, storage: "FARMACIA" },
             { g:4, name: "Diclofenaco", type: "number", stock: 2, storage: "FARMACIA" },
             { g:4, name: "Metoclopramida", type: "number", stock: 5, storage: "FARMACIA" },
             // ── BLOQUE 5 ──
@@ -858,8 +858,8 @@ const DEFAULT_INVENTORY = {
             // ── BLOQUE 6 ──
             { g: 6, name: "Guantes", type: "checkbox", options: ["S", "M", "L"], storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Empapador", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
-            { g: 6, name: "Gasas grandes s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g: 6, name: "Gasas pequeñas s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Gasas Grandes s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g: 6, name: "Gasas Pequeñas s/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Sondas Aspiración #16 (Naranja)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Sondas Aspiración #14 (Verde)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Sondas Aspiración #12 (Blanco)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
@@ -867,24 +867,24 @@ const DEFAULT_INVENTORY = {
             { g: 6, name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g: 6, name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g: 6, name: "Alcohol", type: "checkbox", storage: "FARMACIA" },
-            { g: 6, name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA", unidad: "Contenedor Agujas" },
+            { g: 6, name: "Contenedor Agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA", unidad: "Contenedor Agujas" },
             { g: 6, name: "Jeringas", type: "checkbox", options: ["20cc", "10cc", "5cc", "3cc"], storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Agujas", type: "checkbox", options: ["Carga", "Azul", "Verde", "Amarilla", "Naranja"], storage: "ALMACÉN PASILLO DERECHO" },
 
         ],
         "Otros": [
             // ── BLOQUE 1 ──
-            { g:1, name: "Set anestesia", type: "checkbox", options: ["Tubuladura","Filtro","Capnografo"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Cal sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Cal sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Receptales aspiración", type: "number", stock: 8, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Receptal aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Set aspiración anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Set Anestesia", type: "checkbox", options: ["Tubuladura","Filtro","Capnografo"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Cal Sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Cal Sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Receptales Aspiración", type: "number", stock: 8, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Receptal Aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Set Aspiración Anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 2 ──
             { g:2, name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
             { g:2, name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
             { g:2, name: "Taburete", type: "number", stock: 4, storage: "BLOQUE QUIRÚRGICO" },
-            { g:2, name: "Bomba infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
+            { g:2, name: "Bomba Infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
         ]
     }
 };
@@ -937,6 +937,7 @@ window.addEventListener('pagehide', guardaEditorAbierto);
 document.addEventListener('DOMContentLoaded', () => {
     checkUpdate();
     loadAll();
+    migraNombresV2();
     loadOrder();
     buildInventory();
     renderTabs();
@@ -946,6 +947,37 @@ document.addEventListener('DOMContentLoaded', () => {
     initVoz();
     bindChecklistChanges();
 });
+
+// 14-nov: nombres con cada palabra en mayúscula («Mefix pequeño» → «Mefix Pequeño») y tildes; viejo → nuevo
+const RENOMBRADOS_V2 = {"Guedel #5 11mm (celeste/ naranja)": "Guedel #5 11mm (Celeste/ Naranja)", "Receptal aspiración PETIT": "Receptal Aspiración PETIT", "Guedel #3 90mm (amarillo)": "Guedel #3 90mm (Amarillo)", "Set aspiración anestesia": "Set Aspiración Anestesia", "Guedel #2 80mm (verde)": "Guedel #2 80mm (Verde)", "Cal sodada G.Electric": "Cal Sodada G.Electric", "Guedel #4 10mm (rojo)": "Guedel #4 10mm (Rojo)", "Receptales aspiración": "Receptales Aspiración", "Salbutamol inhalado": "Salbutamol Inhalado", "SF 100ml irrigación": "SF 100ml Irrigación", "SF 500ml irrigación": "SF 500ml Irrigación", "Receptal aspiración": "Receptal Aspiración", "Aposito via (UCSI)": "Apósito Vía (UCSI)", "Jeringa cono ancho": "Jeringa Cono Ancho", "Gasas pequeñas s/c": "Gasas Pequeñas s/c", "Bolsa instrumental": "Bolsa Instrumental", "Aguja carga (UCSI)": "Aguja Carga (UCSI)", "SF lavados 3L (R)": "SF Lavados 3L (R)", "Bisturi eléctrico": "Bisturí Eléctrico", "Gasas grandes s/c": "Gasas Grandes s/c", "Apósito vía (REA)": "Apósito Vía (REA)", "Aguja carga (REA)": "Aguja Carga (REA)", "Contenedor agujas": "Contenedor Agujas", "Cal sodada DRAGER": "Cal Sodada DRAGER", "Sistema estandar": "Sistema Estándar", "Sistema jeringa": "Sistema Jeringa", "Goma aspiración": "Goma Aspiración", "Paño utilidades": "Paño Utilidades", "Tapón via (REA)": "Tapón Vía (REA)", "Botes anatomia": "Botes Anatomía", "Bomba infusión": "Bomba Infusión", "Jeringas bomba": "Jeringas Bomba", "Otros liquidos": "Otros Líquidos", "Alargo bisturí": "Alargo Bisturí", "Paño adhesivo": "Paño Adhesivo", "Mefix pequeño": "Mefix Pequeño", "Pomada ocular": "Pomada Ocular", "Set anestesia": "Set Anestesia", "Placa bisturi": "Placa Bisturí", "Bata esteril": "Bata Estéril", "Kit sondaje": "Kit Sondaje", "Aposito via": "Apósito Vía", "Venda gasa": "Venda Gasa", "Tapon via": "Tapón Vía"};
+// una sola vez: marcas, stocks, nombres ya corregidos (mismas letras salvo mayúsculas) y orden pasan al nombre nuevo
+function migraNombresV2() {
+    try { if (localStorage.getItem('nombres_v2')) return; } catch (e) { return; }
+    const lc = t => String(t).toLocaleLowerCase('es');
+    const mapa = {};
+    for (const [v, n] of Object.entries(RENOMBRADOS_V2)) { mapa[lc(v)] = n; mapa[lc(n)] = n; }
+    const nuevo = t => mapa[lc(t)];
+    const reClave = k => { const p = k.split(ID_SEP); let c = false; for (let i = 1; i < p.length; i++) { const n = nuevo(p[i]); if (n && n !== p[i]) { p[i] = n; c = true; } } return c ? p.join(ID_SEP) : k; };
+    const reObj = o => { for (const k of Object.keys(o)) { const k2 = reClave(k); if (k2 !== k) { if (!(k2 in o)) o[k2] = o[k]; delete o[k]; } } };
+    for (const k of Object.keys(inventoryEdits)) {
+        const p = k.split(ID_SEP), v = RENOMBRADOS_V2[p[2]], ed = inventoryEdits[k];
+        if (ed.name && nuevo(ed.name) === (v || p[2])) delete ed.name;
+        if (v) { p[2] = v; delete inventoryEdits[k]; inventoryEdits[p.join(ID_SEP)] = { ...(inventoryEdits[p.join(ID_SEP)] || {}), ...ed }; }
+    }
+    for (const k of Object.keys(inventoryEdits)) if (!Object.keys(inventoryEdits[k]).length) delete inventoryEdits[k];
+    reObj(checklistState); reObj(summaryTicks); reObj(summaryAreaTicks);
+    let orden = null;
+    try { orden = JSON.parse(localStorage.getItem('reposicionOrden_v1')); } catch (e) {}
+    const reArbol = x => Array.isArray(x) ? x.map(reArbol) : (x && typeof x === 'object') ? Object.fromEntries(Object.entries(x).map(([k, v]) => [nuevo(k) || k, reArbol(v)])) : (typeof x === 'string' && nuevo(x)) ? nuevo(x) : x;
+    try {
+        if (orden) localStorage.setItem('reposicionOrden_v1', JSON.stringify(reArbol(orden)));
+        localStorage.setItem(INVENTORY_EDIT_KEY, JSON.stringify(inventoryEdits));
+        localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
+        localStorage.setItem(SUMMARY_TICKS_KEY, JSON.stringify(summaryTicks));
+        localStorage.setItem(AREA_TICKS_KEY, JSON.stringify(summaryAreaTicks));
+        localStorage.setItem('nombres_v2', '1');
+    } catch (e) {}
+}
 
 function loadAll() {
     const loadJSON = (key, def) => { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } };
@@ -1845,16 +1877,16 @@ const VOZ_LETTER = { s: ['s', 'ese', ...VOZ_PEQ], m: ['m', 'eme', 'mediano', 'me
 // clave = nombre del material tal cual en la app (sin (R)/(U)/(REA)/(UCSI)); valor = otras formas de decirlo.
 // Si el alias no lleva número, vale el del nombre: «zofran 4» → Ondansetron 4mg.
 const VOZ_ALIAS = {
-    'SF lavados 3L (R)': ['sf lavados', 'suero lavados', 'suero de lavados', 'suero fisiologico lavados', 'sf 3 litros', 'suero 3 litros', 'suero fisiologico 3 litros', 'lavados'],
+    'SF Lavados 3L (R)': ['sf lavados', 'suero lavados', 'suero de lavados', 'suero fisiologico lavados', 'sf 3 litros', 'suero 3 litros', 'suero fisiologico 3 litros', 'lavados'],
     'Mascarilla O2 (REA)': ['mascarilla oxigeno', 'mascarilla de oxigeno', 'mascarilla o dos', 'mascarilla o2'],
-    'Otros liquidos': ['liquidos'],
+    'Otros Líquidos': ['liquidos'],
     'Mefix': ['aposito en rollo', 'aposito rollo'],
-    'Mefix pequeño': ['aposito en rollo', 'aposito rollo'],
+    'Mefix Pequeño': ['aposito en rollo', 'aposito rollo'],
     'Contenedor Agujas': ['contenedor', 'contenedor punzantes'],
     'Gasas Grandes c/c': ['gasas grandes con contraste', 'gasas grandes contraste'],
     'Gasas Pequeñas c/c': ['gasas pequenas con contraste', 'gasas pequenas contraste'],
-    'Gasas grandes s/c': ['gasas verdes grandes', 'gasas grandes sin contraste'],
-    'Gasas pequeñas s/c': ['gasas verdes pequenas', 'gasas pequenas sin contraste'],
+    'Gasas Grandes s/c': ['gasas verdes grandes', 'gasas grandes sin contraste'],
+    'Gasas Pequeñas s/c': ['gasas verdes pequenas', 'gasas pequenas sin contraste'],
     'Yankauer': ['canula de aspiracion', 'canula aspiracion', 'canula'],
     'Sulky': ['lubricante acuoso'],
     'Smart': ['compresor'],
@@ -1867,7 +1899,7 @@ const VOZ_ALIAS = {
     'Ondansetron 4mg': ['zofran'], 'Ondansetron 8mg': ['zofran'],
     'Dexclorferinamina': ['dexclorfeniramina', 'polaramine'],
     'Metilprednisona 20mg': ['metilprednisolona', 'urbason'], 'Metilprednisona 40mg': ['metilprednisolona', 'urbason'],
-    'Salbutamol inhalado': ['ventolin'],
+    'Salbutamol Inhalado': ['ventolin'],
     'Diclofenaco': ['voltaren'],
     'Metoclopramida': ['primperan'],
     'Ac. Tranexámico': ['tranexamico', 'acido tranexamico', 'tranesamico', 'acido tranesamico', 'amchafibrin', 'anchafibrin', 'amchafibrina', 'anchafibrina', 'amcha fibrin', 'ancha fibrin'],
@@ -1880,11 +1912,11 @@ const VOZ_ALIAS = {
     'Sondas Aspiración #14 (Verde)': ['receptal verde', 'sonda verde'],
     'Sondas Aspiración #12 (Blanco)': ['receptal blanco', 'sonda blanca'],
     'Sondas Aspiración #10 (Negro)': ['receptal negro', 'sonda negra'],
-    'Cal sodada G.Electric': ['cal sodada general electric'],
+    'Cal Sodada G.Electric': ['cal sodada general electric'],
     'BIC': ['bomba analgesia', 'bomba de analgesia'],
     'Guedel': ['tubo mayo', 'canula de guedel'],
-    'Guedel #2 80mm (verde)': ['tubo mayo verde'], 'Guedel #3 90mm (amarillo)': ['tubo mayo amarillo'],
-    'Guedel #4 10mm (rojo)': ['tubo mayo rojo'], 'Guedel #5 11mm (celeste/ naranja)': ['tubo mayo celeste', 'tubo mayo naranja']
+    'Guedel #2 80mm (Verde)': ['tubo mayo verde'], 'Guedel #3 90mm (Amarillo)': ['tubo mayo amarillo'],
+    'Guedel #4 10mm (Rojo)': ['tubo mayo rojo'], 'Guedel #5 11mm (Celeste/ Naranja)': ['tubo mayo celeste', 'tubo mayo naranja']
 };
 // opciones: clave = 'Material||Opción'
 const VOZ_OPT_ALIAS = {
@@ -1892,13 +1924,13 @@ const VOZ_OPT_ALIAS = {
     'Antisepticos||Clorh. Alc. Tintada': ['clorhexidina alcoholica tintada', 'clore alcohol tintada'],
     'Antisepticos||Clorh. Acu.': ['clorhexidina acuosa', 'clore acuosa'],
     'Antisepticos||Clorh. Acu. Tintada': ['clorhexidina acuosa tintada', 'clore acuosa tintada'],
-    'Otros liquidos||Agua Oxig.': ['agua oxigenada', 'h2o2', 'oxigenada'],
-    'Otros liquidos||Nobecutan': ['aposito aerosol', 'aposito en aerosol', 'aerosol', 'spray'],
-    'Kit sondaje||Cathegel': ['lubricante'],
-    'Kit sondaje||Paño Kit Sondaje': ['pano sondaje'],
-    'Kit sondaje||Jeringa Kit Sondaje': ['jeringa sondaje'],
-    'Kit sondaje||Guante sondaje': ['guante sondaje', 'guantes sondaje'],
-    'Kit sondaje||Sonda Vesical': ['sonda vesical'],
+    'Otros Líquidos||Agua Oxig.': ['agua oxigenada', 'h2o2', 'oxigenada'],
+    'Otros Líquidos||Nobecutan': ['aposito aerosol', 'aposito en aerosol', 'aerosol', 'spray'],
+    'Kit Sondaje||Cathegel': ['lubricante'],
+    'Kit Sondaje||Paño Kit Sondaje': ['pano sondaje'],
+    'Kit Sondaje||Jeringa Kit Sondaje': ['jeringa sondaje'],
+    'Kit Sondaje||Guante sondaje': ['guante sondaje', 'guantes sondaje'],
+    'Kit Sondaje||Sonda Vesical': ['sonda vesical'],
     'SteryStrip||Azul (2)': ['azul'], 'SteryStrip||Naranja (2)': ['naranja'],
     'Agujas||Naranja': ['aguja naranja', 'aguja subcutanea', 'subcutanea']
 };
@@ -1964,7 +1996,7 @@ const VOZ_SPEAK = [
     [/\bc\/c\b/gi, 'con contraste'], [/\bs\/c\b/gi, 'sin contraste'],
     [/Clorh\./g, 'clorhexidina'], [/Alc\./g, 'alcohólica'], [/Acu\./g, 'acuosa'], [/Oxig\./g, 'oxigenada'],
     [/G\.Electric/g, 'General Electric'], [/\bAc\. /g, 'ácido '],
-    [/\bSF lavados\b/g, 'suero de lavados'], [/\bMefix G\b/g, 'Mefix grande'], [/\bMefix P\b/g, 'Mefix pequeño'], [/\bSF\b/g, 'fisiológico'], [/\bRL\b/g, 'Ringer lactato'], [/\bSGS\b/g, 'glucosalino'], [/\bTET\b/g, 'tubo'], [/\bBIC\b/g, 'bomba de analgesia'],
+    [/\bSF lavados\b/gi, 'suero de lavados'], [/\bMefix G\b/g, 'Mefix grande'], [/\bMefix P\b/g, 'Mefix Pequeño'], [/\bSF\b/g, 'fisiológico'], [/\bRL\b/g, 'Ringer lactato'], [/\bSGS\b/g, 'glucosalino'], [/\bTET\b/g, 'tubo'], [/\bBIC\b/g, 'bomba de analgesia'],
     [/nº|#/g, 'número '], [/(\d),(\d)/g, '$1 coma $2'], [/(\d)\s?m[lL]\b/g, '$1 mililitros'], [/(\d)\s?mg\b/g, '$1 miligramos'],
     [/(\d)[gG]\b/g, '$1 G'], [/(\d)\s?L\b/g, '$1 litros'], [/[()]/g, ' '], [/\//g, ' '], [/Carro /g, '']
 ];
@@ -1972,7 +2004,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 15:07'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 15:13'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2490,27 +2522,27 @@ const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvi
     groups: [],
     items: {
         'ALMACÉN PASILLO DERECHO': [
-            "Gasas pequeñas s/c", "Gasas Pequeñas c/c", "Gasas grandes s/c", "Gasas Grandes c/c", "Gasas (UCSI)", "Gasas (REA)",
+            "Gasas Pequeñas s/c", "Gasas Pequeñas c/c", "Gasas Grandes s/c", "Gasas Grandes c/c", "Gasas (UCSI)", "Gasas (REA)",
             "Gafas Nasales", "Gafas Nasales (REA)", "Mascarilla O2 (REA)", "Filtro", "Capnografo", "Guantes Esteriles (nº8,5)", "Guantes Esteriles (nº8)",
             "Guantes Esteriles (nº7,5)", "Guantes Esteriles (nº7)", "Guantes Esteriles (nº6,5)", "Guantes Esteriles (nº6)",
-            "Empapador", "Empapador (UCSI)", "Empapador (REA)", "Bisturi", "Bisturi eléctrico", "BIC", "Abocath 22G",
+            "Empapador", "Empapador (UCSI)", "Empapador (REA)", "Bisturi", "Bisturí Eléctrico", "BIC", "Abocath 22G",
             "Abocath 20G", "Abocath 18G", "Abocath 16G", "Abocath 14G", "Abocath (UCSI)", "Abocath (REA)",
             "Mascarilla Laringea (nº5)", "Mascarilla Laringea (nº4)", "Mascarilla Laringea (nº3)", "Yankauer", "Mango Lampara",
-            "Placa bisturi", "Rasca", "Rotulador", "Goma aspiración", "TET (nº8)", "TET (nº7,5)", "TET (nº7)", "TET (nº6,5)",
-            "Set anestesia", "Set aspiración anestesia", "Receptal aspiración PETIT", "Receptales aspiración", "Receptal aspiración",
-            "Guedel #5 11mm (celeste/ naranja)", "Guedel #4 10mm (rojo)", "Guedel #3 90mm (amarillo)", "Guedel #2 80mm (verde)",
-            "Guedel (REA)", "Jeringas bomba", "Sistema jeringa", "Sistemas (REA)", "Sistemas (UCSI)", "Tapón via (REA)", "Tapon via",
-            "Llave 3p (UCSI)", "Llave 3p (REA)", "Sistema estandar", "Alargadera", "Alargadera (UCSI)", "Alargadera (REA)",
-            "Llave 3Pasos", "Alargo bisturí", "Jeringa cono ancho", "Botes anatomia", "Aguja carga (UCSI)", "Aguja carga (REA)", "Venda gasa",
-            "Smart", "Jeringas (UCSI)", "Jeringas", "Agujas", "Mefix pequeño", "Mefix", "Esparadrapo", "Electrodos",
-            "Cal sodada DRAGER", "Cal sodada G.Electric", "Guantes (UCSI)", "Guantes (REA)", "Guantes",
+            "Placa Bisturí", "Rasca", "Rotulador", "Goma Aspiración", "TET (nº8)", "TET (nº7,5)", "TET (nº7)", "TET (nº6,5)",
+            "Set Anestesia", "Set Aspiración Anestesia", "Receptal Aspiración PETIT", "Receptales Aspiración", "Receptal Aspiración",
+            "Guedel #5 11mm (Celeste/ Naranja)", "Guedel #4 10mm (Rojo)", "Guedel #3 90mm (Amarillo)", "Guedel #2 80mm (Verde)",
+            "Guedel (REA)", "Jeringas Bomba", "Sistema Jeringa", "Sistemas (REA)", "Sistemas (UCSI)", "Tapón Vía (REA)", "Tapón Vía",
+            "Llave 3p (UCSI)", "Llave 3p (REA)", "Sistema Estándar", "Alargadera", "Alargadera (UCSI)", "Alargadera (REA)",
+            "Llave 3Pasos", "Alargo Bisturí", "Jeringa Cono Ancho", "Botes Anatomía", "Aguja Carga (UCSI)", "Aguja Carga (REA)", "Venda Gasa",
+            "Smart", "Jeringas (UCSI)", "Jeringas", "Agujas", "Mefix Pequeño", "Mefix", "Esparadrapo", "Electrodos",
+            "Cal Sodada DRAGER", "Cal Sodada G.Electric", "Guantes (UCSI)", "Guantes (REA)", "Guantes",
             "Sondas Aspiración #12 (Blanco)", "Sondas Aspiración #10 (Negro)", "Sondas Aspiración #14 (Verde)",
             "Sondas Aspiración #16 (Naranja)"
         ],
         'ALMACÉN PASILLO IZQUIERDO': [
-            "Bata esteril", "Sábana Adhesiva", "Funda Mayo", "Bolsa instrumental", "Pegatina", "Paño utilidades",
-            "Paño adhesivo", "Kit sondaje", "SteryStrip", "Aposito via", "Aposito via (UCSI)", "Apósito vía (REA)",
-            "Otros liquidos", "Sevorane", "SF 100ml irrigación", "SF 500ml irrigación", "Frova"
+            "Bata Estéril", "Sábana Adhesiva", "Funda Mayo", "Bolsa Instrumental", "Pegatina", "Paño Utilidades",
+            "Paño Adhesivo", "Kit Sondaje", "SteryStrip", "Apósito Vía", "Apósito Vía (UCSI)", "Apósito Vía (REA)",
+            "Otros Líquidos", "Sevorane", "SF 100ml Irrigación", "SF 500ml Irrigación", "Frova"
         ],
         'FARMACIA': [
             "Ac. Tranexámico", "Adrenalina", "Amiodarona", "Ampicilina (U)", "Atropina", "Atropina (R)", "Augmentine (U)",
@@ -2521,10 +2553,10 @@ const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvi
             "Mepivacaina 2%", "Meropenem (U)", "Metamizol", "Metamizol (R)", "Metilprednisona 20mg", "Metilprednisona 40mg",
             "Metoclopramida", "Metoclopramida (R)", "Midazolam", "Midazolam (R)", "Midazolam (U)", "Naloxona", "Neostigmina",
             "Ondansetron 4mg", "Ondansetrón 4mg (R)", "Ondansetron 8mg", "Ondansetrón 8mg (R)", "Pantoprazol", "Propofol (R)",
-            "Propofol 10 mL", "Propofol 50 ml", "Ropivacaina", "Salbutamol inhalado", "SF 10mL", "SF 10ml (R)", "SF 10ml (U)",
+            "Propofol 10 mL", "Propofol 50 ml", "Ropivacaina", "Salbutamol Inhalado", "SF 10mL", "SF 10ml (R)", "SF 10ml (U)",
             "Solinitrina", "Solu Moderin 125mg", "Tramadol", "Tramadol (R)", "Trandate", "Urapidilo", "Urapidilo (R)",
             "Vancomicina (U)", "SF 100ml (U)", "SF 100ml", "SF 500mL", "SF 500ml", "SGS", "RL", "Paracetamol (U)",
-            "Paracetamol (R)", "Paracetamol", "Pomada ocular", "Sulky", "Antisepticos", "Alcohol", "Alcohol (R)", "SF lavados 3L (R)",
+            "Paracetamol (R)", "Paracetamol", "Pomada Ocular", "Sulky", "Antisepticos", "Alcohol", "Alcohol (R)", "SF Lavados 3L (R)",
             "Glucosado 5% 500ml", "Glucosado 5%", "Gelafundina"
         ]
     }
