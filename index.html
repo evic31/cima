@@ -729,10 +729,10 @@ const DEFAULT_INVENTORY = {
         "Carro Enfermeria": [
             // ── BLOQUE 1 ──
             { g:1, name: "Bisturi", type: "checkbox", options: ["nº10","nº11","nº15","nº22","nº24"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Antisepticos", type: "checkbox", options: ["Betadine","Clorh. Alc.","Clorh. Alc. Tintada","Clorh. Acu.","Clorh. Acu. Tintada","Alcohol"], storage: "FARMACIA", optStorage: { "Betadine": "ALMACÉN PASILLO IZQUIERDO", "Clorh. Acu.": "ALMACÉN PASILLO IZQUIERDO", "Clorh. Acu. Tintada": "ALMACÉN PASILLO IZQUIERDO" } },
+            { g:1, name: "Antisepticos", type: "checkbox", options: ["Betadine","Clorh. Alc.","Clorh. Alc. Tintada","Clorh. Acu.","Clorh. Acu. Tintada","Alcohol"], storage: "FARMACIA", optStorage: { "Betadine": "ALMACÉN PASILLO IZQUIERDO", "Clorh. Acu.": "ALMACÉN PASILLO IZQUIERDO", "Clorh. Acu. Tintada": "ALMACÉN PASILLO IZQUIERDO" }, optUnit: { "Alcohol": "Alcohol" } },
             { g:1, name: "Otros liquidos", type: "checkbox", options: ["Agua Oxig.","Nobecutan"], storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:1, name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO", optUnit: { "P": "Mefix pequeño" } },
             { g:1, name: "Contenedor Agujas", type: "number", stock: 1, storage: "ALMACÉN LIMPIEZA" },
             { g:1, name: "Gasas Grandes c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Gasas Pequeñas c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
@@ -810,7 +810,7 @@ const DEFAULT_INVENTORY = {
             { g:3, name: "Abocath 14G", type: "number", stock: 2, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Llave 3Pasos", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Tapon via", type: "number", stock: 4, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:3, name: "Mefix pequeño", type: "number", stock: 1, storage: "ALMACÉN PASILLO DERECHO" },
+            { g:3, name: "Mefix pequeño", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:3, name: "Esparadrapo", type: "checkbox", options: ["Plastico","Tela","Papel"], storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 4 ──
             { g:4, name: "Atropina", type: "number", stock: 10, storage: "FARMACIA" },
@@ -864,7 +864,7 @@ const DEFAULT_INVENTORY = {
             { g: 6, name: "Sondas Aspiración #10 (Negro)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g: 6, name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
-            { g: 6, name: "Alcohol", type: "number", stock: 1, storage: "FARMACIA" },
+            { g: 6, name: "Alcohol", type: "checkbox", storage: "FARMACIA" },
             { g: 6, name: "Contenedor agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA" },
             { g: 6, name: "Jeringas", type: "checkbox", options: ["20cc", "10cc", "5cc", "3cc"], storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Agujas", type: "checkbox", options: ["Carga", "Azul", "Verde", "Amarilla", "Naranja"], storage: "ALMACÉN PASILLO DERECHO" },
@@ -1068,7 +1068,7 @@ function renderLocationGroup(tabName, locationName, items, locIdx = 0) {
 function renderItem(tabName, locationName, item) {
     const baseId = [tabName, locationName, item.name].join(ID_SEP);
     let html = '';
-    if (item.type === 'checkbox') {
+    if (item.type === 'checkbox' || item.stock === 1) { // stock 1: casilla «Falta» en vez de un desplegable de una sola opción
         const opts = item.options?.length ? item.options : [''];
         html = opts.map(opt => {
             const oid = opt ? [baseId, opt].join(ID_SEP) : baseId;
@@ -1134,13 +1134,14 @@ function renderSummary() {
     if (!el) return;
 
     // build location map (+ posición de cada casilla en su pestaña, para listar por área en ese orden)
-    const locMap = {}, tabPos = {};
+    // optUnit: en la lista total, esa opción suma con otro producto (Antisépticos·Alcohol = Alcohol del carro de anestesia)
+    const locMap = {}, tabPos = {}, unitMap = {};
     for (const area in inventoryData) {
         let n = 0;
         for (const location in inventoryData[area]) {
             for (const item of inventoryData[area][location]) {
                 const base = [area, location, item.name].join(ID_SEP);
-                if (item.options?.length) item.options.forEach(o => { const id = [base, o].join(ID_SEP); locMap[id] = storageOf(item, o); tabPos[id] = n++; });
+                if (item.options?.length) item.options.forEach(o => { const id = [base, o].join(ID_SEP); locMap[id] = storageOf(item, o); tabPos[id] = n++; if (item.optUnit?.[o]) unitMap[id] = item.optUnit[o]; });
                 else { locMap[base] = item.storage; tabPos[base] = n++; }
             }
         }
@@ -1157,10 +1158,11 @@ function renderSummary() {
         if (isNum) display += ` - Faltan: ${value}`;
         byArea[area].push({ d: display, r: tabPos[inputId] ?? 1e6, n: itemName + (option ? ` (${option})` : ''), q: isNum ? parseInt(value) : null });
         const store = locMap[inputId] || 'Desconocido';
-        const fullName = option ? `${itemName} (${option})` : itemName;
+        const uName = unitMap[inputId] || itemName, uOpt = unitMap[inputId] ? null : option;
+        const fullName = uOpt ? `${uName} (${uOpt})` : uName;
         if (!byStorage[store]) { byStorage[store] = {}; byMeta[store] = {}; }
-        byMeta[store][isNum ? itemName : fullName] = { unit: itemName, opt: isNum ? null : option };
-        if (isNum) { byStorage[store][itemName] = (byStorage[store][itemName] || 0) + parseInt(value); }
+        byMeta[store][isNum ? uName : fullName] = { unit: uName, opt: isNum ? null : uOpt };
+        if (isNum) { byStorage[store][uName] = (byStorage[store][uName] || 0) + parseInt(value); }
         else       { byStorage[store][fullName] = (byStorage[store][fullName] || 0) + 1; }
     }
 
@@ -1387,7 +1389,7 @@ function renderManualSheet(RH) {
             const stocks = quis.map(q => inventoryData[q][loc]?.[ii]?.stock);
             const base = {
                 kind: 'item', si, label: loc, g: item.g || 0, name: item.name, storage: item.storage,
-                isNum: item.type === 'number', stocks, uniform: stocks.every(s => s === stocks[0])
+                isNum: item.type === 'number' && stocks.some(s => s > 1), stocks, uniform: stocks.every(s => s === stocks[0])
             };
             const opts = item.options?.length ? item.options : [null];
             opts.forEach((opt, oi) => rows.push({ ...base, storage: storageOf(item, opt), stChange: oi === 0 || storageOf(item, opt) !== storageOf(item, opts[oi - 1]), opt, first: oi === 0, last: oi === opts.length - 1, n: opts.length }));
@@ -1583,7 +1585,7 @@ function renderManualSheet(RH) {
                 drawUB(item.storage, LIST_X + LNAME_W + UB_W / 2, ty);
                 const mx = LIST_X + LNAME_W + UB_W;
                 if (item.options?.length) { /* se rodea la opción */ }
-                else if (item.type === 'number') {
+                else if (item.type === 'number' && item.stock > 1) {
                     doc.setFont('helvetica', 'normal'); doc.setFontSize(4.6); doc.setTextColor(120, 132, 152);
                     doc.text('/' + item.stock, mx + MARK_W - 0.4, ly + 1.8, { align: 'right' });
                 } else box(mx + MARK_W / 2, ly);
@@ -1940,7 +1942,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 18:40'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '14-nov 19:15'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2360,7 +2362,7 @@ function vozApply(c, heard, text = heard) {
     const base = [area, loc, item.name].join(ID_SEP);
     const changes = [];
     let said;
-    if (item.type === 'number') {
+    if (item.type === 'number' && item.stock > 1) {
         const sel = document.getElementById(base);
         if (!sel) return;
         const v = remove ? 0 : Math.min(qty ?? 1, item.stock);
