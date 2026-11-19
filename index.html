@@ -108,8 +108,15 @@
         body[data-q="7"] { --header-bg: #e57207; }
         /* Q8 y Hemo: franjas HORIZONTALES sobre toda la cabecera (logo + pestañas); arriba un solo color → la barra del iPhone lo coge */
         body[data-q="8"], body[data-q="hemo"] { --header-bg: transparent; }
-        body[data-q="8"] .top-wrapper { background: linear-gradient(to bottom, #87c6f4 33.3%, #c5a2e5 33.3% 66.6%, #f1e690 66.6%); }
-        body[data-q="hemo"] .top-wrapper { background: linear-gradient(to bottom, #8bc9a2 33.3%, #e87878 33.3% 66.6%, #f1e690 66.6%); }
+        /* (19-nov) franjas con colores LISOS, no degradado: el iPhone no lee el color de un degradado para la barra de la hora.
+           Arriba = fondo de .top-wrapper; medio y abajo = ::before / ::after detrás de la cabecera y las pestañas */
+        body[data-q="8"] .top-wrapper, body[data-q="hemo"] .top-wrapper { --f2: #c5a2e5; --f3: #f1e690; }
+        body[data-q="hemo"] .top-wrapper { --f2: #e87878; }
+        body[data-q="8"] .top-wrapper::before, body[data-q="hemo"] .top-wrapper::before,
+        body[data-q="8"] .top-wrapper::after, body[data-q="hemo"] .top-wrapper::after { content: ''; position: absolute; left: 0; right: 0; z-index: 0; }
+        body[data-q="8"] .top-wrapper::before, body[data-q="hemo"] .top-wrapper::before { top: 33.3%; height: 33.4%; background-color: var(--f2); }
+        body[data-q="8"] .top-wrapper::after, body[data-q="hemo"] .top-wrapper::after { top: 66.6%; bottom: 0; background-color: var(--f3); }
+        .top-wrapper > header, .top-wrapper > .tabs-container { position: relative; z-index: 1; }
         /* colores claros: letra oscura en RESUMEN/Editor/Orden y en ℹ */
         body[data-q="2"], body[data-q="5"], body[data-q="8"], body[data-q="hemo"] { --tab-text: #1e293b; --tab-bg: rgba(255,255,255,0.6); }
         body[data-q="2"] .header-info-btn, body[data-q="5"] .header-info-btn, body[data-q="8"] .header-info-btn, body[data-q="hemo"] .header-info-btn { color: #1e293b; border-color: rgba(0,0,0,.35); background: rgba(255,255,255,.6); }
@@ -2062,7 +2069,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '19-nov 19:26'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '19-nov 19:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
