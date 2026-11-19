@@ -373,6 +373,14 @@
         #content-RESUMEN .total-item { justify-content: flex-start; }
         #content-RESUMEN .total-item .quantity { min-width: 2.4rem; text-align: center; }
         #content-RESUMEN .total-item.done .quantity { opacity: 0.45; }
+        /* (19-nov) puntitos con el color de cada quirófano que necesita ese producto (colores de UCSI) */
+        .qdots { display: inline-flex; gap: 2px; margin-left: 5px; vertical-align: middle; position: relative; top: -1px; }
+        .qdot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 0.5px rgba(0,0,0,.25); }
+        .qd-1 { background: #dd3030; } .qd-2 { background: #d8db2d; } .qd-3 { background: #179e08; } .qd-4 { background: #963499; }
+        .qd-5 { background: #fff; box-shadow: 0 0 0 0.75px #000; } .qd-6 { background: #3190e4; } .qd-7 { background: #e57207; }
+        .qd-8 { background: linear-gradient(to bottom, #87c6f4 33.3%, #c5a2e5 33.3% 66.6%, #f1e690 66.6%); }
+        .qd-hemo { background: linear-gradient(to bottom, #8bc9a2 33.3%, #e87878 33.3% 66.6%, #f1e690 66.6%); }
+        #content-RESUMEN .total-item.done .qdots { opacity: 0.45; }
         #content-RESUMEN .sum-check,
         #content-RESUMEN .sum-area-check {
             width: 1.05em; height: 1.05em;
@@ -1247,7 +1255,7 @@ function renderSummary() {
         }
     }
 
-    let byArea = {}, byStorage = {}, byMeta = {};
+    let byArea = {}, byStorage = {}, byMeta = {}, byQ = {};   // byQ: quirófanos que piden cada producto (puntitos)
     for (const inputId in checklistState) {
         if (inputId.startsWith('RESUMEN') || inputId.startsWith('Area')) continue;
         const value = checklistState[inputId];
@@ -1260,8 +1268,10 @@ function renderSummary() {
         const store = locMap[inputId] || 'Desconocido';
         const uName = unitMap[inputId] || itemName, uOpt = unitMap[inputId] ? null : option;
         const fullName = uOpt ? `${uName} (${uOpt})` : uName;
-        if (!byStorage[store]) { byStorage[store] = {}; byMeta[store] = {}; }
+        if (!byStorage[store]) { byStorage[store] = {}; byMeta[store] = {}; byQ[store] = {}; }
         byMeta[store][isNum ? uName : fullName] = { unit: uName, opt: isNum ? null : uOpt };
+        const qk = (byQ[store][isNum ? uName : fullName] ||= new Set());
+        const qm = area.match(/^Quirófano (\d)$/); if (qm) qk.add(qm[1]); else if (area === 'Hemodinamia') qk.add('hemo');
         if (isNum) { byStorage[store][uName] = (byStorage[store][uName] || 0) + parseInt(value); }
         else       { byStorage[store][fullName] = (byStorage[store][fullName] || 0) + 1; }
     }
@@ -1319,7 +1329,9 @@ function renderSummary() {
                     <ul>${entries.map(([name, qty]) => {
                         const sid = ['RESUMEN', loc, name].join(ID_SEP);
                         const chk = !!summaryTicks[sid];
-                        return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span class="quantity">×${qty}</span><span>${name}</span></label></li>`;
+                        const qs = [...'12345678', 'hemo'].filter(q => byQ[loc]?.[name]?.has(q));
+                        const dots = qs.length ? `<b class="qdots" title="${qs.map(q => q === 'hemo' ? 'Hemodinamia' : 'Q' + q).join(' · ')}">${qs.map(q => `<i class="qdot qd-${q}"></i>`).join('')}</b>` : '';
+                        return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span class="quantity">×${qty}</span><span>${name}${dots}</span></label></li>`;
                     }).join('')}</ul>
                 </div>`).join('')}
         </div>`;
@@ -2069,7 +2081,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '19-nov 19:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '19-nov 19:36'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
