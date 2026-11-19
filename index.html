@@ -1919,6 +1919,8 @@ const VOZ_SYN = [
     [/\b(tuvo|tubo|tubos)\s+(de\s+)?mayo\b/g, 'guedel'],
     // «Guedel» el iPhone lo escribe «gel»: solo o con número/color = Guedel (menos «gel lubricante» = Cathegel)
     [/\b(g ?del|ge ?del|gue ?del|gedel|guel|gel|geles)\b(?!\s+(lubricante|lubricantes|de sondaje|sondaje|conductor))/g, 'guedel'],
+    // (19-nov, su registro) Nobecutan: «Nocta», «Vetan», «Ejecutan»
+    [/\b(noctas?|noctan|nocutan|vetan|betan|ejecutan|e cutan|ecutan|be tan|ve tan|vecutan|becutan|bekutan|nobetan|novetan)\b/g, 'nobecutan'],
     // «Traste», «Andate» = Trandate · «Dance de 4 mg», «Strong» = Ondansetron (Zofran)
     [/\b(traste|trastes|tran date|trandat|andate|trandates)\b/g, 'trandate'],
     [/\b(on ?dance ?tron|on ?dan ?se ?tron|ondasetron|dance ?tron|on ?dance|dance|danse|strong|sofran|zofran)\b/g, 'ondansetron'],
@@ -2082,7 +2084,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '19-nov 19:38'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '19-nov 19:47'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2107,6 +2109,8 @@ function vozScrollToLoc(loc) {
 
 function initVoz() {
     const btn = document.getElementById('btnVoz');
+    // (19-nov) el iPhone carga la lista de voces tarde («voz por defecto» en el registro): se pide ya al abrir
+    try { speechSynthesis.getVoices(); speechSynthesis.addEventListener('voiceschanged', () => speechSynthesis.getVoices()); } catch {}
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { btn.addEventListener('click', () => alert('Este navegador no admite reconocimiento de voz. En iPhone, prueba desde Safari.')); return; }
     // si el micro se quedó en pausa (Safari no deja rearrancarlo solo), un toque lo reanuda
