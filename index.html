@@ -1924,7 +1924,8 @@ const VOZ_SYN = [
     // «Traste», «Andate» = Trandate · «Dance de 4 mg», «Strong» = Ondansetron (Zofran)
     [/\b(traste|trastes|tran date|trandat|andate|trandates)\b/g, 'trandate'],
     [/\b(on ?dance ?tron|on ?dan ?se ?tron|ondasetron|dance ?tron|on ?dance|dance|danse|strong|sofran|zofran)\b/g, 'ondansetron'],
-    [/\bsuero fisiologico\b|\bfisiologico\b|\bsuero\b/g, 'sf'], [/\bringer lactato\b|\bringer\b|\blactato\b/g, 'rl'],
+    // (20-nov, su registro) «Lógico 100 ml» = fisiológico
+    [/\bsuero fisiologico\b|\bfisiologicos?\b|\blogicos?\b|\bsuero\b/g, 'sf'], [/\bringer lactato\b|\bringer\b|\blactato\b/g, 'rl'],
     [/\bglucosalino\b|\bglucosalinos\b/g, 'sgs'], [/\btubos?\b/g, 'tet'], [/\bmascarillas? laringeas?\b/g, 'mascarilla laringea'],
     [/\bpor ciento\b/g, ''],
     // «set» de aspiración: el iPhone escribe «7», «sed», «sec»… (y el 7 se tomaba como cantidad)
@@ -1946,7 +1947,11 @@ const VOZ_SYN = [
     // Mefix: cómo lo suele escribir el iPhone
     [/\b(netflix|nefix|mefisto|mefis|mefi|mefik|mefic|mefil|metfix|methix|mephix|mex|meeks|me fix|me fis|me fixe|me fixed|me fijo|me fijas|me fixes)\b/g, 'mefix'],
     [/\berre ele\b/g, 'rl'], [/\bese efe\b/g, 'sf'], [/\bese ge ese\b/g, 'sgs'],
-    [/\bcoma cinco\b|\by medio\b|\bymedio\b/g, ' .5']
+    [/\bcoma cinco\b|\by medio\b|\bymedio\b/g, ' .5'],
+    // (20-nov, su registro) medidas de jeringa: «10 heces», «Cinco C3», «cinco ce ce», «mililitros»
+    [/\b(heces|eces|seces|ces|ce ce|se se|c c|cs|centimetros cubicos|centimetros|cubicos?)\b/g, 'cc'],
+    [/\b(c|ce)\s3\b/g, 'cc'],
+    [/\bmililitros?\b/g, 'ml'], [/\bmiligramos?\b/g, 'mg']
 ];
 const VOZ_STOP = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'en', 'al', 'y', 'e', 'faltan', 'falta', 'hay', 'que', 'mas', 'ml', 'mg', 'cc', 'nº', 'n', 'numero', 'num', 'talla']);
 // letras de talla dichas en voz alta
@@ -2084,7 +2089,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '19-nov 19:47'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '20-nov 00:12'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2235,7 +2240,7 @@ function vozArranca(auto) {
     if (auto) vozEv('rearranco solo');
     clearTimeout(voz.vigia);
     // el 1er arranque puede estar esperando a que aceptes el aviso de permiso del micro: ahí se espera mucho más
-    const espera = voz.oido || auto ? 2000 : 15000;
+    const espera = voz.oido || auto ? 2000 : voz.micOk ? 5000 : 15000;   // (20-nov) con permiso ya dado, 5 s
     voz.vigia = setTimeout(() => {
         if (!voz?.on || voz.vivo || voz.paused || voz.speaking) return;
         // (19-nov) antes de pedir un toque, un 2.º intento con un micro nuevo: a veces el primero no arrancaba
@@ -2253,6 +2258,7 @@ function vozStart(SR) {
     voz = { on: true, SR, rec: null, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false, vivo: false, vigia: 0, trasFin: null, reintento: false };
     try { vozAC = vozAC || new (window.AudioContext || window.webkitAudioContext)(); vozAC.resume(); } catch {}
     voz.rec = vozNuevoRec(SR);
+    try { navigator.permissions?.query({ name: 'microphone' }).then(s => { if (voz) voz.micOk = s.state === 'granted'; }).catch(() => {}); } catch {}
     const v = vozVozES();
     vozEv('— modo voz v' + APP_BUILD + (VOZ_IOS ? ' (iPhone)' : '') + ' · voz ' + (v ? v.name : 'por defecto'));
     document.getElementById('btnVoz').classList.add('on');
@@ -2402,7 +2408,7 @@ function vozHandle(alts) {
     if (/^(deshacer|deshaz|atras|borra eso|anula)$/.test(n)) return vozUndo(heard);
     const tabHit = vozTabCommand(n);
     if (tabHit) {
-        switchTab(tabHit); voz.carro = null; voz.pending = null;
+        switchTab(tabHit); voz.carro = null; voz.pending = null; voz.ultimo = null;
         vozShow(heard, 'Pestaña ' + tabHit); return vozSay(vozSpeak(tabHit));
     }
     const area = vozTab();
@@ -2421,6 +2427,12 @@ function vozHandle(alts) {
         if (carroAns) pool = pool.filter(c => c.loc === carroAns);
         if (p.needOpt) pool = pool.filter(c => c.opts.length);
         if (pool.length && pool.length < p.n) return vozResolve(pool, heard, p.text + ' ' + heard, p.remove);
+        // (20-nov) «Mililitros», «sí»: no dice cuál → se vuelve a preguntar (una vez) en vez de perder la pregunta
+        if (p.needOpt && p.opts && !p.otra && !vozTokens(heard).nums.length && !vozMatch(area, heard).length) {
+            voz.pending = { ...p, otra: true };
+            vozShow(heard, '¿Cuál? ' + p.opts.join(' · '), true);
+            return vozSay('¿Cuál? ' + p.opts.map(vozSpeak).join(', '));
+        }
         // no aclara nada → se trata como frase nueva
     }
     if (carroAns) {
@@ -2428,6 +2440,9 @@ function vozHandle(alts) {
         voz.carro = carroAns; vozScrollToLoc(carroAns);
         vozShow(heard, '→ ' + carroAns); return vozSay(vozSpeak(carroAns));
     }
+    // (20-nov) solo números («faltan nueve», «cinco cc», «10 ml», «de 10»): van al último material o a la medida
+    const U0 = vozTokens(heard);
+    if (!remove && U0.nums.length && !U0.words.filter(w => !VOZ_CARRO[w]).length) return vozSoloNum(area, U0, n, heard);
     // prueba las alternativas que da el reconocedor y se queda con la que mejor encaja
     let best = null, bestTxt = heard;
     alts.forEach((a, ai) => {
@@ -2436,6 +2451,30 @@ function vozHandle(alts) {
     });
     if (!best) { vozShow(heard, 'No lo encuentro en ' + area, true); return vozSay('No lo encuentro'); }
     vozResolve(best, heard, bestTxt, remove);
+}
+
+// (20-nov) frase sin material, solo número/medida:
+//   1) el último material dicho: «Jeringas 10cc» → «cinco» = 5cc · «SF 100ml» → «faltan nueve» = faltan 9
+//   2) si no, por la medida: «cinco cc» = Jeringas 5cc · «10 ml» = Jeringas 10cc o SF 10ml (si hay dos, pregunta)
+function vozSoloNum(area, U, n, heard) {
+    const num = U.nums[0], cc = /\bcc\b/.test(n), ml = /\bml\b/.test(n), falta = /\bfaltan?\b/.test(n);
+    const optNum = it => (it.options || []).find(o => vozTokens(o.replace(/\(.*?\)/g, '')).nums.includes(num));
+    const u = voz.ultimo?.area === area ? voz.ultimo : null;
+    if (u) {
+        const o = !falta && optNum(u.item);
+        if (o) return vozApply({ area, loc: u.loc, item: u.item, opts: [o], qty: null }, heard);
+        if (!cc && !ml && u.item.type === 'number' && u.item.stock > 1) return vozApply({ area, loc: u.loc, item: u.item, opts: [], qty: Math.round(num) }, heard);
+    }
+    const cands = [];
+    if (!falta) for (const loc in inventoryData[area]) inventoryData[area][loc].forEach(item => {
+        const o = optNum(item);
+        if (o && (cc ? /cc/i.test(o) : /cc|ml/i.test(o))) return cands.push({ area, loc, item, opts: [o], qty: null, score: 10 });
+        if (!cc && !item.options?.length && /\d\s?ml\b/i.test(item.name) && vozTokens(item.name).nums.includes(num))
+            cands.push({ area, loc, item, opts: [], qty: null, score: 10 });
+    });
+    if (cands.length) return vozResolve(cands, heard, n, false);
+    if (u) { vozShow(heard, vozLabel(u.item.name) + ': aquí no lleva cantidad', true); return vozSay(vozSpeak(u.item.name) + ', aquí no lleva cantidad'); }
+    vozShow(heard, 'No lo encuentro en ' + area, true); return vozSay('No lo encuentro');
 }
 
 // frase que es SOLO un carro/zona (admite «de», «el», «la», «carro»)
@@ -2463,7 +2502,8 @@ function vozGemelo(top, heard, text, remove) {
     if (c0.item.options?.length && !c0.opts.length) {
         const ambos = top.filter(c => VOZ_GEMELOS.includes(c.loc) && vozKey(c.item.name) === vozKey(c0.item.name));
         if (new Set(ambos.map(c => c.loc)).size < 2) return false;
-        voz.pending = { text, remove, keys: new Set(ambos.map(c => c.loc + ID_SEP + c.item.name)), n: ambos.length + 1, needOpt: true };
+        voz.pending = { text, remove, keys: new Set(ambos.map(c => c.loc + ID_SEP + c.item.name)), n: ambos.length + 1, needOpt: true, opts: c0.item.options };
+        voz.ultimo = { area: c0.area, loc: c0.loc, item: c0.item };
         vozShow(heard, `${vozLabel(c0.item.name)}: ¿cuál? ${c0.item.options.join(', ')}`, true);
         vozSay(`${vozSpeak(c0.item.name)}, ¿cuál?`);
         return true;
@@ -2595,6 +2635,7 @@ function vozMatch(area, text) {
 
 function vozApply(c, heard, text = heard) {
     const { area, loc, item, opts, qty, remove } = c;
+    voz.ultimo = { area, loc, item };   // (20-nov) «faltan nueve» / «cinco» sueltos van a este
     const base = [area, loc, item.name].join(ID_SEP);
     const changes = [];
     let said;
@@ -2607,7 +2648,7 @@ function vozApply(c, heard, text = heard) {
         said = remove ? `${item.name}, stock completo` : `${item.name}, faltan ${v}` + (qty > item.stock ? `, máximo ${item.stock}` : '');
     } else if (item.options?.length) {
         if (!opts.length) {
-            voz.pending = { text, remove, keys: new Set([loc + ID_SEP + item.name]), n: 2, needOpt: true };
+            voz.pending = { text, remove, keys: new Set([loc + ID_SEP + item.name]), n: 2, needOpt: true, opts: item.options };
             vozShow(heard, `${vozLabel(item.name)}: ¿cuál? ${item.options.join(', ')}`, true);
             return vozSay(`${vozSpeak(item.name)}, ¿cuál?`);
         }
@@ -2618,7 +2659,8 @@ function vozApply(c, heard, text = heard) {
         if (!cb) return;
         changes.push({ el: cb, prev: cb.checked });
         cb.checked = !remove;
-        said = item.name + (remove ? ', quitado' : '');
+        // (20-nov) «Paracetamol faltan tres» en REA: ahí es casilla, no número → se dice para que no pase desapercibido
+        said = item.name + (remove ? ', quitado' : qty > 1 ? ', aquí no lleva cantidad' : '');
     }
     voz.undo.push(changes);
     voz.carro = loc;
