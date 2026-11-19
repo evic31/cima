@@ -378,8 +378,9 @@
         .qdot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 0.5px rgba(0,0,0,.25); }
         .qd-1 { background: #dd3030; } .qd-2 { background: #d8db2d; } .qd-3 { background: #179e08; } .qd-4 { background: #963499; }
         .qd-5 { background: #fff; box-shadow: 0 0 0 0.75px #000; } .qd-6 { background: #3190e4; } .qd-7 { background: #e57207; }
-        .qd-8 { background: linear-gradient(to bottom, #87c6f4 33.3%, #c5a2e5 33.3% 66.6%, #f1e690 66.6%); }
-        .qd-hemo { background: linear-gradient(to bottom, #8bc9a2 33.3%, #e87878 33.3% 66.6%, #f1e690 66.6%); }
+        /* Q8 y Hemo comparten el amarillo: puntito bicolor sin él (Q8 azul/lila, Hemo verde/rojo) */
+        .qd-8 { background: linear-gradient(to bottom, #87c6f4 50%, #c5a2e5 50%); }
+        .qd-hemo { background: linear-gradient(to bottom, #8bc9a2 50%, #e87878 50%); }
         #content-RESUMEN .total-item.done .qdots { opacity: 0.45; }
         #content-RESUMEN .sum-check,
         #content-RESUMEN .sum-area-check {
@@ -2081,7 +2082,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '19-nov 19:36'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '19-nov 19:38'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
