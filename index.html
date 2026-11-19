@@ -1844,6 +1844,13 @@ const VOZ_NUM = {
 };
 // sinónimos hablados → como está escrito en la app
 const VOZ_SYN = [
+    // (19-nov, su registro) «tuvo mayo», «G del / gel naranja» = Guedel (antes de que «tubo» pase a TET)
+    [/\b(tuvo|tubo|tubos)\s+(de\s+)?mayo\b/g, 'guedel'],
+    // «Guedel» el iPhone lo escribe «gel»: solo o con número/color = Guedel (menos «gel lubricante» = Cathegel)
+    [/\b(g ?del|ge ?del|gue ?del|gedel|guel|gel|geles)\b(?!\s+(lubricante|lubricantes|de sondaje|sondaje|conductor))/g, 'guedel'],
+    // «Traste», «Andate» = Trandate · «Dance de 4 mg», «Strong» = Ondansetron (Zofran)
+    [/\b(traste|trastes|tran date|trandat|andate|trandates)\b/g, 'trandate'],
+    [/\b(on ?dance ?tron|on ?dan ?se ?tron|ondasetron|dance ?tron|on ?dance|dance|danse|strong|sofran|zofran)\b/g, 'ondansetron'],
     [/\bsuero fisiologico\b|\bfisiologico\b|\bsuero\b/g, 'sf'], [/\bringer lactato\b|\bringer\b|\blactato\b/g, 'rl'],
     [/\bglucosalino\b|\bglucosalinos\b/g, 'sgs'], [/\btubos?\b/g, 'tet'], [/\bmascarillas? laringeas?\b/g, 'mascarilla laringea'],
     [/\bpor ciento\b/g, ''],
@@ -2004,7 +2011,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '14-nov 15:13'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '19-nov 18:49'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2092,8 +2099,8 @@ function vozNuevoRec(SR) {
     // lo hace la app. interimResults = ver lo que dices mientras lo dices.
     rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
     rec.onstart = () => {
-        voz.vivo = true; voz.cerrado = false; clearTimeout(voz.vigia);
-        if (voz.saludo) { const t = voz.saludo; voz.saludo = null; vozSay(t); }   // el saludo, cuando el micro ya tiene permiso
+        if (voz.rec !== rec) return;
+        voz.vivo = true; voz.cerrado = false; voz.reintento = false; clearTimeout(voz.vigia);
     };
     rec.onresult = e => {
         voz.oido = true;
@@ -2108,16 +2115,21 @@ function vozNuevoRec(SR) {
         }
         if (!parcial.trim()) return;
         document.getElementById('vozHeard').textContent = '«' + parcial.trim() + '…»';   // en vivo, tal como lo dices
-        voz.cierreT = setTimeout(() => vozCierra([parcial], 'silencio 1 s'), 1000);
+        // (19-nov) si el iPhone deja la frase en coma («Set aspiración anestesia,») es que vas a seguir: se espera más
+        const coma = /,\s*$/.test(parcial);
+        voz.cierreT = setTimeout(() => vozCierra([parcial], coma ? 'silencio 1,8 s (coma)' : 'silencio 1 s'), coma ? 1800 : 1000);
     };
     rec.onerror = e => {
+        if (voz.rec !== rec) return;                                // un micro viejo que ya se cambió
         if (e.error === 'aborted' && voz.trasFin) return;          // lo hemos apagado nosotros para hablar
         vozEv('error ' + e.error);
         if (e.error !== 'not-allowed' && e.error !== 'service-not-allowed') return;
-        if (!voz.oido) { vozShow('', 'Sin permiso para el micrófono', true); return vozStop(); }
+        // (19-nov) el micro arranca tras el saludo, fuera del toque: si el iPhone lo niega, primero se pide un toque
+        if (!voz.oido && voz.toque) { vozShow('', 'Sin permiso para el micrófono', true); return vozStop(); }
         vozPausa();
     };
     rec.onend = () => {
+        if (voz.rec !== rec) return;                                // un micro viejo que ya se cambió
         voz.vivo = false;
         if (voz.trasFin) { const f = voz.trasFin; voz.trasFin = null; clearTimeout(voz.esperaT); return f(); }   // ya apagado: ahora sí, hablar
         vozEv('fin del micro');
@@ -2143,27 +2155,37 @@ function vozArranca(auto) {
     try { voz.rec.start(); }
     catch (e) {
         vozEv('no arranca (' + (e.name || e) + '), pruebo otro');
-        try { voz.rec = vozNuevoRec(voz.SR); voz.rec.start(); } catch (e2) { vozEv('tampoco (' + (e2.name || e2) + ')'); return vozPausa(); }
+        try { try { voz.rec.abort(); } catch {} voz.rec = vozNuevoRec(voz.SR); voz.rec.start(); } catch (e2) { vozEv('tampoco (' + (e2.name || e2) + ')'); return vozPausa(); }
     }
     if (auto) vozEv('rearranco solo');
     clearTimeout(voz.vigia);
     // el 1er arranque puede estar esperando a que aceptes el aviso de permiso del micro: ahí se espera mucho más
     const espera = voz.oido || auto ? 2000 : 15000;
-    voz.vigia = setTimeout(() => { if (voz?.on && !voz.vivo && !voz.paused && !voz.speaking) { vozEv('no arrancó en ' + espera / 1000 + ' s'); vozPausa(); } }, espera);
+    voz.vigia = setTimeout(() => {
+        if (!voz?.on || voz.vivo || voz.paused || voz.speaking) return;
+        // (19-nov) antes de pedir un toque, un 2.º intento con un micro nuevo: a veces el primero no arrancaba
+        if (!voz.reintento) {
+            voz.reintento = true; vozEv('no arrancó en ' + espera / 1000 + ' s, pruebo otro');
+            try { voz.rec.abort(); } catch {}
+            voz.rec = vozNuevoRec(voz.SR);
+            return vozArranca(true);
+        }
+        vozEv('no arrancó en ' + espera / 1000 + ' s'); vozPausa();
+    }, espera);
 }
 
 function vozStart(SR) {
-    voz = { on: true, SR, rec: null, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false, vivo: false, vigia: 0, trasFin: null, saludo: null };
-    // iPhone: la voz y el sonido solo se «desbloquean» si se usan dentro del toque → frase vacía y muda ahora
-    try { const u0 = new SpeechSynthesisUtterance(' '); u0.volume = 0; speechSynthesis.speak(u0); } catch {}
+    voz = { on: true, SR, rec: null, carro: null, undo: [], pending: null, speaking: false, mudoHasta: 0, oido: false, paused: false, vivo: false, vigia: 0, trasFin: null, reintento: false };
     try { vozAC = vozAC || new (window.AudioContext || window.webkitAudioContext)(); vozAC.resume(); } catch {}
     voz.rec = vozNuevoRec(SR);
-    vozEv('— modo voz v' + APP_BUILD + (VOZ_IOS ? ' (iPhone)' : ''));
-    voz.saludo = 'Escuchando ' + vozTabName();
-    vozArranca(false);        // dentro del toque: así el iPhone pide/usa el permiso del micro
+    const v = vozVozES();
+    vozEv('— modo voz v' + APP_BUILD + (VOZ_IOS ? ' (iPhone)' : '') + ' · voz ' + (v ? v.name : 'por defecto'));
     document.getElementById('btnVoz').classList.add('on');
     document.getElementById('vozBar').classList.add('on');
     vozShow('', 'Escuchando…');
+    // (19-nov) el saludo se dice DENTRO del toque (así el iPhone deja hablar a la app) y el micro se enciende
+    // cuando ella termina. Antes voz muda + micro a la vez en el mismo toque: a veces el micro no arrancaba.
+    vozSay('Escuchando ' + vozTabName());
 }
 
 function vozPausa() {
@@ -2176,7 +2198,7 @@ function vozPausa() {
 }
 function vozResume() {
     if (!voz?.on) return;
-    voz.paused = false;
+    voz.paused = false; voz.toque = true;
     vozEv('toque: reanudo');
     vozArranca(false);
     document.getElementById('btnVoz').classList.add('on');
@@ -2186,7 +2208,7 @@ function vozResume() {
 function vozStop() {
     if (!voz) return;
     voz.on = false;
-    clearTimeout(voz.vigia); clearTimeout(voz.ttsT); clearTimeout(voz.esperaT); clearTimeout(voz.cierreT);
+    clearTimeout(voz.vigia); clearTimeout(voz.ttsT); clearTimeout(voz.esperaT); clearTimeout(voz.cierreT); clearInterval(voz.mira);
     voz.trasFin = null;
     vozEv('— apagado');
     try { voz.rec.abort(); } catch {}
@@ -2212,38 +2234,68 @@ function vozDing() {
     } catch { return 0; }
 }
 
-// habla por turnos: micro apagado del todo → (tintín) → voz → micro otra vez
+// voz clara en español: la mejor de España que tenga el iPhone (mejorada/premium, Mónica…), nunca las de broma
+const VOZ_RARAS = /eddy|flo\b|grandma|grandpa|abuel|reed|rocko|sandy|shelley|bells|bubbles|news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|albert|bahh|boing|cellos|fred|junior|kathy|ralph/i;
+function vozVozES() {
+    try {
+        const vs = speechSynthesis.getVoices().filter(v => /^es[-_]ES$/i.test(v.lang) && !VOZ_RARAS.test(v.name));
+        const rango = v => { const s = v.name + ' ' + v.voiceURI; return /premium/i.test(s) ? 0 : /enhanced|mejorad/i.test(s) ? 1 : /m[oó]nica/i.test(s) ? 2 : /marisol/i.test(s) ? 3 : 4; };
+        return vs.sort((a, b) => rango(a) - rango(b))[0] || null;
+    } catch { return null; }
+}
+
+/* habla por turnos: micro apagado del todo → (tintín) → voz → micro otra vez.
+   (19-nov) El micro NO se vuelve a abrir hasta que ella ha terminado de verdad. Antes se reabría a los ~2 s
+   por tiempo («la voz sonó pero no avisó del final» en el registro): el iPhone, al abrir el micro, corta
+   la voz y la pasa a modo llamada (bajita y rara) → «no se entiende» y «se calla al segundo». */
 function vozSay(txt) {
     if (!window.speechSynthesis || !voz?.on) return;
     voz.speaking = true;
-    clearTimeout(voz.ttsT); clearTimeout(voz.esperaT);
-    const decir = () => {
+    clearTimeout(voz.ttsT); clearTimeout(voz.esperaT); clearInterval(voz.mira);
+    const decir = pausa => {
         if (!voz?.on) return;
         const u = new SpeechSynthesisUtterance(txt);
-        u.lang = 'es-ES'; u.rate = 1.1;
-        let hecho = false, sono = false;
+        u.lang = 'es-ES'; u.rate = 1;
+        const vv = vozVozES(); if (vv) u.voice = vv;
+        let hecho = false, sono = false, fin = false;
         const back = motivo => {
-            if (hecho || !voz) return; hecho = true; clearTimeout(voz.ttsT);
+            if (hecho || !voz) return; hecho = true; clearInterval(voz.mira); clearTimeout(voz.ttsT);
             if (motivo) vozEv(motivo);
             voz.speaking = false; voz.mudoHasta = Date.now() + 300;
             vozArranca(false);                         // vuelve a escuchar (si no está en pausa)
         };
-        u.onstart = () => { sono = true; clearTimeout(voz.ttsT); voz.ttsT = setTimeout(() => back('la voz sonó pero no avisó del final'), Math.min(6000, 700 + txt.length * 75)); };
-        u.onend = () => back(); u.onerror = e => back('voz error ' + (e.error || ''));
-        // si no llega a sonar en 1,5 s, no esperamos más: a escuchar
-        const ding = voz.ding ? vozDing() : 0; voz.ding = false;
-        voz.ttsT = setTimeout(() => { if (!sono) back('la voz no sonó: «' + txt + '»'); }, 1500 + ding);
-        if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
-        setTimeout(() => speechSynthesis.speak(u), ding);
+        u.onstart = () => { sono = true; };
+        u.onend = () => { fin = true; };
+        u.onerror = e => { if (!fin) vozEv('voz error ' + (e.error || '')); fin = true; };
+        const hablar = () => {
+            if (!voz?.on) return;
+            if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+            speechSynthesis.speak(u);
+            const t0 = Date.now(), tope = 1800 + txt.length * 100;   // tope generoso: solo si el iPhone no dice nada
+            voz.mira = setInterval(() => {
+                const t = Date.now() - t0, suena = speechSynthesis.speaking || speechSynthesis.pending;
+                if (suena) sono = true;
+                if (fin || (sono && !suena && t > 500)) return back();                     // ha terminado
+                if (!sono && t > 2000) return back('la voz no sonó: «' + txt + '»');
+                if (t > tope) return back('la voz no avisó del final (' + (t / 1000).toFixed(1) + ' s)');
+            }, 150);
+        };
+        // tras apagar el micro, un respiro para que el iPhone vuelva al altavoz; luego tintín y voz
+        // (sin respiro = dentro del toque: el iPhone solo deja hablar a la app si la 1.ª frase sale en el toque)
+        const conTintin = () => {
+            const ding = voz?.ding ? vozDing() : 0; if (voz) voz.ding = false;
+            ding ? (voz.ttsT = setTimeout(hablar, ding)) : hablar();
+        };
+        pausa ? (voz.ttsT = setTimeout(conTintin, pausa)) : conTintin();
     };
     if (voz.vivo) {
-        voz.trasFin = decir;                           // se dice cuando el micro avise de que ya está apagado
+        voz.trasFin = () => decir(250);                // se dice cuando el micro avise de que ya está apagado
         try { voz.rec.abort(); } catch {}
         voz.esperaT = setTimeout(() => { if (voz?.trasFin) { const f = voz.trasFin; voz.trasFin = null; vozEv('el micro no avisó de que se apagó; hablo igual'); f(); } }, 1000);
     } else {
         clearTimeout(voz.vigia);
         try { voz.rec.abort(); } catch {}
-        decir();
+        decir(0);
     }
 }
 
