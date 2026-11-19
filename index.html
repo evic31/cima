@@ -7,7 +7,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Repositorio">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#58A6FF">
     <title>Reposición BLOQUE QUIRÚRGICO · CIMA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -42,6 +41,8 @@
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        /* (19-nov) el iPhone agrandaba por su cuenta la letra de los bloques con más texto (Carro Enfermería más grande que Anestesia) */
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
         body {
             font-family: 'IBM Plex Sans', sans-serif;
@@ -1107,9 +1108,8 @@ function switchTab(tabName) {
     const qm = tabName.match(/^Quirófano (\d)$/);
     if (qm || tabName === 'Hemodinamia') document.body.dataset.q = qm ? qm[1] : 'hemo';
     else delete document.body.dataset.q;
-    // color de la barra del navegador/iPhone: el del quirófano (en los de franjas, la de arriba)
-    const QBARRA = { 1: '#dd3030', 2: '#d8db2d', 3: '#179e08', 4: '#963499', 5: '#ffffff', 6: '#3190e4', 7: '#e57207', 8: '#87c6f4', hemo: '#8bc9a2' };
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', QBARRA[document.body.dataset.q] || '#58A6FF');
+    // (19-nov) SIN meta theme-color: el iPhone lo leía solo al abrir (azul) y dejaba de seguir la cabecera.
+    // La barra de la hora la saca el iPhone del color de arriba de la cabecera (en Q8/Hemo, la franja de arriba).
     if (btn) { btn.classList.add('active'); btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
     if (content) content.classList.add('active');
     if (tabName === 'RESUMEN') renderSummary();
@@ -2062,7 +2062,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '19-nov 19:22'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '19-nov 19:26'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
