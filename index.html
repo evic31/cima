@@ -105,21 +105,21 @@
         body[data-q="5"] { --header-bg: #ffffff; }
         body[data-q="6"] { --header-bg: #3190e4; }
         body[data-q="7"] { --header-bg: #e57207; }
-        body[data-q="8"] { --header-bg: linear-gradient(to right, #87c6f4 33.3%, #c5a2e5 33.3% 66.6%, #f1e690 66.6%); }
-        body[data-q="hemo"] { --header-bg: linear-gradient(to right, #8bc9a2 33.3%, #e87878 33.3% 66.6%, #f1e690 66.6%); }
+        /* Q8 y Hemo: franjas HORIZONTALES sobre toda la cabecera (logo + pestañas); arriba un solo color → la barra del iPhone lo coge */
+        body[data-q="8"], body[data-q="hemo"] { --header-bg: transparent; }
+        body[data-q="8"] .top-wrapper { background: linear-gradient(to bottom, #87c6f4 33.3%, #c5a2e5 33.3% 66.6%, #f1e690 66.6%); }
+        body[data-q="hemo"] .top-wrapper { background: linear-gradient(to bottom, #8bc9a2 33.3%, #e87878 33.3% 66.6%, #f1e690 66.6%); }
         /* colores claros: letra oscura en RESUMEN/Editor/Orden y en ℹ */
         body[data-q="2"], body[data-q="5"], body[data-q="8"], body[data-q="hemo"] { --tab-text: #1e293b; --tab-bg: rgba(255,255,255,0.6); }
         body[data-q="2"] .header-info-btn, body[data-q="5"] .header-info-btn, body[data-q="8"] .header-info-btn, body[data-q="hemo"] .header-info-btn { color: #1e293b; border-color: rgba(0,0,0,.35); background: rgba(255,255,255,.6); }
         body[data-q="5"] .tabs-container { border-bottom: 2px solid #000; }
         body[data-q] header { box-shadow: none; }
-        /* Q8 y Hemo: el iPhone colorea la barra de la hora con lo que lee arriba del todo; con franjas no puede
-           y se quedaba con el último color liso (naranja del Q7) → una franja blanca arriba para que lea blanco */
-        body[data-q="8"] header, body[data-q="hemo"] header { border-top: 8px solid #fff; padding-top: calc(0.5rem - 8px); background-color: #fff; }
-        /* color liso de la barra fija de arriba (lo que lee el iPhone): el del quirófano, blanco en los de franjas */
+        /* color liso de la barra fija de arriba (lo que lee el iPhone para la barra de la hora): el del quirófano;
+           en Q8/Hemo la franja de arriba (con franjas verticales no podía elegir y se quedaba con el color anterior) */
         .top-wrapper { background-color: var(--barra, #58A6FF); }
         body[data-q="1"] { --barra: #dd3030; } body[data-q="2"] { --barra: #d8db2d; } body[data-q="3"] { --barra: #179e08; }
         body[data-q="4"] { --barra: #963499; } body[data-q="5"] { --barra: #ffffff; } body[data-q="6"] { --barra: #3190e4; }
-        body[data-q="7"] { --barra: #e57207; } body[data-q="8"], body[data-q="hemo"] { --barra: #ffffff; }
+        body[data-q="7"] { --barra: #e57207; } body[data-q="8"] { --barra: #87c6f4; } body[data-q="hemo"] { --barra: #8bc9a2; }
         /* (19-nov) RESUMEN arriba a la derecha (sin scroll) e ℹ a la izquierda */
         header .header-info-btn { right: auto; left: 12px; }
         header .tab.hdr-resumen { position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
@@ -1107,8 +1107,8 @@ function switchTab(tabName) {
     const qm = tabName.match(/^Quirófano (\d)$/);
     if (qm || tabName === 'Hemodinamia') document.body.dataset.q = qm ? qm[1] : 'hemo';
     else delete document.body.dataset.q;
-    // color de la barra del navegador/iPhone: el del quirófano (blanco en los de franjas)
-    const QBARRA = { 1: '#dd3030', 2: '#d8db2d', 3: '#179e08', 4: '#963499', 5: '#ffffff', 6: '#3190e4', 7: '#e57207', 8: '#ffffff', hemo: '#ffffff' };
+    // color de la barra del navegador/iPhone: el del quirófano (en los de franjas, la de arriba)
+    const QBARRA = { 1: '#dd3030', 2: '#d8db2d', 3: '#179e08', 4: '#963499', 5: '#ffffff', 6: '#3190e4', 7: '#e57207', 8: '#87c6f4', hemo: '#8bc9a2' };
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', QBARRA[document.body.dataset.q] || '#58A6FF');
     if (btn) { btn.classList.add('active'); btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
     if (content) content.classList.add('active');
@@ -2062,7 +2062,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '19-nov 19:03'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '19-nov 19:22'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
