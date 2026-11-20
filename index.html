@@ -1919,6 +1919,9 @@ const VOZ_SYN = [
     [/\b(voladuras?|tubuladuras?|tubo ladura|tuvo ladura|tubu ladura|bula dura|tabuladura|tubladura)\b/g, 'tubuladura'],
     // (19-nov, su registro) «tuvo mayo», «G del / gel naranja» = Guedel (antes de que «tubo» pase a TET)
     [/\b(tuvo|tubo|tubos)\s+(de\s+)?mayo\b/g, 'guedel'],
+    // (20-nov) «que del amarillo», «Wedel amarillo» = Guedel (acababa en Agujas Amarilla)
+    [/\b(wedel|huedel|uedel|bedel|guedell|guede|guedeles)\b/g, 'guedel'],
+    [/\b(que|ke|k|we|hue|ue|be|ve)\s?del\b(?=\s+(verde|amarill[oa]s?|roj[oa]s?|celeste|naranja|numero|\d|dos|tres|cuatro|cinco))/g, 'guedel'],
     // «Guedel» el iPhone lo escribe «gel»: solo o con número/color = Guedel (menos «gel lubricante» = Cathegel)
     [/\b(g ?del|ge ?del|gue ?del|gedel|guel|gel|geles)\b(?!\s+(lubricante|lubricantes|de sondaje|sondaje|conductor))/g, 'guedel'],
     // (19-nov, su registro) Nobecutan: «Nocta», «Vetan», «Ejecutan»
@@ -1963,6 +1966,7 @@ const VOZ_SYN = [
 const VOZ_STOP = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'en', 'al', 'y', 'e', 'faltan', 'falta', 'hay', 'que', 'mas', 'ml', 'mg', 'cc', 'nº', 'n', 'numero', 'num', 'talla']);
 // letras de talla dichas en voz alta
 const VOZ_PEQ = ['pequeno', 'pequenos', 'pequena', 'pequenas'], VOZ_GRA = ['grande', 'grandes'];
+const VOZ_COLOR = ['verde', 'amarillo', 'amarilla', 'rojo', 'roja', 'azul', 'naranja', 'celeste', 'blanco', 'blanca', 'negro', 'negra', 'lila', 'rosa', 'gris'];
 const VOZ_LETTER = { s: ['s', 'ese', ...VOZ_PEQ], m: ['m', 'eme', 'mediano', 'medianos', 'mediana', 'medianas'], l: ['l', 'ele', ...VOZ_GRA], g: ['g', 'ge', ...VOZ_GRA], p: ['p', 'pe', ...VOZ_PEQ] };
 
 // ── nombres alternativos SOLO para la voz (la app y la hoja impresa no cambian) ──
@@ -1980,7 +1984,7 @@ const VOZ_ALIAS = {
     'Gasas Grandes s/c': ['gasas verdes grandes', 'gasas grandes sin contraste'],
     'Gasas Pequeñas s/c': ['gasas verdes pequenas', 'gasas pequenas sin contraste'],
     'Yankauer': ['canula de aspiracion', 'canula aspiracion', 'canula'],
-    'Sulky': ['lubricante acuoso'],
+    'Sulky': ['lubricante acuoso', 'lubricante', 'gel lubricante'],   // (20-nov) «lubricante» a secas = Sulky (el que se usa)
     'Smart': ['compresor'],
     'SteryStrip': ['tira adhesiva', 'tiras adhesivas', 'steri strip'],
     'Abocath 18G': ['via'], 'Abocath 20G': ['via'], 'Abocath 22G': ['via'], 'Abocath 16G': ['via'], 'Abocath 14G': ['via'],
@@ -2018,7 +2022,7 @@ const VOZ_OPT_ALIAS = {
     'Antisepticos||Clorh. Acu. Tintada': ['clorhexidina acuosa tintada', 'clore acuosa tintada'],
     'Otros Líquidos||Agua Oxig.': ['agua oxigenada', 'h2o2', 'oxigenada'],
     'Otros Líquidos||Nobecutan': ['aposito aerosol', 'aposito en aerosol', 'aerosol', 'spray'],
-    'Kit Sondaje||Cathegel': ['lubricante'],
+    'Kit Sondaje||Cathegel': ['lubricante urologico', 'lubricante de sondaje', 'catejel', 'catehel', 'cate gel', 'cate'],
     'Kit Sondaje||Paño Kit Sondaje': ['pano sondaje'],
     'Kit Sondaje||Jeringa Kit Sondaje': ['jeringa sondaje'],
     'Kit Sondaje||Guante sondaje': ['guante sondaje', 'guantes sondaje'],
@@ -2087,7 +2091,7 @@ const VOZ_SPEAK = [
     [/\s*\((R|U|REA|UCSI)\)/gi, ''], [/\s*\(\d+\)/g, ''],
     [/\bc\/c\b/gi, 'con contraste'], [/\bs\/c\b/gi, 'sin contraste'],
     [/Clorh\./g, 'clorhexidina'], [/Alc\./g, 'alcohólica'], [/Acu\./g, 'acuosa'], [/Oxig\./g, 'oxigenada'],
-    [/G\.Electric/g, 'General Electric'], [/\bAc\. /g, 'ácido '],
+    [/G\.Electric/g, 'General Electric'], [/\bDRAGER\b/gi, 'Dráguer'],   // (20-nov) leído «Drajer»: se dice Dráguer [/\bAc\. /g, 'ácido '],
     [/\bSF lavados\b/gi, 'suero de lavados'], [/\bMefix G\b/g, 'Mefix grande'], [/\bMefix P\b/g, 'Mefix Pequeño'], [/\bSF\b/g, 'fisiológico'], [/\bRL\b/g, 'Ringer lactato'], [/\bSGS\b/g, 'glucosalino'], [/\bTET\b/g, 'tubo'], [/\bBIC\b/g, 'bomba de analgesia'],
     [/nº|#/g, 'número '], [/(\d),(\d)/g, '$1 coma $2'], [/(\d)\s?m[lL]\b/g, '$1 mililitros'], [/(\d)\s?mg\b/g, '$1 miligramos'],
     [/(\d)[gG]\b/g, '$1 G'], [/(\d)\s?L\b/g, '$1 litros'], [/[()]/g, ' '], [/\//g, ' '], [/Carro /g, '']
@@ -2096,7 +2100,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '20-nov 11:32'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '20-nov 11:37'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2622,10 +2626,14 @@ function vozMatch(area, text) {
                 return { o, forms: [base, ...al] };
             });
             let bestC = null;
-            variants.forEach(nameWords => {
+            variants.forEach((nameWords, vi) => {
                 let matched = 0, soloTalla = true;
                 nameWords.forEach(nw => { if (UW.some(uw => vozWordEq(uw, nw))) { matched++; if (![...VOZ_PEQ, ...VOZ_GRA].includes(nw)) soloTalla = false; } });
+                // (20-nov) un alias de voz vale entero, no a medias: «lubricante» no es «lubricante acuoso» (Sulky)
+                if (vi > 0 && matched < nameWords.length) matched = 0;
                 if (matched && soloTalla) matched = 0; // «pequeño» suelto no basta para elegir Gasas Pequeñas
+                // (20-nov) solo el color («… amarillo») no basta para elegir Guedel #3 (Amarillo): empata con Agujas Amarilla → pregunta
+                const soloColor = matched > 0 && nameWords.filter(nw => UW.some(uw => vozWordEq(uw, nw))).every(nw => VOZ_COLOR.includes(nw));
                 let nums = U.nums.slice();
                 const optHits = [];
                 optVars.forEach(({ o, forms }) => {
@@ -2647,7 +2655,9 @@ function vozMatch(area, text) {
                 const optWords = Math.max(0, ...opts.filter(h => h.byWords).map(h => h.used.length));
                 if (!matched && !optWords) return;
                 // las palabras de la opción no penalizan al nombre (Guantes sondaje = opción de Kit sondaje)
-                let score = matched ? matched * 10 - (nameWords.length - matched) * 3 : 4 + optWords * 5;
+                // (20-nov) solo por la opción («Receptal» = opción del Set Aspiración) vale menos que el nombre a medias
+                // («Receptal Aspiración»): «receptal» suelto va al que se cuenta, el Set solo si se dice «set aspiración… receptal»
+                let score = matched && !soloColor ? matched * 10 - (nameWords.length - matched) * 3 : 2 + Math.max(optWords, soloColor ? matched : 0) * 4;
                 // números del nombre (TET 7,5 · Abocath 18G · Guedel #3 90mm) no son cantidad; el primero dicho identifica
                 const hitNums = N.nums.filter(nn => nums.includes(nn));
                 hitNums.forEach(nn => { score += 6 + (U.nums[0] === nn ? 2 : 0); nums.splice(nums.indexOf(nn), 1); });
@@ -2672,7 +2682,7 @@ function vozApply(c, heard, text = heard) {
     voz.ultimo = { area, loc, item };   // (20-nov) «faltan nueve» / «cinco» sueltos van a este
     const base = [area, loc, item.name].join(ID_SEP);
     const changes = [];
-    let said;
+    let said, saidVoz;
     if (item.type === 'number' && item.stock > 1) {
         const sel = document.getElementById(base);
         if (!sel) return;
@@ -2688,6 +2698,10 @@ function vozApply(c, heard, text = heard) {
         }
         opts.forEach(o => { const cb = document.getElementById([base, o].join(ID_SEP)); if (cb) { changes.push({ el: cb, prev: cb.checked }); cb.checked = !remove; } });
         said = `${item.name} ${opts.join(' y ')}` + (remove ? ', quitado' : '');
+        // (20-nov) «Betadine» → dice «Betadine», sin la familia («Antisépticos»). La familia se dice solo si la opción sola
+        // no se entiende (5cc, M, Verde…); de un Set se avisa («Receptal del set») para que se note que no es el suelto
+        const solo = o => { const s = o.replace(/\(.*?\)/g, '').trim(); return /^[a-záéíóúñü.\s]{4,}$/i.test(s) && !VOZ_COLOR.includes(vozNorm(s)); };
+        if (!remove && opts.every(solo)) saidVoz = opts.join(' y ') + (/^set\b/i.test(item.name) ? ' del set' : '');
     } else {
         const cb = document.getElementById(base);
         if (!cb) return;
@@ -2703,7 +2717,7 @@ function vozApply(c, heard, text = heard) {
     if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'start' }); row.classList.remove('voz-flash'); void row.offsetWidth; row.classList.add('voz-flash'); }
     vozShow(heard, '✔ ' + vozLabel(said));
     voz.ding = true;            // tintín de confirmación antes de decir el producto
-    vozSay(vozSpeak(said));
+    vozSay(vozSpeak(saidVoz || said));
 }
 
 function vozUndo(heard) {
