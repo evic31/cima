@@ -1915,6 +1915,8 @@ const VOZ_NUM = {
 };
 // sinónimos hablados → como está escrito en la app
 const VOZ_SYN = [
+    // (20-nov, su registro) «Voladura» = Tubuladura (opción de Set Anestesia); antes de que «tubo» pase a TET
+    [/\b(voladuras?|tubuladuras?|tubo ladura|tuvo ladura|tubu ladura|bula dura|tabuladura|tubladura)\b/g, 'tubuladura'],
     // (19-nov, su registro) «tuvo mayo», «G del / gel naranja» = Guedel (antes de que «tubo» pase a TET)
     [/\b(tuvo|tubo|tubos)\s+(de\s+)?mayo\b/g, 'guedel'],
     // «Guedel» el iPhone lo escribe «gel»: solo o con número/color = Guedel (menos «gel lubricante» = Cathegel)
@@ -2094,7 +2096,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '20-nov 11:29'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '20-nov 11:32'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
