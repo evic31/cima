@@ -1957,6 +1957,8 @@ const VOZ_SYN = [
     [/\b(heces|eces|seces|ces|ce ce|se se|c c|cs|centimetros cubicos|centimetros|cubicos?)\b/g, 'cc'],
     [/\b(c|ce)\s3\b/g, 'cc'],
     [/\bmililitros?\b/g, 'ml'], [/\bmiligramos?\b/g, 'mg'],
+    // (20-nov) «llave de tres vías» = Llave 3 pasos
+    [/\bllaves?\s+(de\s+)?(3|tres)\s+vias?\b/g, 'llave 3 pasos'],
     // (20-nov, su registro) «Tacógrafo» = Capnógrafo · «Retales», «Receptar les» = Receptales · «Call soda The Driver», «Canso dada bragas» = Cal sodada Drager
     [/\b(tacografos?|capnografos?|cap nografo|capografo|carnografo|cardiografo)\b/g, 'capnografo'],
     [/\b(receptar les|receptal es|receptales|retales|recetales|receptares|reptales)\b/g, 'receptales'],
@@ -2089,6 +2091,9 @@ function vozTokens(t) {
 // cómo se leen en alto los nombres (c/c no es «cuenta corriente»)
 const VOZ_SPEAK = [
     [/\s*\((R|U|REA|UCSI)\)/gi, ''], [/\s*\(\d+\)/g, ''],
+    // (20-nov) «Guedel número 4 10 mm rojo» sobra: basta «Guedel rojo» (Celeste/ Naranja → celeste)
+    [/Guedel\s*#\d+\s*\d+\s*mm\s*\(([^/)]+)[^)]*\)/gi, 'Guedel $1'],
+    [/\bLlave 3\s?(Pasos|p)\b/gi, 'Llave de tres pasos'],   // «Llave 3Pasos» / «Llave 3p» sonaban raro
     [/\bc\/c\b/gi, 'con contraste'], [/\bs\/c\b/gi, 'sin contraste'],
     [/Clorh\./g, 'clorhexidina'], [/Alc\./g, 'alcohólica'], [/Acu\./g, 'acuosa'], [/Oxig\./g, 'oxigenada'],
     [/G\.Electric/g, 'General Electric'], [/\bDRAGER\b/gi, 'Dráguer'],   // (20-nov) leído «Drajer»: se dice Dráguer [/\bAc\. /g, 'ácido '],
@@ -2100,7 +2105,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '20-nov 11:37'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '20-nov 11:41'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2457,7 +2462,7 @@ function vozHandle(alts) {
         let pool = r.length ? r.filter(c => c.score === r[0].score) : [];
         if (carroAns) pool = pool.filter(c => c.loc === carroAns);
         if (p.needOpt) pool = pool.filter(c => c.opts.length);
-        if (pool.length && pool.length < p.n) return vozResolve(pool, heard, p.text + ' ' + heard, p.remove);
+        if (pool.length && pool.length < p.n) return vozResolve(pool, heard, p.text + ' ' + heard, p.remove || remove);   // «quita…» en la respuesta también quita
         // (20-nov) «Mililitros», «sí»: no dice cuál → se vuelve a preguntar (una vez) en vez de perder la pregunta
         if (p.needOpt && p.opts && !p.otra && !vozTokens(heard).nums.length && !vozMatch(area, heard).length) {
             voz.pending = { ...p, otra: true };
