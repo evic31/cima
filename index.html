@@ -1951,7 +1951,12 @@ const VOZ_SYN = [
     // (20-nov, su registro) medidas de jeringa: «10 heces», «Cinco C3», «cinco ce ce», «mililitros»
     [/\b(heces|eces|seces|ces|ce ce|se se|c c|cs|centimetros cubicos|centimetros|cubicos?)\b/g, 'cc'],
     [/\b(c|ce)\s3\b/g, 'cc'],
-    [/\bmililitros?\b/g, 'ml'], [/\bmiligramos?\b/g, 'mg']
+    [/\bmililitros?\b/g, 'ml'], [/\bmiligramos?\b/g, 'mg'],
+    // (20-nov, su registro) «Tacógrafo» = Capnógrafo · «Retales», «Receptar les» = Receptales · «Call soda The Driver», «Canso dada bragas» = Cal sodada Drager
+    [/\b(tacografos?|capnografos?|cap nografo|capografo|carnografo|cardiografo)\b/g, 'capnografo'],
+    [/\b(receptar les|receptal es|receptales|retales|recetales|receptares|reptales)\b/g, 'receptales'],
+    [/\b(call? soda(da)?|cal sodada|canso dada|calzada|cal zada|cal sobada|cal salada)\b/g, 'cal sodada'],
+    [/\bcal sodada\s+(de\s+|the\s+|el\s+)?(driver|drivers|drager|draguer|dreger|drager|dragger|bragas?|dragas?|draga)\b/g, 'cal sodada drager']
 ];
 const VOZ_STOP = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'en', 'al', 'y', 'e', 'faltan', 'falta', 'hay', 'que', 'mas', 'ml', 'mg', 'cc', 'nº', 'n', 'numero', 'num', 'talla']);
 // letras de talla dichas en voz alta
@@ -2089,7 +2094,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '20-nov 00:12'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '20-nov 11:29'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2180,7 +2185,10 @@ function vozNuevoRec(SR) {
     rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
     rec.onstart = () => {
         if (voz.rec !== rec) return;
-        voz.vivo = true; voz.cerrado = false; voz.reintento = false; clearTimeout(voz.vigia);
+        voz.vivo = true; voz.cerrado = false; voz.reintento = false; voz.reNA = false; clearTimeout(voz.vigia);
+        // (20-nov) «tarda en activarme el micro: solo oye los miligramos»: un toc suave = YA escucho, habla ahora
+        // (solo tras hablar la app o al tocar 🎤, no en los reenganches silenciosos) + cuánto tardó, al registro
+        if (voz.tFin) { vozEv('micro listo ' + ((Date.now() - voz.tFin) / 1000).toFixed(1) + ' s tras la voz'); voz.tFin = 0; vozTic(); }
     };
     rec.onresult = e => {
         voz.oido = true;
@@ -2203,7 +2211,11 @@ function vozNuevoRec(SR) {
         if (voz.rec !== rec) return;                                // un micro viejo que ya se cambió
         if (e.error === 'aborted' && voz.trasFin) return;          // lo hemos apagado nosotros para hablar
         vozEv('error ' + e.error);
+        // (20-nov) audio-capture = otra cosa se quedó el micro (pantalla bloqueada, llamada…): pedir un toque en vez de reengancharse en vacío
+        if (e.error === 'audio-capture') return vozPausa();
         if (e.error !== 'not-allowed' && e.error !== 'service-not-allowed') return;
+        // (20-nov) ya funcionaba y de repente «not-allowed» (la voz no avisó del final): un reintento antes de pedir un toque
+        if (voz.oido && !voz.reNA) { voz.reNA = true; voz.reintentoNA = true; try { speechSynthesis.cancel(); } catch {} return; }
         // (19-nov) el micro arranca tras el saludo, fuera del toque: si el iPhone lo niega, primero se pide un toque
         if (!voz.oido && voz.toque) { vozShow('', 'Sin permiso para el micrófono', true); return vozStop(); }
         vozPausa();
@@ -2213,6 +2225,7 @@ function vozNuevoRec(SR) {
         voz.vivo = false;
         if (voz.trasFin) { const f = voz.trasFin; voz.trasFin = null; clearTimeout(voz.esperaT); return f(); }   // ya apagado: ahora sí, hablar
         vozEv('fin del micro');
+        if (voz.reintentoNA) { voz.reintentoNA = false; voz.tFin = Date.now(); return setTimeout(() => vozArranca(true), 400); }
         // el reconocimiento se corta tras silencios: se reengancha solo mientras el modo esté activo
         if (voz?.on && !voz.paused && !voz.speaking && voz.rec === rec) vozArranca(true);
     };
@@ -2281,6 +2294,7 @@ function vozResume() {
     if (!voz?.on) return;
     voz.paused = false; voz.toque = true;
     vozEv('toque: reanudo');
+    voz.tFin = Date.now();
     vozArranca(false);
     document.getElementById('btnVoz').classList.add('on');
     vozShow('', 'Escuchando…');
@@ -2300,6 +2314,17 @@ function vozStop() {
 }
 
 let vozAC = null;
+// (20-nov) toc corto y grave: el micro ya está escuchando
+function vozTic() {
+    try {
+        const ac = vozAC; if (!ac) return;
+        if (ac.state !== 'running') ac.resume();
+        const t = ac.currentTime + 0.01, o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = 660;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.25, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+        o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.1);
+    } catch {}
+}
 function vozDing() {
     try {
         const ac = vozAC; if (!ac) return 0;
@@ -2342,7 +2367,7 @@ function vozSay(txt) {
         const back = motivo => {
             if (hecho || !voz) return; hecho = true; clearInterval(voz.mira); clearTimeout(voz.ttsT);
             if (motivo) vozEv(motivo);
-            voz.speaking = false; voz.mudoHasta = Date.now() + 300;
+            voz.speaking = false; voz.mudoHasta = Date.now() + 150; voz.tFin = Date.now();
             vozArranca(false);                         // vuelve a escuchar (si no está en pausa)
         };
         u.onstart = () => { sono = true; };
@@ -2356,10 +2381,10 @@ function vozSay(txt) {
             voz.mira = setInterval(() => {
                 const t = Date.now() - t0, suena = speechSynthesis.speaking || speechSynthesis.pending;
                 if (suena) sono = true;
-                if (fin || (sono && !suena && t > 500)) return back();                     // ha terminado
+                if (fin || (sono && !suena && t > 300)) return back();                     // ha terminado
                 if (!sono && t > 2000) return back('la voz no sonó: «' + txt + '»');
                 if (t > tope) return back('la voz no avisó del final (' + (t / 1000).toFixed(1) + ' s)');
-            }, 150);
+            }, 100);
         };
         // tras apagar el micro, un respiro para que el iPhone vuelva al altavoz; luego tintín y voz
         // (sin respiro = dentro del toque: el iPhone solo deja hablar a la app si la 1.ª frase sale en el toque)
@@ -2457,17 +2482,19 @@ function vozHandle(alts) {
 //   1) el último material dicho: «Jeringas 10cc» → «cinco» = 5cc · «SF 100ml» → «faltan nueve» = faltan 9
 //   2) si no, por la medida: «cinco cc» = Jeringas 5cc · «10 ml» = Jeringas 10cc o SF 10ml (si hay dos, pregunta)
 function vozSoloNum(area, U, n, heard) {
-    const num = U.nums[0], cc = /\bcc\b/.test(n), ml = /\bml\b/.test(n), falta = /\bfaltan?\b/.test(n);
+    const num = U.nums[0], cc = /\bcc\b/.test(n), ml = /\bml\b/.test(n), mg = /\bmg\b/.test(n), falta = /\bfaltan?\b/.test(n);
     const optNum = it => (it.options || []).find(o => vozTokens(o.replace(/\(.*?\)/g, '')).nums.includes(num));
     const u = voz.ultimo?.area === area ? voz.ultimo : null;
     if (u) {
         const o = !falta && optNum(u.item);
         if (o) return vozApply({ area, loc: u.loc, item: u.item, opts: [o], qty: null }, heard);
-        if (!cc && !ml && u.item.type === 'number' && u.item.stock > 1) return vozApply({ area, loc: u.loc, item: u.item, opts: [], qty: Math.round(num) }, heard);
+        if (!cc && !ml && !mg && u.item.type === 'number' && u.item.stock > 1) return vozApply({ area, loc: u.loc, item: u.item, opts: [], qty: Math.round(num) }, heard);
     }
     const cands = [];
     if (!falta) for (const loc in inventoryData[area]) inventoryData[area][loc].forEach(item => {
         const o = optNum(item);
+        // (20-nov) «4 mg» (se perdió «Ondansetrón») = el que lleva 4mg en el nombre, no «faltan 4» del anterior
+        if (mg) { if (/\d\s?mg\b/i.test(item.name) && vozTokens(item.name).nums.includes(num)) cands.push({ area, loc, item, opts: [], qty: null, score: 10 }); return; }
         if (o && (cc ? /cc/i.test(o) : /cc|ml/i.test(o))) return cands.push({ area, loc, item, opts: [o], qty: null, score: 10 });
         if (!cc && !item.options?.length && /\d\s?ml\b/i.test(item.name) && vozTokens(item.name).nums.includes(num))
             cands.push({ area, loc, item, opts: [], qty: null, score: 10 });
@@ -2530,6 +2557,9 @@ function vozGemelo(top, heard, text, remove) {
 // aplica si está claro; si no, pregunta (materiales distintos o mismo material en dos carros)
 function vozResolve(best, heard, text, remove) {
     let top = best.filter(c => c.score === best[0].score);
+    // (20-nov) «Receptales faltan cinco»: entre empates, el que admite esa cantidad (Receptales ×8, no Receptal ×2)
+    const caben = top.filter(c => c.qty > 1 && c.item.type === 'number' && c.item.stock >= c.qty);
+    if (caben.length && caben.length < top.length) top = caben;
     if (vozGemelo(top, heard, text, remove)) return;
     const pref = vozPrefLoc();
     const inCarro = top.filter(c => c.loc === pref);
@@ -2622,6 +2652,8 @@ function vozMatch(area, text) {
                 if (N.nums.length && !hitNums.length) score -= 4;
                 if (opts.length && matched) score += 3 + optWords * 2;
                 if (carroWords.some(w => VOZ_CARRO[w] === loc)) score += 5;
+                // (20-nov) «Receptales faltan cinco»: si se dice cantidad, gana el que se cuenta (no la opción del Set)
+                if (nums.length && item.type === 'number' && item.stock > 1 && matched) score += 3;
                 // la palabra de carro forma parte del nombre («Set aspiración anestesia»): cuenta como acierto del nombre
                 score += N.words.filter(w => VOZ_CARRO[w] && carroWords.includes(w)).length * 10;
                 const c = { area, loc, item, opts: opts.map(h => h.o), qty: nums.length ? Math.round(nums[0]) : null, score };
