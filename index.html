@@ -1928,6 +1928,12 @@ const VOZ_SYN = [
     [/\b[a-z]*\s?del\s+(verde|amarill[oa]s?|roj[oa]s?|celeste|naranja)\b/g, 'guedel $1'],
     // (21-nov, su lista dictada en Notas) lo que escribe el dictado de Apple
     [/\b(clorina|cloreina|clorhina|clorexina|clorhexina|clorexidina|clorhexidina)\b/g, 'clorhexidina'],
+    // (21-nov, su lista del carro de enfermería) «florexibina», «clorexibina», «pintada», «no de cutan», «guantes N», «Melado», «KTG»
+    [/\b[cf]lorh?e?x\w*\b/g, 'clorhexidina'], [/\b(pintadas?|sintadas?|tinta da|tintadas)\b/g, 'tintada'],
+    [/\bno\s?de\s?cutan\b/g, 'nobecutan'],
+    [/\bguantes\s+(n|en|eme|me)\b/g, 'guantes m'],
+    [/\b(melado|mediado|me diano|medianos)\b/g, 'mediano'],
+    [/\b(ktg|k t g|kategel|catgel|kate gel)\b/g, 'cathegel'],
     [/\bclorhexidina\s+(ac|al|alc|alco)\b/g, 'clorhexidina alcoholica'], [/\b(acosa|acuasa|acuo sa|agosa)\b/g, 'acuosa'],
     [/\b(cantes|cuantes|wantes|guante s)\b/g, 'guantes'],
     [/\bbanos?\s+adhesivos?\b/g, 'pano adhesivo'],
@@ -2123,7 +2129,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '21-nov 09:18'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '21-nov 09:25'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
