@@ -1934,6 +1934,19 @@ const VOZ_SYN = [
     [/\bguantes\s+(n|en|eme|me)\b/g, 'guantes m'],
     [/\b(melado|mediado|me diano|medianos)\b/g, 'mediano'],
     [/\b(ktg|k t g|kategel|catgel|kate gel)\b/g, 'cathegel'],
+    // (21-nov, su lista del resto del carro)
+    [/\b(que la|quela|kela|ge la|jela|hela)\s?fundinas?\b/g, 'gelafundina'],
+    [/\b(jedel|yedel|chedel|jeder|jedell)\b/g, 'guedel'],
+    [/\b(stick|stik|steri|stery|stereo|ste)\s?(street|strip|stri|strit|stree|stric)\b/g, 'stery strip'], [/\b(actuo|asul|azur)\b/g, 'azul'],
+    [/\b(mez|mes|mex|mef|meth|met)\s+(pequeno|grande)\b/g, 'mefix $2'],
+    [/\b(neusticina|neusticmina|neostignina|neostinmina|neostisina|neosticmina|neustigmina)\b/g, 'neostigmina'],
+    [/\b[pf]uro\s?(emira|semida|semira|cemida|semi|emida|zemida|semia)\b/g, 'furosemida'],
+    [/\b(solmoderin|solumoderin|solo moderin|sol moderin|solu moderin)\b/g, 'solu moderin'],
+    [/\b(mgramos|mgr|migramos|migra|mgramo)\b/g, 'mg'],
+    [/\b((ml|mil|metil|meti|me til)\s?)?(premisona|prednisona|precnisona|prenisona|prednisolona)\b/g, 'metilprednisona'],
+    [/\bmetoclo\w*\b/g, 'metoclopramida'], [/\bmi\w*zol\w*\b/g, 'midazolam'],
+    [/\bcte\b/g, 'trandate'],
+    [/\b(cestesia|sestesia|setestesia|set estesia)\b/g, 'set anestesia'],
     [/\bclorhexidina\s+(ac|al|alc|alco)\b/g, 'clorhexidina alcoholica'], [/\b(acosa|acuasa|acuo sa|agosa)\b/g, 'acuosa'],
     [/\b(cantes|cuantes|wantes|guante s)\b/g, 'guantes'],
     [/\bbanos?\s+adhesivos?\b/g, 'pano adhesivo'],
@@ -1958,7 +1971,7 @@ const VOZ_SYN = [
     [/\bglucosalino\b|\bglucosalinos\b/g, 'sgs'], [/\btubos?\b/g, 'tet'], [/\bmascarillas? laringeas?\b/g, 'mascarilla laringea'],
     [/\bpor ciento\b/g, ''],
     // «set» de aspiración: el iPhone escribe «7», «sed», «sec»… (y el 7 se tomaba como cantidad)
-    [/\b(7|siete|sed|sec|sez|zet|zed|cet|ser)\s+(de\s+)?aspiracion\b/g, 'set aspiracion'],
+    [/\b(7|siete|sed|sec|sez|zet|zed|cet|ser|se|seta|setas)\s+(de\s+)?aspiracion\b/g, 'set aspiracion'],   // (21-nov) +«se», «seta(s)»
     // Nobecutan y Yankauer: cómo los suele escribir el iPhone
     [/\b(no ?be ?cutan|no ?ve ?cutan|nobel ?cutan|novel ?cutan|nove ?kutan|nobe ?kutan|no ?be ?cuta|no ?ve ?cuta|nobecut|novecut|nove cuta)\b/g, 'nobecutan'],
     [/\b(yan ?kauer|yan ?cauer|yan ?kawer|yan ?cawer|yan ?kower|yan ?cower|yan ?cuer|jan ?kauer|jan ?cauer|llan ?kauer|llan ?cauer|yankee|yanqui|yanker|yonkauer|yancower|yankower)\b/g, 'yankauer'],
@@ -2092,8 +2105,11 @@ function vozTokens(t) {
     let n = vozNorm(t);
     VOZ_SYN.forEach(([re, rep]) => { n = n.replace(re, rep); });
     const words = [], nums = [];
+    let trasFalta = false, falta = null;
     n.split(' ').forEach(w => {
         if (!w) return;
+        if (w === 'falta' || w === 'faltan') { trasFalta = true; return; }
+        if (trasFalta) { const v = /^\d+$/.test(w) ? parseFloat(w) : VOZ_NUM[w]; if (v !== undefined) falta = v; trasFalta = false; }
         if (/^0\d+$/.test(w)) nums.push(parseFloat('0.' + w.slice(1)));
         else if (/^\d+(\.\d+)?$/.test(w)) nums.push(parseFloat(w));
         else if (/^\.5$/.test(w) && nums.length) nums[nums.length - 1] += 0.5;
@@ -2109,7 +2125,7 @@ function vozTokens(t) {
         if (v === 0 && typeof nums[i + 1] === 'number' && nums[i + 1] > 0) { out.push(parseFloat('0.' + String(nums[i + 1]))); i++; continue; }
         out.push(v);
     }
-    return { words, nums: out };
+    return { words, nums: out, falta };
 }
 
 // cómo se leen en alto los nombres (c/c no es «cuenta corriente»)
@@ -2129,7 +2145,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '21-nov 09:25'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '21-nov 09:30'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2715,16 +2731,22 @@ function vozMatch(area, text) {
                 // («Receptal Aspiración»): «receptal» suelto va al que se cuenta, el Set solo si se dice «set aspiración… receptal»
                 let score = matched && !soloColor ? matched * 10 - (nameWords.length - matched) * 3 : 2 + Math.max(optWords, soloColor ? matched : 0) * 4;
                 // números del nombre (TET 7,5 · Abocath 18G · Guedel #3 90mm) no son cantidad; el primero dicho identifica
-                const hitNums = N.nums.filter(nn => nums.includes(nn));
+                // (21-nov) «Mepivacaína 2% faltan dos»: el número tras «faltan» es la cantidad aunque coincida con el del nombre
+                const hitNums = N.nums.filter(nn => nums.includes(nn) && !(nn === U.falta && nums.filter(x => x === nn).length === 1));
                 hitNums.forEach(nn => { score += 6 + (U.nums[0] === nn ? 2 : 0); nums.splice(nums.indexOf(nn), 1); });
-                if (N.nums.length && !hitNums.length && !soloColor) score -= 4;
+                // (21-nov) el castigo por no decir el número del nombre solo si se dijo OTRO número (no la cantidad):
+                // «mepivacaína faltan 3» iba a Ropivacaína porque Mepivacaína 2% salía castigada
+                const otrosNums = U.nums.filter(x => x !== U.falta);
+                if (N.nums.length && !hitNums.length && !soloColor && otrosNums.length) score -= 4;
+                // palabra dicha tal cual (no parecida) desempata: «mepivacaina» = Mepivacaína, no Ropivacaína
+                score += nameWords.filter(nw => U.words.includes(nw)).length;
                 if (opts.length && matched) score += 3 + optWords * 2;
                 if (carroWords.some(w => VOZ_CARRO[w] === loc)) score += 5;
                 // (20-nov) «Receptales faltan cinco»: si se dice cantidad, gana el que se cuenta (no la opción del Set)
                 if (nums.length && item.type === 'number' && item.stock > 1 && matched) score += 3;
                 // la palabra de carro forma parte del nombre («Set aspiración anestesia»): cuenta como acierto del nombre
                 score += N.words.filter(w => VOZ_CARRO[w] && carroWords.includes(w)).length * 10;
-                const c = { area, loc, item, opts: opts.map(h => h.o), qty: nums.length ? Math.round(nums[0]) : null, score };
+                const c = { area, loc, item, opts: opts.map(h => h.o), qty: U.falta != null && nums.includes(U.falta) ? Math.round(U.falta) : nums.length ? Math.round(nums[0]) : null, score };
                 if (!bestC || c.score > bestC.score) bestC = c;
             });
             if (bestC) out.push(bestC);
