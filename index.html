@@ -1924,6 +1924,19 @@ const VOZ_SYN = [
     [/\b(acido|partido|placido|asido)\s+(tamico|tanico|tranico|tranxico|tranexico|traxamico|tranesamico)\b/g, 'acido tranexamico'],
     // (20-nov noche, su registro) «Día del verde», «Deben verde», «Deben ver» = Guedel verde (acababa en Agujas Verde)
     [/\b(dia del|dias del|deben|debes|debe del|de del|idel|y del|ve del|be del|de el)\s+(ver|verde|amarill[oa]|roj[oa]|celeste|naranja)\b/g, (m, a, c) => 'guedel ' + (c === 'ver' ? 'verde' : c)],
+    // (21-nov, su registro) «gugué del amarillo»: cualquier «… del» + color = Guedel (no hay otro material «del amarillo»)
+    [/\b[a-z]*\s?del\s+(verde|amarill[oa]s?|roj[oa]s?|celeste|naranja)\b/g, 'guedel $1'],
+    // (21-nov, su lista dictada en Notas) lo que escribe el dictado de Apple
+    [/\b(clorina|cloreina|clorhina|clorexina|clorhexina|clorexidina|clorhexidina)\b/g, 'clorhexidina'],
+    [/\bclorhexidina\s+(ac|al|alc|alco)\b/g, 'clorhexidina alcoholica'], [/\b(acosa|acuasa|acuo sa|agosa)\b/g, 'acuosa'],
+    [/\b(cantes|cuantes|wantes|guante s)\b/g, 'guantes'],
+    [/\bbanos?\s+adhesivos?\b/g, 'pano adhesivo'],
+    [/\bya\w*\s?(cauer|kauer|kawer|cawer|cower|kower)\b/g, 'yankauer'],
+    [/\b(y regacion|regacion|irigacion|irrigacion|y rigacion)\b/g, 'irrigacion'], [/\b(el mitros|mitros|militros|mili litros)\b/g, 'ml'],
+    [/\b(de\s?)?(es|ex|des|dex)\s?(clor|plor|flor|cor|clo)\w*(amina|mina)\b/g, 'dexclorfeniramina'],
+    // (21-nov) «sed aspiración anestesia coma» / «coma de aspiración» = Goma (antes de que «coma» pase a decimal)
+    [/\b((7|siete|sed|sec|set)\s+(de\s+)?aspiracion(\s+anestesia)?)\s+coma\b/g, '$1 goma'],
+    [/\bcoma\s+(de\s+)?aspiracion\b/g, 'goma aspiracion'],
     // (20-nov) «que del amarillo», «Wedel amarillo» = Guedel (acababa en Agujas Amarilla)
     [/\b(wedel|huedel|uedel|bedel|guedell|guede|guedeles)\b/g, 'guedel'],
     [/\b(que|ke|k|we|hue|ue|be|ve)\s?del\b(?=\s+(verde|amarill[oa]s?|roj[oa]s?|celeste|naranja|numero|\d|dos|tres|cuatro|cinco))/g, 'guedel'],
@@ -2047,7 +2060,7 @@ setTimeout(() => {
 const VOZ_CARRO = { enfermeria: 'Carro Enfermeria', anestesia: 'Carro Anestesia', otros: 'Otros', farmacia: 'FARMACIA', almacen: 'ALMACÉN' };
 
 const vozNorm = t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/(\d),(\d)/g, '$1.$2').replace(/nº|#/g, ' ')
+    .replace(/(\d),+(\d)/g, '$1.$2').replace(/nº|#/g, ' ')
     .replace(/(\d)([a-z])/g, '$1 $2').replace(/([a-z])(\d)/g, '$1 $2')
     .replace(/[^a-z0-9.\s]/g, ' ').replace(/\.(?!\d)|(^|[^\d])\./g, '$1 ').replace(/\s+/g, ' ').trim();
 const vozStem = w => w.length > 4 ? w.replace(/(es|s)$/, '') : w;
@@ -2110,7 +2123,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '20-nov 21:03'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '21-nov 09:18'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -2206,9 +2219,13 @@ function vozNuevoRec(SR) {
         // (solo tras hablar la app o al tocar 🎤, no en los reenganches silenciosos) + cuánto tardó, al registro
         // (20-nov noche) el toc fuera: «suenas continuamente como pitidos». Solo queda el tintín de «apuntado»
         if (voz.tFin) { vozEv('micro listo ' + ((Date.now() - voz.tFin) / 1000).toFixed(1) + ' s tras la voz'); voz.tFin = 0; }
+        vozVigilaSordo(rec);
     };
+    // (21-nov, Chrome en Mac) «ha dejado de escucharme»: el micro decía estar abierto pero no llegaba sonido
+    // y no cerraba nunca (sin no-speech). Se vigila: si no llega audio, se cambia el micro por uno nuevo sin decir nada.
+    rec.onaudiostart = () => { if (voz.rec !== rec) return; voz.audio = true; voz.audioEv = true; };
     rec.onresult = e => {
-        voz.oido = true;
+        voz.oido = true; voz.ultRes = Date.now();
         if (voz.cerrado || voz.rec !== rec) return;            // esa frase ya se dio por terminada
         clearTimeout(voz.cierreT);
         let parcial = '';
@@ -2239,7 +2256,7 @@ function vozNuevoRec(SR) {
     };
     rec.onend = () => {
         if (voz.rec !== rec) return;                                // un micro viejo que ya se cambió
-        voz.vivo = false;
+        voz.vivo = false; clearTimeout(voz.sordoT); clearInterval(voz.mudoI);
         if (voz.trasFin) { const f = voz.trasFin; voz.trasFin = null; clearTimeout(voz.esperaT); return f(); }   // ya apagado: ahora sí, hablar
         vozEv('fin del micro');
         if (voz.reintentoNA) { voz.reintentoNA = false; voz.tFin = Date.now(); return setTimeout(() => vozArranca(true), 400); }
@@ -2259,6 +2276,23 @@ function vozCierra(alts, como) {
     vozHandle(alts);
     // si la respuesta no ha apagado el micro para hablar, se reinicia para empezar limpio la siguiente frase
     if (!voz.speaking && voz.on) { try { voz.rec.abort(); } catch {} }
+}
+function vozVigilaSordo(rec) {
+    voz.audio = false; voz.ultRes = Date.now();
+    clearTimeout(voz.sordoT); clearInterval(voz.mudoI);
+    const cambia = motivo => {
+        if (!voz?.on || voz.rec !== rec || !voz.vivo || voz.speaking || voz.paused) return;
+        clearTimeout(voz.sordoT); clearInterval(voz.mudoI);
+        vozEv(motivo + ': cambio el micro');
+        voz.vivo = false;
+        try { rec.abort(); } catch {}
+        voz.rec = vozNuevoRec(voz.SR);
+        vozArranca(true);
+    };
+    // el navegador avisa de que llega sonido (Chrome sí): si a los 4 s no ha llegado, micro nuevo
+    voz.sordoT = setTimeout(() => { if (voz?.audioEv && !voz.audio) cambia('micro abierto sin sonido'); }, 4000);
+    // fuera del iPhone, si en 25 s ni frase ni aviso de silencio, el micro está colgado
+    if (!VOZ_IOS) voz.mudoI = setInterval(() => { if (Date.now() - (voz?.ultRes || 0) > 25000) cambia('25 s sin oír nada'); }, 5000);
 }
 function vozArranca(auto) {
     if (!voz?.on || voz.paused) return;
@@ -2320,7 +2354,7 @@ function vozResume() {
 function vozStop() {
     if (!voz) return;
     voz.on = false;
-    clearTimeout(voz.vigia); clearTimeout(voz.ttsT); clearTimeout(voz.esperaT); clearTimeout(voz.cierreT); clearInterval(voz.mira);
+    clearTimeout(voz.vigia); clearTimeout(voz.ttsT); clearTimeout(voz.esperaT); clearTimeout(voz.cierreT); clearInterval(voz.mira); clearTimeout(voz.sordoT); clearInterval(voz.mudoI);
     voz.trasFin = null;
     vozEv('— apagado');
     try { voz.rec.abort(); } catch {}
