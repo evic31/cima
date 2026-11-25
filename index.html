@@ -833,6 +833,15 @@
         .tab.tab-acc { background: #fff; color: #1d4f9c; border: 2px solid #fff; font-size: 15px; font-weight: 600; padding: 6px 4px; text-align: center; }
         .tab.tab-acc:hover { background: #fff; color: #1d4f9c; }
         .tab.tab-acc.active { background: #1d4f9c; color: #fff; border-color: #fff; }
+        /* (25-nov) resúmenes: en ordenador/tablet, las ubicaciones en columnas una al lado de otra (cantidad pegada al nombre) */
+        .cv-res.cv-res-ancho { max-width: 1180px; }
+        .cv-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start; }
+        .cv-cols .cv-card { margin-bottom: 0; }
+        .cv-fila { grid-template-columns: minmax(0, 1fr) 44px; }
+        @media (min-width: 900px) {
+            #content-RESUMEN .summary-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0 4px; align-items: start; }
+            #content-RESUMEN .summary-section > .sub-header, #content-RESUMEN .summary-section > .empty-state { grid-column: 1 / -1; }
+        }
     </style>
 </head>
 <body>
@@ -2302,7 +2311,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-nov 17:06'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-nov 17:11'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3366,9 +3375,9 @@ function cvResumenHTML() {
     }));
     const { cat } = orderCatalog();
     const sitios = [...orderedStorages(cat).filter(s => porSitio[s]), ...Object.keys(porSitio).filter(s => !cat[s])];
-    return `<div class="cv-res"><h2>Resumen</h2>
-        ${sitios.length ? sitios.map(s => `<div class="cv-card"><div class="sub-header ${getLocationClass(s)}">${s}</div>
-            ${porSitio[s].map(([n, c]) => `<div class="cv-fila"><span>${cvEsc(n)}</span><span>${c}</span></div>`).join('')}</div>`).join('')
+    return `<div class="cv-res cv-res-ancho"><h2>Resumen</h2>
+        ${sitios.length ? `<div class="cv-cols">${sitios.map(s => `<div class="cv-card"><div class="sub-header ${getLocationClass(s)}">${s}</div>
+            ${porSitio[s].map(([n, c]) => `<div class="cv-fila"><span>${cvEsc(n)}</span><span>${c}</span></div>`).join('')}</div>`).join('')}</div>`
           : '<div class="cv-vacio">No falta nada</div>'}
         ${sitios.length ? `<button class="cv-limpiar" onclick="cvLimpiar()">Limpiar ${cv.q}</button>` : ''}</div>`;
 }
