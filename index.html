@@ -860,6 +860,8 @@
         #cv .cv-admin { position: fixed; right: 12px; bottom: 12px; top: auto; transform: none; width: 38px; height: 38px; border-radius: 50%;
             background: #fff; border: 1.5px solid #0f766e; font-size: 16px; line-height: 1; padding: 0; box-shadow: 0 2px 10px rgba(0,0,0,.12); z-index: 6; }
         .cv-pie { margin-bottom: 64px; }
+        .cv-aviso { max-width: 560px; margin: 16px auto 0; padding: 9px 14px; border-radius: 12px; background: #fff7ed; border: 1.5px solid #f59e0b; color: #9a3412; font-size: 15px; font-weight: 600; text-align: center; }
+        @media (max-width: 760px) { .cv-aviso { margin: 14px 12px 0; } }
     </style>
 </head>
 <body>
@@ -2330,7 +2332,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-nov 17:24'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-nov 17:27'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3261,15 +3263,28 @@ function cvTurno(d = new Date()) {
     const dia = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
     return { dia, turno: h >= 8 && h < 15 ? 'Mañana' : h >= 15 && h < 22 ? 'Tarde' : 'Noche' };
 }
-// al cambiar de turno se limpia lo marcado en los quirófanos (el registro Revisado/Repuesto se queda)
+// última vez que se pulsó Revisado / Repuesto en un quirófano (cualquier turno)
+function cvUltimo(q, tipo) {
+    let u = null;
+    try { for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i); if (!k?.startsWith(CV_REG + '|' + q + '|') || !k.endsWith('|' + tipo)) continue;
+        const v = localStorage.getItem(k), [, , dia, turno] = k.split('|');
+        if (!u || v > u.iso) u = { iso: v, dia, turno };
+    } } catch {}
+    return u;
+}
+// revisado y aún sin reponer (de este turno o de uno anterior): lo marcado se queda para el turno siguiente
+function cvPendiente(q) { const r = cvUltimo(q, 'revisado'), p = cvUltimo(q, 'repuesto'); return r && (!p || r.iso > p.iso) ? r : null; }
+// al cambiar de turno se limpia lo marcado en los quirófanos, SALVO los revisados sin reponer (el registro se queda siempre)
 function cvRueda() {
     const t = cvTurno(), k = t.dia + '|' + t.turno, prev = cvLS.get('repo_turno');
     if (prev === k) return;
     cvLS.set('repo_turno', k);
     if (!prev) return;
-    let cambia = false;
+    let cambia = false; const pend = Object.fromEntries(CV_QS.map(q => [q, !!cvPendiente(q)]));
     document.querySelectorAll('#tab-contents input[type="checkbox"], #tab-contents select').forEach(i => {
-        if (!CV_QS.some(q => i.id.startsWith(q + ID_SEP))) return;
+        const q = CV_QS.find(q => i.id.startsWith(q + ID_SEP));
+        if (!q || pend[q]) return;
         if (i.type === 'checkbox' ? i.checked : i.value !== '0') { cambia = true; if (i.type === 'checkbox') i.checked = false; else i.value = '0'; }
     });
     if (cambia) saveChecklistState();
@@ -3351,6 +3366,8 @@ function cvRender() {
         html += `<div class="cv-qs">${CV_QS.map(q => `<button class="cv-q ${cvClaseQ(q)}${q === cv.q ? ' sel' : ''}" onclick="cvCambiaQ('${q}')">${cvCorto(q)}</button>`).join('')}</div>
             <div class="cv-arcos${cv.q ? '' : ' apagado'}">${[0, 1, 2].map(i => { const z = CV_ZONAS[i];
             return `<button class="cv-arco${i === 1 ? ' c' : ''}" onclick="${cv.q ? `cvIr('zona', ${i})` : 'cvPideQ()'}" title="${z.nombre}" aria-label="${z.nombre}"><img src="${CV_IMG[z.k + '_menu'] || CV_IMG[z.k]}" alt="">${cvNum(cvCuenta(z))}</button>`; }).join('')}</div>
+            ${(() => { const p = cv.q && cvPendiente(cv.q); const t = cvTurno();
+                return p && !(p.dia === t.dia && p.turno === t.turno) ? `<div class="cv-aviso">Revisado en el turno de ${p.turno.toLowerCase()}${p.dia !== t.dia ? ' del ' + p.dia.split('-').reverse().slice(0, 2).join('/') : ''} (${cvHora(p.iso)}) · falta reponer</div>` : ''; })()}
             <div class="cv-acciones">
                 <button class="cv-acc" onclick="cvIr('resumen')"${no}>Resumen${total ? `<b>${total}</b>` : ''}</button>
                 <button class="cv-acc${rev ? ' hecho' : ''}" onclick="cvMarca('revisado')"${no}>${rev ? `✓ Revisado<small>${cvHora(rev)}</small>` : 'Revisado'}</button>
