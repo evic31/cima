@@ -2330,7 +2330,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-nov 17:20'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-nov 17:24'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3254,12 +3254,12 @@ const cvCuenta = (z, s) => (s == null ? (inventoryData[cv.q]?.[z.loc] || []) : c
 const cvNum = n => n ? `<span class="cv-num">${n}</span>` : '';
 const cvEtiq = (it, o) => CV_ETIQ[it.name]?.[o] || o;
 
-// turno por la hora (Mañana 7–15, Tarde 15–22, Noche 22–7); la noche cuenta en el día en que empieza
+// turno por la hora (Mañana 8–15, Tarde 15–22, Noche 22–8); la noche cuenta en el día en que empieza
 function cvTurno(d = new Date()) {
     const h = d.getHours(), f = new Date(d);
-    if (h < 7) f.setDate(f.getDate() - 1);
+    if (h < 8) f.setDate(f.getDate() - 1);
     const dia = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
-    return { dia, turno: h >= 7 && h < 15 ? 'Mañana' : h >= 15 && h < 22 ? 'Tarde' : 'Noche' };
+    return { dia, turno: h >= 8 && h < 15 ? 'Mañana' : h >= 15 && h < 22 ? 'Tarde' : 'Noche' };
 }
 // al cambiar de turno se limpia lo marcado en los quirófanos (el registro Revisado/Repuesto se queda)
 function cvRueda() {
