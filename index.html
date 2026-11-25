@@ -684,6 +684,7 @@
             box-shadow: 0 1px 4px rgba(0,0,0,.18); -webkit-tap-highlight-color: transparent; }
         header .hdr-carro img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
         body.cv-on { overflow: hidden; }
+        body.cv-on #hubpill { bottom: 12px !important; }   /* hub: el ⌂ abajo del todo, sin tapar «Resumen» */
         body.cv-on #btnVoz, body.cv-on #btnGuardar, body.cv-on #btnSubir, body.cv-on #vozBar { display: none !important; }
         #cv { display: none; position: fixed; inset: 0; z-index: 10000; background: #e9f1f9; overflow-y: auto; -webkit-overflow-scrolling: touch;
             font-family: 'IBM Plex Sans', sans-serif; color: var(--text); font-variant-numeric: tabular-nums; }
@@ -2288,7 +2289,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-nov 16:56'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-nov 17:00'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
