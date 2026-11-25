@@ -842,6 +842,21 @@
             #content-RESUMEN .summary-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0 4px; align-items: start; }
             #content-RESUMEN .summary-section > .sub-header, #content-RESUMEN .summary-section > .empty-state { grid-column: 1 / -1; }
         }
+        /* (25-nov, 3.ª) quirófanos encima del carro del medio, sin ninguno elegido al entrar; logo más grande */
+        .cv-qs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 640px; margin: 6px auto 0; padding: 0 12px; }
+        .cv-qs .cv-q { font-size: 16px; padding: 5px 14px; min-width: 50px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+        .cv-qs .cv-q.sel { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #1d4f9c; }
+        .cv-qs.pide { animation: cvPide .5s ease; }
+        @keyframes cvPide { 0%, 100% { transform: none; } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+        .cv-arcos.apagado .cv-arco { opacity: .45; }
+        .cv-acc:disabled { opacity: .4; cursor: default; }
+        .cv-arcos { max-width: min(1060px, calc((100dvh - 300px) * 1.5)); }
+        .cv-logo { height: 92px; }
+        @media (max-width: 760px) { .cv-arcos { max-width: none; } .cv-logo { height: 62px; } .cv-qs { gap: 6px; } .cv-qs .cv-q { font-size: 15px; padding: 4px 10px; min-width: 44px; } }
+        /* candado al lado de «Bloque completo» (fijo abajo tapaba «Repuesto» en el móvil) */
+        .cv-pie { position: relative; display: flex; justify-content: center; align-items: center; max-width: 560px; margin: 16px auto 28px; padding: 0 16px; }
+        .cv-pie .cv-bloque { margin: 0; }
+        .cv-pie .cv-admin { position: absolute; right: 16px; bottom: auto; top: 50%; transform: translateY(-50%); }
     </style>
 </head>
 <body>
@@ -958,7 +973,7 @@ const DEFAULT_INVENTORY = {
             { g:1, name: "Otros Líquidos", type: "checkbox", options: ["Agua Oxig.","Nobecutan"], storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g:1, name: "Guantes", type: "checkbox", options: ["S","M","L"], storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Mefix", type: "checkbox", options: ["G","P"], storage: "ALMACÉN PASILLO DERECHO", optUnit: { "P": "Mefix Pequeño" } },
-            { g:1, name: "Contenedor Agujas", type: "number", stock: 1, storage: "ALMACÉN LIMPIEZA" },
+            { g:1, name: "Contenedor Agujas", type: "number", stock: 1, storage: "ARMARIO TRANSFER" },
             { g:1, name: "Gasas Grandes c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Gasas Pequeñas c/c", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Guantes Esteriles (nº6)", type: "number", stock: 5, storage: "ALMACÉN PASILLO DERECHO" },
@@ -1090,7 +1105,7 @@ const DEFAULT_INVENTORY = {
             { g: 6, name: "Frova", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g: 6, name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g: 6, name: "Alcohol", type: "checkbox", storage: "FARMACIA" },
-            { g: 6, name: "Contenedor Agujas", type: "checkbox", storage: "ALMACÉN LIMPIEZA", unidad: "Contenedor Agujas" },
+            { g: 6, name: "Contenedor Agujas", type: "checkbox", storage: "ARMARIO TRANSFER", unidad: "Contenedor Agujas" },
             { g: 6, name: "Jeringas", type: "checkbox", options: ["20cc", "10cc", "5cc", "3cc"], storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Agujas", type: "checkbox", options: ["Carga", "Azul", "Verde", "Amarilla", "Naranja"], storage: "ALMACÉN PASILLO DERECHO" },
 
@@ -1105,7 +1120,7 @@ const DEFAULT_INVENTORY = {
             { g:1, name: "Set Aspiración Anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 2 ──
             { g:2, name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
-            { g:2, name: "Sábanas", type: "checkbox", storage: "ARMARIO LENCERIA" },
+            { g:2, name: "Sábanas", type: "checkbox", storage: "ARMARIO TRANSFER" },
             { g:2, name: "Taburete", type: "number", stock: 4, storage: "BLOQUE QUIRÚRGICO" },
             { g:2, name: "Bomba Infusión", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" }
         ]
@@ -1625,7 +1640,8 @@ const STORAGE_ABBR = {
     'ALMACÉN PASILLO IZQUIERDO': ['AI',  [5, 150, 105]],
     'ALMACÉN LIMPIEZA':          ['LIM', [71, 85, 105]],
     'BLOQUE QUIRÚRGICO':         ['BQ',  [71, 85, 105]],
-    'ARMARIO LENCERIA':          ['LEN', [71, 85, 105]]
+    'ARMARIO LENCERIA':          ['LEN', [71, 85, 105]],
+    'ARMARIO TRANSFER':          ['TRA', [71, 85, 105]]   // (25-nov) contenedores de agujas y sábanas
 };
 // mismos tonos que las filas impares de cada carro en la app
 const SECTION_TINT = [
@@ -2311,7 +2327,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-nov 17:11'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-nov 17:15'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3195,7 +3211,7 @@ const CV_ZONAS = [
         { n: 'Armario', re: /^(Jeringas|Agujas|Guantes)$/i, r: [21, 0, 63, 25.5], a: [79.6, 12.2] },
         { n: 'Bandeja', g: [6], r: [0, 46.8, 23, 9], a: [3.9, 51] },
         { n: 'Cajón 1', g: [5], r: [23, 43, 46.8, 9.4], a: [46.9, 48.7], chico: 1 },
-        { n: 'Cajón 2', g: [4], r: [23, 52.4, 46.8, 9.2], a: [46.9, 57.9], chico: 1 },
+        { n: 'Cajón 2', g: [4], re: /^Ac\. Tranexámico$/i, r: [23, 52.4, 46.8, 9.2], a: [46.9, 57.9], chico: 1 },
         { n: 'Cajón 3', g: [3], r: [23, 61.6, 46.8, 9.4], a: [46.9, 67.2], chico: 1 },
         { n: 'Cajón 4', g: [2], r: [23, 71, 46.8, 9.2], a: [46.9, 76.5], chico: 1 },
         { n: 'Cajón 5', g: [1], r: [23, 80.2, 46.8, 9.3], a: [46.9, 85.5], chico: 1 },
@@ -3235,21 +3251,33 @@ const cvCuenta = (z, s) => (s == null ? (inventoryData[cv.q]?.[z.loc] || []) : c
 const cvNum = n => n ? `<span class="cv-num">${n}</span>` : '';
 const cvEtiq = (it, o) => CV_ETIQ[it.name]?.[o] || o;
 
-// turno por la hora (Mañana 8–15, Tarde 15–22, Noche 22–8); la noche cuenta en el día en que empieza
+// turno por la hora (Mañana 7–15, Tarde 15–22, Noche 22–7); la noche cuenta en el día en que empieza
 function cvTurno(d = new Date()) {
     const h = d.getHours(), f = new Date(d);
-    if (h < 8) f.setDate(f.getDate() - 1);
+    if (h < 7) f.setDate(f.getDate() - 1);
     const dia = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
-    return { dia, turno: h >= 8 && h < 15 ? 'Mañana' : h >= 15 && h < 22 ? 'Tarde' : 'Noche' };
+    return { dia, turno: h >= 7 && h < 15 ? 'Mañana' : h >= 15 && h < 22 ? 'Tarde' : 'Noche' };
+}
+// al cambiar de turno se limpia lo marcado en los quirófanos (el registro Revisado/Repuesto se queda)
+function cvRueda() {
+    const t = cvTurno(), k = t.dia + '|' + t.turno, prev = cvLS.get('repo_turno');
+    if (prev === k) return;
+    cvLS.set('repo_turno', k);
+    if (!prev) return;
+    let cambia = false;
+    document.querySelectorAll('#tab-contents input[type="checkbox"], #tab-contents select').forEach(i => {
+        if (!CV_QS.some(q => i.id.startsWith(q + ID_SEP))) return;
+        if (i.type === 'checkbox' ? i.checked : i.value !== '0') { cambia = true; if (i.type === 'checkbox') i.checked = false; else i.value = '0'; }
+    });
+    if (cambia) saveChecklistState();
+    if (document.getElementById('cv').classList.contains('on')) { if (cv.vista !== 'pin' && cv.vista !== 'registro') cv.q = null, cv.vista = 'menu'; cvRender(); }
 }
 const cvRegKey = (tipo, q = cv.q, t = cvTurno()) => [CV_REG, q, t.dia, t.turno, tipo].join('|');
 const cvHora = iso => new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
 function cvAbrir(q) {
-    const act = document.querySelector('.tab.active')?.dataset.tab;
-    cv.q = q || (CV_QS.includes(act) ? act : null) || cvLS.get('cv_q') || 'Quirófano 1';
-    if (!CV_QS.includes(cv.q)) cv.q = 'Quirófano 1';
-    cvLS.set('cv_q', cv.q); cvLS.del('cv_modo');
+    cv.q = CV_QS.includes(q) ? q : null;   // (25-nov) al entrar no hay quirófano elegido: cada uno elige el suyo
+    cvLS.del('cv_modo');
     if (typeof voz !== 'undefined' && voz?.on) try { vozStop(); } catch {}
     document.body.classList.add('cv-on');
     document.getElementById('cv').classList.add('on');
@@ -3275,8 +3303,8 @@ function cvTop() {
     return `<div class="cv-top">${volver}
         <img class="cv-logo" src="${logo}" alt="Reposició BQ CIMA">
         <div class="cv-meta">
-            <button class="cv-q ${cvClaseQ(cv.q)}" onclick="cvPop(event)">${cv.q}</button>
-            <span class="cv-dato">${fecha}</span><span class="cv-dato">${turno}</span>
+            ${cv.vista !== 'menu' && cv.q ? `<button class="cv-q ${cvClaseQ(cv.q)}" onclick="cvIr('menu')">${cv.q}</button>` : ''}
+            <span class="cv-dato">${fecha}</span><span class="cv-dato">Turno de ${turno.toLowerCase()}</span>
         </div></div>`;
 }
 function cvPop(e) {
@@ -3285,7 +3313,8 @@ function cvPop(e) {
     const old = top.querySelector('.cv-pop'); if (old) { old.remove(); return; }
     top.insertAdjacentHTML('beforeend', `<div class="cv-pop">${CV_QS.map(q => `<button class="cv-q ${cvClaseQ(q)}" onclick="cvCambiaQ('${q}')">${cvCorto(q)}</button>`).join('')}</div>`);
 }
-function cvCambiaQ(q) { cv.q = q; cvLS.set('cv_q', q); cvRender(); }
+function cvCambiaQ(q) { cv.q = q; cvRender(); }
+function cvPideQ() { const f = document.querySelector('#cv .cv-qs'); if (!f) return; f.classList.remove('pide'); void f.offsetWidth; f.classList.add('pide'); }
 
 // fila de un producto: casillas en una fila, «Faltan 1 2 3» si hay poco stock, desplegable si hay mucho
 function cvItemHTML(z, it) {
@@ -3315,16 +3344,17 @@ function cvRender() {
     let html = cvTop();
     if (cv.vista === 'menu') {
         const total = CV_ZONAS.reduce((n, z) => n + cvCuenta(z), 0);
-        const rev = cvLS.get(cvRegKey('revisado')), rep = cvLS.get(cvRegKey('repuesto'));
-        html += `<div class="cv-arcos">${[0, 1, 2].map(i => { const z = CV_ZONAS[i];
-            return `<button class="cv-arco${i === 1 ? ' c' : ''}" onclick="cvIr('zona', ${i})" title="${z.nombre}" aria-label="${z.nombre}"><img src="${CV_IMG[z.k]}" alt="">${cvNum(cvCuenta(z))}</button>`; }).join('')}</div>
+        const rev = cv.q && cvLS.get(cvRegKey('revisado')), rep = cv.q && cvLS.get(cvRegKey('repuesto')), no = cv.q ? '' : ' disabled';
+        html += `<div class="cv-qs">${CV_QS.map(q => `<button class="cv-q ${cvClaseQ(q)}${q === cv.q ? ' sel' : ''}" onclick="cvCambiaQ('${q}')">${cvCorto(q)}</button>`).join('')}</div>
+            <div class="cv-arcos${cv.q ? '' : ' apagado'}">${[0, 1, 2].map(i => { const z = CV_ZONAS[i];
+            return `<button class="cv-arco${i === 1 ? ' c' : ''}" onclick="${cv.q ? `cvIr('zona', ${i})` : 'cvPideQ()'}" title="${z.nombre}" aria-label="${z.nombre}"><img src="${CV_IMG[z.k]}" alt="">${cvNum(cvCuenta(z))}</button>`; }).join('')}</div>
             <div class="cv-acciones">
-                <button class="cv-acc" onclick="cvIr('resumen')">Resumen${total ? `<b>${total}</b>` : ''}</button>
-                <button class="cv-acc${rev ? ' hecho' : ''}" onclick="cvMarca('revisado')">${rev ? `✓ Revisado<small>${cvHora(rev)}</small>` : 'Revisado'}</button>
-                <button class="cv-acc${rep ? ' hecho' : ''}" onclick="cvMarca('repuesto')">${rep ? `✓ Repuesto<small>${cvHora(rep)}</small>` : 'Repuesto'}</button>
+                <button class="cv-acc" onclick="cvIr('resumen')"${no}>Resumen${total ? `<b>${total}</b>` : ''}</button>
+                <button class="cv-acc${rev ? ' hecho' : ''}" onclick="cvMarca('revisado')"${no}>${rev ? `✓ Revisado<small>${cvHora(rev)}</small>` : 'Revisado'}</button>
+                <button class="cv-acc${rep ? ' hecho' : ''}" onclick="cvMarca('repuesto')"${no}>${rep ? `✓ Repuesto<small>${cvHora(rep)}</small>` : 'Repuesto'}</button>
             </div>
-            <button class="cv-bloque" onclick="cvCerrar()">Bloque completo</button>
-            <button class="cv-admin" onclick="cvIr('pin')" title="Registro" aria-label="Registro">🔒</button>`;
+            <div class="cv-pie"><button class="cv-bloque" onclick="cvCerrar()">Bloque completo</button>
+            <button class="cv-admin" onclick="cvIr('pin')" title="Registro" aria-label="Registro">🔒</button></div>`;
     } else if (cv.vista === 'zona') {
         const z = CV_ZONAS[cv.z], sp = z.spots[cv.s], items = cvItems(z, cv.s);
         const li = Object.keys(inventoryData[cv.q] || {}).indexOf(z.loc);
@@ -3439,7 +3469,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (b) { pasa(b.dataset.id, o => { o.value = b.classList.contains('on') ? '0' : b.dataset.n; }); cvRender(); return; }
         if (!e.target.closest('.cv-pop, .cv-q')) el.querySelector('.cv-pop')?.remove();
     });
-    if (cvLS.get('cv_modo') !== 'clasico') cvAbrir(cvLS.get('cv_q'));
+    cvRueda();
+    setInterval(cvRueda, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) cvRueda(); });
+    if (cvLS.get('cv_modo') !== 'clasico') cvAbrir();
 });
 </script>
 </body>
