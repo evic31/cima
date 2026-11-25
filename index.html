@@ -2332,7 +2332,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-nov 17:27'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-nov 17:36'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3283,7 +3283,7 @@ function cvRueda() {
     if (!prev) return;
     let cambia = false; const pend = Object.fromEntries(CV_QS.map(q => [q, !!cvPendiente(q)]));
     document.querySelectorAll('#tab-contents input[type="checkbox"], #tab-contents select').forEach(i => {
-        const q = CV_QS.find(q => i.id.startsWith(q + ID_SEP));
+        const q = ['Reanimación', 'UCSI', ...CV_QS].find(q => i.id.startsWith(q + ID_SEP));   // (25-nov) REA y UCSI también se limpian
         if (!q || pend[q]) return;
         if (i.type === 'checkbox' ? i.checked : i.value !== '0') { cambia = true; if (i.type === 'checkbox') i.checked = false; else i.value = '0'; }
     });
