@@ -801,13 +801,14 @@
         .cv-dots.mal span { border-color: #dc2626; }
         .cv-pad { display: grid; grid-template-columns: repeat(3, 72px); gap: 14px; justify-content: center; }
         .cv-pad button { height: 64px; border-radius: 50%; border: 1.5px solid var(--border2); background: #fff; font-size: 24px; font-weight: 500; cursor: pointer; color: var(--text); }
-        .cv-reg { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1fr 1fr; align-items: center; text-align: center; padding: 9px 6px; border-bottom: 1px solid var(--border); font-size: 15px; }
+        .cv-reg { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1.5fr 1fr 1fr; align-items: center; text-align: center; padding: 9px 6px; border-bottom: 1px solid var(--border); font-size: 15px; }
         .cv-reg:last-child { border-bottom: none; }
         .cv-regcab { font-weight: 600; color: #1d4f9c; background: #eef4ff; }
         @media (max-width: 760px) {
             .cv-acciones { gap: 8px; padding: 0 12px; }
             .cv-acc { font-size: 15px; padding: 8px 4px; }
-            .cv-reg { font-size: 15px; padding: 9px 2px; grid-template-columns: 0.9fr 1.05fr 0.75fr 0.95fr 0.95fr; }
+            .cv-reg { font-size: 15px; padding: 9px 2px; grid-template-columns: 0.8fr 1fr 0.7fr 1.4fr 0.8fr 0.8fr; }
+            .cv-regcab > span { hyphens: manual; }
             .cv-n { width: 36px; }
         }
         /* (25-nov) pantalla grande: el carro quieto y solo se desplaza la lista del cajón */
@@ -2332,7 +2333,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-nov 17:36'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '25-nov 17:47'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3464,9 +3465,14 @@ function cvRegistroHTML() {
     const tOrd = { 'Mañana': 0, 'Tarde': 1, 'Noche': 2 };
     const lista = Object.values(filas).sort((a, b) => b.dia.localeCompare(a.dia) || tOrd[b.turno] - tOrd[a.turno] || CV_QS.indexOf(a.q) - CV_QS.indexOf(b.q));
     const fDia = d => d.split('-').reverse().slice(0, 2).join('/');
+    // (25-nov) enfermera de cada quirófano y turno, del Mapa de Personal del hub (clave compartida bq_personal_asig;
+    // la noche pertenece al día en que empieza). Sin Mapa (p. ej. GitHub Pages) la casilla queda vacía.
+    let asig = {};
+    try { asig = JSON.parse(localStorage.getItem('bq_personal_asig') || '{}') || {}; } catch {}
+    const enf = f => { const n = asig[f.dia]?.[f.turno]?.[cvCorto(f.q)]; return n ? String(n).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]) : ''; };
     return `<div class="cv-res"><h2>Registro</h2>
-        ${lista.length ? `<div class="cv-card"><div class="cv-reg cv-regcab"><span>Fecha</span><span>Turno</span><span>Quirófano</span><span>Revisado</span><span>Repuesto</span></div>
-            ${lista.map(f => `<div class="cv-reg"><span>${fDia(f.dia)}</span><span>${f.turno}</span><span>${cvCorto(f.q)}</span><span>${f.revisado ? cvHora(f.revisado) : '—'}</span><span>${f.repuesto ? cvHora(f.repuesto) : '—'}</span></div>`).join('')}</div>`
+        ${lista.length ? `<div class="cv-card"><div class="cv-reg cv-regcab"><span>Fecha</span><span>Turno</span><span>Quiró&shy;fano</span><span>Enfermera</span><span>Revi&shy;sado</span><span>Repues&shy;to</span></div>
+            ${lista.map(f => `<div class="cv-reg"><span>${fDia(f.dia)}</span><span>${f.turno}</span><span>${cvCorto(f.q)}</span><span>${enf(f)}</span><span>${f.revisado ? cvHora(f.revisado) : '—'}</span><span>${f.repuesto ? cvHora(f.repuesto) : '—'}</span></div>`).join('')}</div>`
           : '<div class="cv-vacio">Sin registros</div>'}
         <button class="cv-bloque" onclick="cvCambiaPin()">🔑 Cambiar clave</button></div>`;
 }
