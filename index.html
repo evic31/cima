@@ -100,7 +100,7 @@
         .tab.tab-ico.active { border-color: #1d4f9c; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
         /* (19-nov) la cabecera toma el color del quirófano abierto (colores de UCSI): así no se mezclan quirófanos */
         body[data-q="1"] { --header-bg: #dd3030; }
-        body[data-q="2"] { --header-bg: #d8db2d; }
+        body[data-q="2"] { --header-bg: #eac506; }
         body[data-q="3"] { --header-bg: #179e08; }
         body[data-q="4"] { --header-bg: #963499; }
         body[data-q="5"] { --header-bg: #ffffff; }
@@ -125,7 +125,7 @@
         /* color liso de la barra fija de arriba (lo que lee el iPhone para la barra de la hora): el del quirófano;
            en Q8/Hemo la franja de arriba (con franjas verticales no podía elegir y se quedaba con el color anterior) */
         .top-wrapper { background-color: var(--barra, #58A6FF); }
-        body[data-q="1"] { --barra: #dd3030; } body[data-q="2"] { --barra: #d8db2d; } body[data-q="3"] { --barra: #179e08; }
+        body[data-q="1"] { --barra: #dd3030; } body[data-q="2"] { --barra: #eac506; } body[data-q="3"] { --barra: #179e08; }
         body[data-q="4"] { --barra: #963499; } body[data-q="5"] { --barra: #ffffff; } body[data-q="6"] { --barra: #3190e4; }
         body[data-q="7"] { --barra: #e57207; } body[data-q="8"] { --barra: #87c6f4; } body[data-q="hemo"] { --barra: #8bc9a2; }
         /* (19-nov) RESUMEN arriba a la derecha (sin scroll) e ℹ a la izquierda */
@@ -376,7 +376,7 @@
         /* (19-nov) puntitos con el color de cada quirófano que necesita ese producto (colores de UCSI) */
         .qdots { display: inline-flex; gap: 2px; margin-left: 5px; vertical-align: middle; position: relative; top: -1px; }
         .qdot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 0.5px rgba(0,0,0,.25); }
-        .qd-1 { background: #dd3030; } .qd-2 { background: #d8db2d; } .qd-3 { background: #179e08; } .qd-4 { background: #963499; }
+        .qd-1 { background: #dd3030; } .qd-2 { background: #eac506; } .qd-3 { background: #179e08; } .qd-4 { background: #963499; }
         .qd-5 { background: #fff; box-shadow: 0 0 0 0.75px #000; } .qd-6 { background: #3190e4; } .qd-7 { background: #e57207; }
         /* Q8 y Hemo comparten el amarillo: puntito bicolor sin él (Q8 azul/lila, Hemo verde/rojo) */
         .qd-8 { background: linear-gradient(to bottom, #87c6f4 50%, #c5a2e5 50%); }
@@ -697,7 +697,7 @@
         .cv-meta { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
         .cv-q { border: 2px solid transparent; border-radius: 999px; padding: 4px 16px; font-size: 18px; font-weight: 600; cursor: pointer; color: #fff; }
         .cv-dato { background: #fff; border-radius: 999px; padding: 2px 12px; font-size: 15px; font-weight: 600; }
-        .cvq-1 { background: #dd3030; } .cvq-2 { background: #d8db2d; color: #1e293b !important; } .cvq-3 { background: #179e08; }
+        .cvq-1 { background: #dd3030; } .cvq-2 { background: #eac506; color: #1e293b !important; } .cvq-3 { background: #179e08; }
         .cvq-4 { background: #963499; } .cvq-5 { background: #fff; color: #1e293b !important; border-color: #1e293b !important; }
         .cvq-6 { background: #3190e4; } .cvq-7 { background: #e57207; }
         .cvq-8 { background: linear-gradient(#87c6f4 0 33%, #c5a2e5 33% 66%, #f1e690 66%); color: #1e293b !important; }
@@ -783,7 +783,7 @@
         .cv-it { display: flex; flex-wrap: wrap; flex-direction: row; align-items: center; gap: 8px 12px; }
         .cv-it .item-name { flex: 1 1 130px; width: auto; min-width: 0; }
         .cv-ctl { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; margin-left: auto; }
-        .cv-chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--text-muted);
+        .cv-chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--text);
             background: var(--surf2); border: 1.5px solid var(--border); border-radius: 100px; padding: 5px 12px; user-select: none; -webkit-tap-highlight-color: transparent; }
         .cv-chk:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
         .cv-chk input { width: 1.05em; height: 1.05em; margin: 0; accent-color: #fff; }
@@ -882,13 +882,13 @@
         #cv .cv-acciones.nuevo + .cv-pie, #cv .cv-aviso + .cv-acciones.nuevo + .cv-pie { margin-top: 36px; }
         #cv .cv-acciones.nuevo .cv-acc, #cv .cv-acciones.nuevo .cv-acc:first-child { flex-direction: column; gap: 0; min-height: 58px; border-radius: 12px;
             border: 2px solid #623d3d; background: #fff; color: #3f749b; box-shadow: 6px 6px 0 #b0d8ef, 6px 6px 0 2px #623d3d;
-            font: 400 clamp(15px, calc(var(--cvw) * .02), 24px)/1.15 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; position: relative; }
+            font: 400 clamp(17px, 2.2vw, 24px)/1.15 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace; position: relative; }
         #cv .cv-acciones.nuevo .cv-acc b { position: absolute; top: -10px; right: -10px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px;
             background: #dc2626; color: #fff; font: 600 14px/24px 'IBM Plex Sans', sans-serif; }
         #cv .cv-acciones.nuevo .cv-acc.hecho { color: #047857; box-shadow: 6px 6px 0 #a7f3d0, 6px 6px 0 2px #623d3d; }
         #cv .cv-acciones.nuevo .cv-acc small { font: 500 15px/1.2 'IBM Plex Sans', sans-serif; }
         #cv .cv-acciones.nuevo .cv-acc:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 3px 3px 0 #b0d8ef, 3px 3px 0 2px #623d3d; }
-        @media (max-width: 760px) { #cv { --cvw: calc(100% - 24px); } #cv .cv-acciones.nuevo .cv-acc { min-height: 48px; padding: 6px 2px; } }
+        @media (max-width: 760px) { #cv { --cvw: calc(100% - 24px); } #cv .cv-acciones.nuevo .cv-acc { min-height: 50px; padding: 6px 2px; } }
     </style>
 </head>
 <body>
@@ -2359,7 +2359,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 16:50'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 16:54'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
