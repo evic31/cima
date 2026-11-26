@@ -901,8 +901,10 @@
         .cv-mesas { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
         .cv-mesas .cv-mesa { pointer-events: auto; }
         .cv-mesa { top: 1.1%; height: 12.84%; width: 10.22%; }
-        .cv-mesa.sel b { position: absolute; left: 50%; top: 104%; transform: translateX(-50%); white-space: nowrap;
-            font: 600 max(15px, 1.4cqw)/1.2 'IBM Plex Sans', sans-serif; color: #1e293b; }
+        /* (26-nov) número del quirófano DENTRO de la mesa elegida (debajo tapaba el número de las tarjetas en el móvil); igual que en Bloque completo */
+        .cv-mesa.sel b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); white-space: nowrap; box-sizing: border-box;
+            min-width: max(18px, 2.6cqw); height: max(18px, 2.6cqw); padding: 0 max(4px, .5cqw); border-radius: 999px; background: #fff; color: #1d4f9c;
+            box-shadow: 0 0 0 1.5px #1d4f9c; display: grid; place-items: center; font: 700 max(12px, 1.6cqw)/1 'IBM Plex Sans', sans-serif; }
         .cv-mesas.pide { animation: cvPide .5s ease; }
         .cv-tarj { top: 18.9%; height: 79.84%; width: 31.21%; border-radius: .3cqw; }
         .cv-tarj:hover { box-shadow: 0 0 0 max(2px, .25cqw) #3f749b; }
@@ -918,7 +920,9 @@
         #cv .cv-acciones.nuevo .cv-acc.hecho { color: #047857; box-shadow: 6px 6px 0 #a7f3d0, 6px 6px 0 2px #623d3d; }
         #cv .cv-acciones.nuevo .cv-acc small { font: 500 15px/1.2 'IBM Plex Sans', sans-serif; }
         #cv .cv-acciones.nuevo .cv-acc:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 3px 3px 0 #b0d8ef, 3px 3px 0 2px #623d3d; }
-        @media (max-width: 760px) { #cv { --cvw: calc(100% - 24px); } #cv .cv-acciones.nuevo .cv-acc { min-height: 50px; padding: 6px 2px; } }
+        @media (max-width: 760px) { #cv { --cvw: calc(100% - 24px); } #cv .cv-acciones.nuevo .cv-acc { min-height: 50px; padding: 6px 2px; }
+            /* (26-nov) móvil: botones más separados (con la sombra se chocaban); la letra no se toca */
+            #cv .cv-acciones.nuevo { width: var(--cvw); gap: 16px; } }
     </style>
 </head>
 <body>
@@ -2444,7 +2448,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 17:38'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 17:41'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3478,7 +3482,7 @@ function cvRender() {
         const X = n => (n / 24).toFixed(3) + '%';   // px del dibujo (2400 de ancho) → %
         html += `<div class="cv-port${cv.q ? '' : ' apagado'}">
             <img src="${CV_IMG.portada}" alt="">
-            <div class="cv-mesas${cv.q ? ' hay' : ''}">${CV_QS.map((q, i) => `<button class="cv-mesa${q === cv.q ? ' sel' : ''}" style="left:${X(96 + 245.33 * i)}" onclick="cvCambiaQ('${q}')" title="${q}" aria-label="${q}">${q === cv.q ? `<b>${cvCorto(q)}</b>` : ''}</button>`).join('')}</div>
+            <div class="cv-mesas${cv.q ? ' hay' : ''}">${CV_QS.map((q, i) => `<button class="cv-mesa${q === cv.q ? ' sel' : ''}" style="left:${X(96 + 245.33 * i)}" onclick="cvCambiaQ('${q}')" title="${q}" aria-label="${q}">${q === cv.q ? `<b>${q.match(/\d/)?.[0] || 'HMD'}</b>` : ''}</button>`).join('')}</div>
             ${[0, 1, 2].map(i => { const z = CV_ZONAS[i];
                 return `<button class="cv-tarj" style="left:${X(17 + 808 * i)}" onclick="${cv.q ? `cvIr('zona', ${i})` : 'cvPideQ()'}" title="${z.nombre}" aria-label="${z.nombre}">${cv.q ? cvNum(cvCuenta(z)) : ''}</button>`; }).join('')}
         </div>
