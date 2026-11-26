@@ -382,6 +382,13 @@
         .qd-8 { background: linear-gradient(to bottom, #87c6f4 50%, #c5a2e5 50%); }
         .qd-hemo { background: linear-gradient(to bottom, #8bc9a2 50%, #e87878 50%); }
         #content-RESUMEN .total-item.done .qdots { opacity: 0.45; }
+        /* (26-nov) nº de cajetín de farmacia, como las etiquetas reales: negro pequeño = armario superior, negro grande = cajones, blanco = antibióticos */
+        .caj { display: inline-grid; place-items: center; flex: none; width: 26px; height: 22px; border-radius: 4px; background: #111; color: #fff; font: 700 13px/1 inherit; font-variant-numeric: tabular-nums; font-style: normal; margin-right: 8px; }
+        .caj-A { width: 34px; border-radius: 3px; margin-right: 0; }
+        .caj-B { background: #fff; color: #111; box-shadow: inset 0 0 0 1.5px #111; }
+        .caj-B.g { width: 34px; margin-right: 0; }
+        .caj-x { visibility: hidden; }
+        #content-RESUMEN .total-item.done .caj { opacity: 0.45; }
         #content-RESUMEN .sum-check,
         #content-RESUMEN .sum-area-check {
             width: 1.05em; height: 1.05em;
@@ -1138,6 +1145,7 @@ const DEFAULT_INVENTORY = {
             { g: 6, name: "Sevorane", type: "checkbox", storage: "ALMACÉN PASILLO IZQUIERDO" },
             { g: 6, name: "Alcohol", type: "checkbox", storage: "FARMACIA" },
             { g: 6, name: "Contenedor Agujas", type: "checkbox", storage: "ARMARIO TRANSFER", unidad: "Contenedor Agujas" },
+            { g: 6, name: "Ambú", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },   // (26-nov) cesta del carro, se coge en el BQ con las bombas
             { g: 6, name: "Jeringas", type: "checkbox", options: ["20cc", "10cc", "5cc", "3cc"], storage: "ALMACÉN PASILLO DERECHO" },
             { g: 6, name: "Agujas", type: "checkbox", options: ["Carga", "Azul", "Verde", "Amarilla", "Naranja"], storage: "ALMACÉN PASILLO DERECHO" },
 
@@ -1447,6 +1455,34 @@ function saveChecklistState() {
     checklistState = state;
 }
 
+// (26-nov) cajetines de farmacia, del cartel «Cajetines medicación BQ»: S = armario superior, A = cajones grandes, B = antibióticos.
+// (R)/(U) usan el del mismo fármaco. «B» sin número = antibiótico con varias dosis en el cartel (se sabe la zona, no el cajetín).
+const CAJETIN = {
+    'Ac. Tranexámico': 'S1', 'Adrenalina': 'S3', 'Amiodarona': 'S4', 'Atropina': 'S5', 'Bicarbonato': 'S7',
+    'Dexametasona': 'S15', 'Dexclorferinamina': 'S16', 'Diclofenaco': 'S17', 'Efedrina': 'S22', 'Furosemida': 'S28',
+    'Hidrocortisona': 'S36', 'Metilprednisona 20mg': 'S40', 'Solu Moderin 125mg': 'S42', 'Metamizol': 'S43',
+    'Metoclopramida': 'S45', 'Metilprednisona 40mg': 'S46', 'Naloxona': 'S48', 'Solinitrina': 'S50',
+    'Ondansetron 4mg': 'S53', 'Ondansetron 8mg': 'S55', 'Salbutamol Inhalado': 'S59', 'Tramadol': 'S62', 'Urapidilo': 'S64',
+    'Bupivacaina 0,25': 'A1', 'Bupivacaina 0.5': 'A3', 'SF 10mL': 'A4', 'Dexketoprofeno': 'A7', 'Trandate': 'A10',
+    'Levobupivacaina': 'A11', 'Lidocaina 2%': 'A12', 'Mepivacaina 2%': 'A13', 'Midazolam': 'A14', 'Neostigmina': 'A15',
+    'Pantoprazol': 'A17', 'Propofol 50 ml': 'A19', 'Ropivacaina': 'A21',
+    'Ampicilina': 'B4', 'Cefazolina 1G': 'B6', 'Cloxacilina': 'B7', 'Ceftazidima': 'B8', 'Clindamicina': 'B10',
+    'Cefotaxima': 'B11', 'Gentamicina': 'B12', 'Meropenem': 'B13', 'Vancomicina': 'B14', 'Cefuroxima': 'B17',
+    'Augmentine': 'B', 'Cefazolina': 'B', 'Ciprofloxacino': 'B',
+};
+const cajKey = s => String(s).replace(/\s*\((R|U)\)\s*$/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const CAJ_IDX = Object.fromEntries(Object.entries(CAJETIN).map(([k, v]) => [cajKey(k), v]));
+const cajDe = u => CAJ_IDX[cajKey(u)] || null;
+// zona de la pared, igual que el cartel: 0 izquierda · 1 centro · 2 derecha · 3 sin cajetín (al final)
+function cajZona(c) {
+    if (!c) return 3;
+    const m = c[0], n = +c.slice(1) || 0;
+    if (m === 'S') { const [i, cols] = n <= 22 ? [n, 22] : n <= 46 ? [n - 22, 24] : [n - 46, 21]; return Math.min(2, Math.floor((i - 0.5) / cols * 3)); }
+    if (m === 'A') return (n <= 6 || (n >= 13 && n <= 18)) ? 0 : 1;
+    return 2;
+}
+const cajTag = c => !c || c.length < 2 ? `<i class="caj caj-x"></i>` : `<i class="caj caj-${c[0]}${c[0] === 'B' && +c.slice(1) >= 15 ? ' g' : ''}" title="${c[0] === 'S' ? 'Armario superior' : c[0] === 'A' ? 'Cajones grandes' : 'Antibióticos'} · ${['izquierda', 'centro', 'derecha'][cajZona(c)]}">${c.slice(1)}</i>`;
+
 // ─────────────────────────────────────────────
 // SUMMARY
 // ─────────────────────────────────────────────
@@ -1506,6 +1542,8 @@ function renderSummary() {
             const ma = byMeta[st][a[0]], mb = byMeta[st][b[0]];
             const ba = block(ma.unit), bb = block(mb.unit);
             if (ba !== bb) return ba - bb;
+            // (26-nov) farmacia: por zona de la pared, izquierda → centro → derecha (sin cajetín al final); dentro, ⚙️ Orden
+            if (st === 'FARMACIA') { const za = cajZona(cajDe(ma.unit)), zb = cajZona(cajDe(mb.unit)); if (za !== zb) return za - zb; }
             const pa = pos.get(ma.unit) ?? 1e6, pb = pos.get(mb.unit) ?? 1e6;
             if (pa !== pb) return pa - pb;
             if (ma.unit !== mb.unit) return ma.unit.localeCompare(mb.unit, 'es');
@@ -1544,7 +1582,7 @@ function renderSummary() {
                         const chk = !!summaryTicks[sid];
                         const qs = [...'12345678', 'hemo'].filter(q => byQ[loc]?.[name]?.has(q));
                         const dots = qs.length ? `<b class="qdots" title="${qs.map(q => q === 'hemo' ? 'Hemodinamia' : 'Q' + q).join(' · ')}">${qs.map(q => `<i class="qdot qd-${q}"></i>`).join('')}</b>` : '';
-                        return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span class="quantity">×${qty}</span><span>${name}${dots}</span></label></li>`;
+                        return `<li class="total-item ${chk?'done':''}"><label for="${sid}"><input type="checkbox" class="sum-check" id="${sid}" ${chk?'checked':''}><span class="quantity">×${qty}</span>${loc === 'FARMACIA' ? cajTag(cajDe(byMeta[loc][name]?.unit || name)) : ''}<span>${name}${dots}</span></label></li>`;
                     }).join('')}</ul>
                 </div>`).join('')}
         </div>`;
@@ -1621,8 +1659,21 @@ function renderSummary() {
                         doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(29, 78, 216);
                         doc.text('×' + r.qty, x + 6.5, ty);
                     }
+                    // (26-nov) nº de cajetín de farmacia como la etiqueta real (negro = armario/cajones, blanco = antibióticos)
+                    let nx = x + 6.5 + QTY_W;
+                    if (r.caj !== undefined) {
+                        const c = r.caj;
+                        if (c && c.length > 1) {
+                            const bw = c[0] === 'S' || (c[0] === 'B' && +c.slice(1) < 15) ? 5.6 : 7.4, bh = RH - 2.2;
+                            if (c[0] === 'B') { doc.setFillColor(255, 255, 255); doc.setDrawColor(17, 17, 17); doc.setLineWidth(0.35); doc.rect(nx, yy + 1.1, bw, bh, 'FD'); doc.setTextColor(17, 17, 17); }
+                            else { doc.setFillColor(17, 17, 17); doc.rect(nx, yy + 1.1, bw, bh, 'F'); doc.setTextColor(255, 255, 255); }
+                            doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+                            doc.text(c.slice(1), nx + bw / 2, ty, { align: 'center' });
+                        }
+                        nx += 8.6;
+                    }
                     doc.setFont('helvetica', 'normal'); doc.setTextColor(45, 49, 66);
-                    doc.text(fit(r.name, COLW - 6.5 - QTY_W - 1, 9.5), x + 6.5 + QTY_W, ty);
+                    doc.text(fit(r.name, x + COLW - nx - 1, 9.5), nx, ty);
                 });
                 y += nRows * RH + 3.5;
                 i += chunk.length;
@@ -1633,7 +1684,7 @@ function renderSummary() {
         // 1) por ubicación, en el orden de ⚙️ Orden
         const PDF_TINT = { farmacia: [254, 226, 226], 'almacen-der': [219, 234, 254], 'almacen-izq': [209, 250, 229], desconocido: [226, 232, 240] };
         if (storeList.length) heading('POR UBICACIÓN');
-        storeList.forEach(([loc, entries]) => group(loc, PDF_TINT[getLocationClass(loc)] || PDF_TINT.desconocido, entries.map(([name, qty]) => ({ name, qty }))));
+        storeList.forEach(([loc, entries]) => group(loc, PDF_TINT[getLocationClass(loc)] || PDF_TINT.desconocido, entries.map(([name, qty]) => loc === 'FARMACIA' ? { name, qty, caj: cajDe(name) } : { name, qty })));
 
         // 2) por área, en el orden de cada pestaña
         const withRows = areaRows.filter(([, rows]) => rows.length);
@@ -2359,7 +2410,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 16:59'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 17:22'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3247,7 +3298,7 @@ const CV_ZONAS = [
         { n: 'Cajón 3 · Circulatorio', g: [3], r: [23, 61.6, 46.8, 9.4], a: [46.9, 67.2], chico: 1 },
         { n: 'Cajón 4 · Respiratorio', g: [2], r: [23, 71, 46.8, 9.2], a: [46.9, 76.5], chico: 1 },
         { n: 'Cajón 5 · Sueroterapia', g: [1], r: [23, 80.2, 46.8, 9.3], a: [46.9, 85.5], chico: 1 },
-        { n: 'Cesta', re: /^(Contenedor Agujas|Empapador|Gasas (Grandes|Pequeñas) s\/c)$/i, r: [69.8, 49.4, 30.2, 14.9], a: [96.1, 57.9] },
+        { n: 'Cesta', re: /^(Contenedor Agujas|Empapador|Ambú|Gasas (Grandes|Pequeñas) s\/c)$/i, r: [69.8, 49.4, 30.2, 14.9], a: [96.1, 57.9] },
     ] },
     { k: 'resp', nombre: 'Respirador y quirófano', loc: 'Otros', flechas: 1, spots: [
         { n: 'Respirador', g: [1], r: [0, 0, 28.5, 57], a: [32, 24] },
