@@ -865,16 +865,18 @@
             .tabs-q.ico { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; margin: 0 -0.8rem; padding: 3px 0.8rem; scroll-padding: 0 40%; }
             .tabs-q.ico::-webkit-scrollbar { display: none; }
             .tab.tab-ico img { height: 44px; } .tab.tab-q.tab-ico { padding: 2px 3px; flex: none; }
-            #tabs .tabs-acc { display: none; }
             .tabs-q.ico { padding-left: 0; }
-            .tabs-q.ico .res-pin { display: flex; align-items: center; position: sticky; left: 0; z-index: 3; flex: none; align-self: stretch;
-                margin: -3px 2px -3px 0; padding: 0 8px 0 0.8rem; background: var(--header-bg); }
+            .tabs-q.ico .res-pin { position: sticky; left: 0; z-index: 3; align-self: stretch; margin: -3px 2px -3px 0; padding: 0 8px 0 0.8rem; background: var(--header-bg); }
             .tabs-q.ico .res-pin::after { content: ''; position: absolute; top: 0; bottom: 0; right: -18px; width: 18px; pointer-events: none; background: linear-gradient(to right, var(--header-bg) 30%, rgba(88,166,255,0)); }
-            .tab.tab-res, .tab.tab-res:hover { width: 44px; height: 44px; padding: 0; border-radius: 10px; border: 2px solid #fff; background: #fff; font-size: 22px; line-height: 1;
-                display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0,0,0,.18); color: inherit; -webkit-tap-highlight-color: transparent; }
-            .tab.tab-res.active { border-color: #1d4f9c; box-shadow: 0 0 0 2px #1d4f9c, 0 3px 10px rgba(0,0,0,.25); background: #fff; }
+            .tab.tab-res, .tab.tab-res:hover { width: 44px; height: 44px; font-size: 22px; }
         }
+        /* (26-nov) Resumen = libretita al principio de la tira, en móvil y en ordenador (sin fila propia); en móvil queda fija al hacer scroll */
         .res-pin { display: none; }
+        .tabs-q.ico .res-pin { display: flex; align-items: center; flex: none; align-self: center; margin-right: 6px; }
+        #tabs .tabs-q.ico ~ .tabs-acc { display: none; }
+        .tab.tab-res, .tab.tab-res:hover { width: 48px; height: 48px; padding: 0; border-radius: 10px; border: 2px solid #fff; background: #fff; font-size: 24px; line-height: 1;
+            display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0,0,0,.18); color: inherit; -webkit-tap-highlight-color: transparent; }
+        .tab.tab-res.active { border-color: #1d4f9c; box-shadow: 0 0 0 2px #1d4f9c, 0 3px 10px rgba(0,0,0,.25); background: #fff; }
         .tabs-acc { display: grid; grid-template-columns: minmax(0, 168px); justify-content: center; gap: 8px; max-width: 520px; margin: 8px auto 0; }
         .tab.tab-acc { background: #fff; color: #1d4f9c; border: 2px solid #fff; font-size: 15px; font-weight: 600; padding: 6px 4px; text-align: center; }
         .tab.tab-acc:hover { background: #fff; color: #1d4f9c; }
@@ -2465,7 +2467,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 17:53'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 18:09'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
