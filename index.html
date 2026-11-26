@@ -2333,7 +2333,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '25-nov 17:47'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 09:44'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3469,12 +3469,30 @@ function cvRegistroHTML() {
     // la noche pertenece al día en que empieza). Sin Mapa (p. ej. GitHub Pages) la casilla queda vacía.
     let asig = {};
     try { asig = JSON.parse(localStorage.getItem('bq_personal_asig') || '{}') || {}; } catch {}
+    if (lista.some(f => !asig[f.dia])) cvAsigPide();
     const enf = f => { const n = asig[f.dia]?.[f.turno]?.[cvCorto(f.q)]; return n ? String(n).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]) : ''; };
     return `<div class="cv-res"><h2>Registro</h2>
         ${lista.length ? `<div class="cv-card"><div class="cv-reg cv-regcab"><span>Fecha</span><span>Turno</span><span>Quiró&shy;fano</span><span>Enfermera</span><span>Revi&shy;sado</span><span>Repues&shy;to</span></div>
             ${lista.map(f => `<div class="cv-reg"><span>${fDia(f.dia)}</span><span>${f.turno}</span><span>${cvCorto(f.q)}</span><span>${enf(f)}</span><span>${f.revisado ? cvHora(f.revisado) : '—'}</span><span>${f.repuesto ? cvHora(f.repuesto) : '—'}</span></div>`).join('')}</div>`
           : '<div class="cv-vacio">Sin registros</div>'}
         <button class="cv-bloque" onclick="cvCambiaPin()">🔑 Cambiar clave</button></div>`;
+}
+// (26-nov) Si al Registro le faltan días en bq_personal_asig (nadie ha abierto el Mapa de Personal hace poco),
+// en el hub se abre el Mapa escondido un momento: al arrancar rehace la clave (y sync.js / la carpeta la reparten).
+function cvAsigPide() {
+    if (cvAsigPide.hecho || !/\/herramientas\/[^/]*$/.test(location.pathname)) return;
+    cvAsigPide.hecho = true;
+    const antes = localStorage.getItem('bq_personal_asig');
+    const f = document.createElement('iframe');
+    f.src = 'personal.html'; f.tabIndex = -1; f.setAttribute('aria-hidden', 'true');
+    f.style.cssText = 'position:fixed;left:-20px;top:-20px;width:10px;height:10px;opacity:0;border:0;pointer-events:none';
+    let n = 0;
+    const mira = setInterval(() => {
+        if (localStorage.getItem('bq_personal_asig') === antes && ++n < 60) return;
+        clearInterval(mira); setTimeout(() => f.remove(), 3000);
+        if (cv.vista === 'registro') cvRender();
+    }, 250);
+    document.body.appendChild(f);
 }
 function cvCambiaPin() {
     const p = prompt('Clave nueva (4 números)');
