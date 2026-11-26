@@ -1518,7 +1518,7 @@ const CAJETIN = {
     'Ondansetron 4mg': 'S53', 'Ondansetron 8mg': 'S55', 'Salbutamol Inhalado': 'S59', 'Tramadol': 'S62', 'Urapidilo': 'S64',
     'Bupivacaina 0,25': 'A1', 'Bupivacaina 0.5': 'A3', 'SF 10mL': 'A4', 'Dexketoprofeno': 'A7', 'Trandate': 'A10',
     'Levobupivacaina': 'A11', 'Lidocaina 2%': 'A12', 'Mepivacaina 2%': 'A13', 'Midazolam': 'A14', 'Neostigmina': 'A15',
-    'Pantoprazol': 'A17', 'Propofol 20 mL': 'A18', 'Propofol 50 ml': 'A19', 'Ropivacaina': 'A21',
+    'Pantoprazol': 'A17', 'Propofol 20 mL': 'A18', 'Propofol': 'A18', 'Propofol 50 ml': 'A19', 'Ropivacaina': 'A21',
     'Ampicilina': 'B4', 'Cefazolina 1G': 'B6', 'Cloxacilina': 'B7', 'Ceftazidima': 'B8', 'Clindamicina': 'B10',
     'Cefotaxima': 'B11', 'Gentamicina': 'B12', 'Meropenem': 'B13', 'Vancomicina': 'B14', 'Cefuroxima': 'B17',
     // UCSI: sin dosis, se coge un poco de cada → todos sus cajetines
@@ -2465,7 +2465,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 17:45'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 17:53'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
