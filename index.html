@@ -1148,8 +1148,7 @@ const DEFAULT_INVENTORY = {
             { g:1, name: "Cal Sodada DRAGER", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Cal Sodada G.Electric", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
             { g:1, name: "Receptales Aspiración", type: "number", stock: 8, storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Receptal Aspiración PETIT", type: "checkbox", storage: "ALMACÉN PASILLO DERECHO" },
-            { g:1, name: "Set Aspiración Anestesia", type: "checkbox", options: ["Receptal","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
+            { g:1, name: "Set Aspiración Anestesia", type: "checkbox", options: ["Receptal","Receptal Pequeño","Goma","Sonda"], storage: "ALMACÉN PASILLO DERECHO" },
             // ── BLOQUE 2 ──
             { g:2, name: "Rosco", type: "checkbox", storage: "BLOQUE QUIRÚRGICO" },
             { g:2, name: "Sábanas", type: "checkbox", storage: "ARMARIO TRANSFER" },
@@ -2275,6 +2274,7 @@ const VOZ_OPT_ALIAS = {
     'Antisepticos||Clorh. Acu. Tintada': ['clorhexidina acuosa tintada', 'clore acuosa tintada'],
     'Otros Líquidos||Agua Oxig.': ['agua oxigenada', 'h2o2', 'oxigenada'],
     'Otros Líquidos||Nobecutan': ['aposito aerosol', 'aposito en aerosol', 'aerosol', 'spray'],
+    'Set Aspiración Anestesia||Receptal Pequeño': ['receptal petit', 'receptal pequeno', 'petit'],   // (26-nov) el Petit suelto se quitó: va dentro del Set
     'Kit Sondaje||Cathegel': ['lubricante urologico', 'lubricante de sondaje', 'catejel', 'catehel', 'cate gel', 'cate'],
     'Kit Sondaje||Paño Kit Sondaje': ['pano sondaje'],
     'Kit Sondaje||Jeringa Kit Sondaje': ['jeringa sondaje'],
@@ -2359,7 +2359,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 16:54'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 16:59'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3038,7 +3038,7 @@ const DEFAULT_ORDER = {   // orden fijado (25-sep): lo que se ordene en el móvi
             "Abocath 20G", "Abocath 18G", "Abocath 16G", "Abocath 14G", "Abocath (UCSI)", "Abocath (REA)",
             "Mascarilla Laringea (nº5)", "Mascarilla Laringea (nº4)", "Mascarilla Laringea (nº3)", "Yankauer", "Mango Lampara",
             "Placa Bisturí", "Rasca", "Rotulador", "Goma Aspiración", "TET (nº8)", "TET (nº7,5)", "TET (nº7)", "TET (nº6,5)",
-            "Set Anestesia", "Set Aspiración Anestesia", "Receptal Aspiración PETIT", "Receptales Aspiración", "Receptal Aspiración",
+            "Set Anestesia", "Set Aspiración Anestesia", "Receptales Aspiración", "Receptal Aspiración",
             "Guedel #5 11mm (Celeste/ Naranja)", "Guedel #4 10mm (Rojo)", "Guedel #3 90mm (Amarillo)", "Guedel #2 80mm (Verde)",
             "Guedel (REA)", "Jeringas Bomba", "Sistema Jeringa", "Sistemas (REA)", "Sistemas (UCSI)", "Tapón Vía (REA)", "Tapón Vía",
             "Llave 3p (UCSI)", "Llave 3p (REA)", "Sistema Estándar", "Alargadera", "Alargadera (UCSI)", "Alargadera (REA)",
@@ -3251,11 +3251,11 @@ const CV_ZONAS = [
     ] },
     { k: 'resp', nombre: 'Respirador y quirófano', loc: 'Otros', flechas: 1, spots: [
         { n: 'Respirador', g: [1], r: [0, 0, 28.5, 57], a: [32, 24] },
-        { n: 'Quirófano', g: [2], re: /^Receptales Aspiración$/i, r: [21, 57, 79, 43], a: [62, 45] },
+        { n: 'Quirófano', g: [2], re: /^Receptal(es)? Aspiración$/i, r: [21, 57, 79, 43], a: [62, 45] },
     ] },
 ];
 // solo en esta vista: cómo se lee una opción (el nombre real no cambia: lo usan la voz y la hoja impresa)
-const CV_ETIQ = { 'Set Aspiración Anestesia': { Receptal: 'Receptal o Receptal Pequeño' } };
+const CV_ETIQ = {};
 const CV_MAX_BOTONES = 5;   // hasta 5 de stock: «Faltan 1 2 3 4 5»; más, desplegable
 const CV_QS = ['Quirófano 1', 'Quirófano 2', 'Quirófano 3', 'Quirófano 4', 'Quirófano 5', 'Quirófano 6', 'Quirófano 7', 'Quirófano 8', 'Hemodinamia'];
 const CV_REG = 'repo_reg';          // registro Revisado/Repuesto: una clave por quirófano·día·turno·tipo (no se pisan entre dispositivos)
