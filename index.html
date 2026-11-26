@@ -707,7 +707,13 @@
         .cv-volver { width: 46px; height: 46px; flex-shrink: 0; border: none; background: none; padding: 0; cursor: pointer; }
         .cv-volver svg { width: 100%; height: 100%; display: block; }
         .cv-logo { height: 64px; width: auto; display: block; }
-        .cv-meta { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+        /* (26-nov) dentro de cada carro: fecha y TURNO a la izquierda, la mesa del quirófano (su icono de la barra) pegada a la derecha */
+        .cv-meta { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .cv-datos { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+        .cv-qico { border: 0; background: none; padding: 0; cursor: pointer; line-height: 0; flex: none; -webkit-tap-highlight-color: transparent; }
+        .cv-qico img { height: 60px; width: auto; display: block; }
+        .cv-datos .cv-dato { white-space: nowrap; }
+        @media (max-width: 760px) { .cv-qico img { height: 36px; } .cv-meta { gap: 5px; } }
         .cv-q { border: 2px solid transparent; border-radius: 999px; padding: 4px 16px; font-size: 18px; font-weight: 600; cursor: pointer; color: #fff; }
         .cv-dato { background: #fff; border-radius: 999px; padding: 2px 12px; font-size: 15px; font-weight: 600; }
         .cvq-1 { background: #dd3030; } .cvq-2 { background: #eac506; color: #1e293b !important; } .cvq-3 { background: #179e08; }
@@ -2459,7 +2465,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 17:43'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 17:45'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3448,8 +3454,9 @@ function cvTop() {
     return `<div class="cv-top">${volver}
         <img class="cv-logo" src="${logo}" alt="Reposició BQ CIMA">
         <div class="cv-meta">
-            ${cv.vista !== 'menu' && cv.q ? `<button class="cv-q ${cvClaseQ(cv.q)}" onclick="cvIr('menu')">${cv.q}</button>` : ''}
-            <span class="cv-dato">${fecha}</span><span class="cv-dato">Turno de ${turno.toLowerCase()}</span>
+            <div class="cv-datos"><span class="cv-dato">${fecha}</span><span class="cv-dato">TURNO DE ${turno.toUpperCase()}</span></div>
+            ${cv.vista !== 'menu' && cv.q ? (TAB_IMG[cv.q] ? `<button class="cv-qico" onclick="cvIr('menu')" title="${cv.q}" aria-label="${cv.q}"><img src="${TAB_IMG[cv.q]}" alt="${cv.q}"></button>`
+                : `<button class="cv-q ${cvClaseQ(cv.q)}" onclick="cvIr('menu')">${cv.q}</button>`) : ''}
         </div></div>`;
 }
 function cvPop(e) {
