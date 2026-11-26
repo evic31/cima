@@ -2432,7 +2432,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 17:33'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 17:34'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3523,7 +3523,7 @@ function cvResumenHTML() {
         const base = [cv.q, z.loc, it.name].join(ID_SEP);
         const add = (st, nombre, cant) => (porSitio[st] ||= []).push([nombre, cant]);
         if (cvCasillas(it)) (it.options?.length ? it.options : ['']).forEach(o => {
-            if (checklistState[o ? base + ID_SEP + o : base]) add(storageOf(it, o), o ? `${it.name} · ${cvEtiq(it, o)}` : it.name, '✓');
+            if (checklistState[o ? base + ID_SEP + o : base]) add(storageOf(it, o), o ? `${it.name} · ${cvEtiq(it, o)}` : it.name, 1);   // (26-nov) casilla = stock de 1 → «1», no ✓
         });
         else if (parseInt(checklistState[base]) > 0) add(it.storage, it.name, checklistState[base]);
     }));
