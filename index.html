@@ -859,7 +859,16 @@
             .tabs-q.ico { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; margin: 0 -0.8rem; padding: 3px 0.8rem; scroll-padding: 0 40%; }
             .tabs-q.ico::-webkit-scrollbar { display: none; }
             .tab.tab-ico img { height: 44px; } .tab.tab-q.tab-ico { padding: 2px 3px; flex: none; }
+            #tabs .tabs-acc { display: none; }
+            .tabs-q.ico { padding-left: 0; }
+            .tabs-q.ico .res-pin { display: flex; align-items: center; position: sticky; left: 0; z-index: 3; flex: none; align-self: stretch;
+                margin: -3px 2px -3px 0; padding: 0 8px 0 0.8rem; background: var(--header-bg); }
+            .tabs-q.ico .res-pin::after { content: ''; position: absolute; top: 0; bottom: 0; right: -18px; width: 18px; pointer-events: none; background: linear-gradient(to right, var(--header-bg) 30%, rgba(88,166,255,0)); }
+            .tab.tab-res, .tab.tab-res:hover { width: 44px; height: 44px; padding: 0; border-radius: 10px; border: 2px solid #fff; background: #fff; font-size: 22px; line-height: 1;
+                display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0,0,0,.18); color: inherit; -webkit-tap-highlight-color: transparent; }
+            .tab.tab-res.active { border-color: #1d4f9c; box-shadow: 0 0 0 2px #1d4f9c, 0 3px 10px rgba(0,0,0,.25); background: #fff; }
         }
+        .res-pin { display: none; }
         .tabs-acc { display: grid; grid-template-columns: minmax(0, 168px); justify-content: center; gap: 8px; max-width: 520px; margin: 8px auto 0; }
         .tab.tab-acc { background: #fff; color: #1d4f9c; border: 2px solid #fff; font-size: 15px; font-weight: 600; padding: 6px 4px; text-align: center; }
         .tab.tab-acc:hover { background: #fff; color: #1d4f9c; }
@@ -1363,7 +1372,8 @@ function renderTabs() {
     const pill = t => { const qm = t.match(/^Quirófano (\d)$/), c = qm ? 'cvq-' + qm[1] : t === 'Hemodinamia' ? 'cvq-hemo' : 'tq-azul', nom = etiq[t] || (qm ? 'Q' + qm[1] : t);
         if (TAB_IMG[t]) return `<button class="tab tab-q tab-ico ${qm ? 'cvq-' + qm[1] : ''}" data-tab="${t}" title="${t}" aria-label="${nom}"><img src="${TAB_IMG[t]}" alt="${nom}"><b class="ico-n${qm ? '' : ' txt'}">${qm ? qm[1] : t === 'Hemodinamia' ? 'HMD' : nom}</b></button>`;
         return `<button class="tab tab-q ${c}" data-tab="${t}" title="${t}">${nom}</button>`; };
-    container.innerHTML = `<div class="tabs-q${zonas.every(z => TAB_IMG[z]) ? ' ico' : ''}">${zonas.map(pill).join('')}</div>
+    // (26-nov) móvil: Resumen = libretita fija al principio de la tira (sin fila propia); los iconos pasan por debajo al hacer scroll
+    container.innerHTML = `<div class="tabs-q${zonas.every(z => TAB_IMG[z]) ? ' ico' : ''}"><span class="res-pin"><button class="tab tab-res" data-tab="RESUMEN" title="Resumen" aria-label="Resumen">🗒️</button></span>${zonas.map(pill).join('')}</div>
         <div class="tabs-acc"><button class="tab tab-acc" data-tab="RESUMEN">Resumen</button></div>`;
     container.addEventListener('click', e => {
         const b = e.target.closest('.tab');
@@ -1374,7 +1384,8 @@ function renderTabs() {
 function switchTab(tabName) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    const btn = document.querySelector(`.tab[data-tab="${tabName}"]`);
+    const btn = [...document.querySelectorAll(`.tab[data-tab="${tabName}"]`)].find(b => b.offsetParent) || document.querySelector(`.tab[data-tab="${tabName}"]`);
+    document.querySelectorAll(`.tab[data-tab="${tabName}"]`).forEach(b => b.classList.add('active'));
     // (26-nov) en móvil la tira de iconos va con scroll: llevar el elegido al centro
     if (btn?.classList.contains('tab-ico')) { const f = btn.parentElement; if (f.scrollWidth > f.clientWidth) { const r = btn.getBoundingClientRect(), fr = f.getBoundingClientRect(); f.scrollBy({ left: r.left - fr.left - (fr.width - r.width) / 2, behavior: 'smooth' }); } }
     const content = document.getElementById(`content-${tabName.replace(/[\s✏️]+/g, '-')}`);
@@ -2448,7 +2459,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 17:41'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '26-nov 17:43'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
