@@ -2467,7 +2467,7 @@ const vozSpeak = t => VOZ_SPEAK.reduce((a, [re, r]) => a.replace(re, r), String(
 const vozLabel = t => String(t).replace(/\s*\((R|U|REA|UCSI)\)/gi, '');
 const VOZ_LOG_KEY = 'vozLog_v1';
 
-const APP_BUILD = '26-nov 18:09'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
+const APP_BUILD = '27-nov 20:17'; // SUBIR EN CADA CAMBIO: la app se recarga sola si hay versión nueva (se ve en la barra de voz)
 
 let voz = null; // estado del modo voz
 
@@ -3557,13 +3557,25 @@ function cvResumenHTML() {
     const porSitio = {};
     CV_ZONAS.forEach(z => (inventoryData[cv.q]?.[z.loc] || []).forEach(it => {
         const base = [cv.q, z.loc, it.name].join(ID_SEP);
-        const add = (st, nombre, cant) => (porSitio[st] ||= []).push([nombre, cant]);
+        const add = (st, nombre, cant, unit, opt) => (porSitio[st] ||= []).push([nombre, cant, unit, opt]);
         if (cvCasillas(it)) (it.options?.length ? it.options : ['']).forEach(o => {
-            if (checklistState[o ? base + ID_SEP + o : base]) add(storageOf(it, o), o ? `${it.name} · ${cvEtiq(it, o)}` : it.name, 1);   // (26-nov) casilla = stock de 1 → «1», no ✓
+            if (checklistState[o ? base + ID_SEP + o : base]) add(storageOf(it, o), o ? `${it.name} · ${cvEtiq(it, o)}` : it.name, 1, (o && it.optUnit?.[o]) || it.unidad || it.name, o || null);   // (26-nov) casilla = stock de 1 → «1», no ✓
         });
-        else if (parseInt(checklistState[base]) > 0) add(it.storage, it.name, checklistState[base]);
+        else if (parseInt(checklistState[base]) > 0) add(it.storage, it.name, checklistState[base], it.unidad || it.name, null);
     }));
-    const { cat } = orderCatalog();
+    const { cat, opts } = orderCatalog();
+    // (27-nov) dentro de cada ubicación, el mismo orden que RESUMEN → Lista Total: ⚙️ Orden y, en farmacia, (R)/(U) al final y zona del cajetín
+    for (const st in porSitio) {
+        const pos = new Map(orderedUnits(st, cat).map((u, i) => [u, i]));
+        const block = u => st !== 'FARMACIA' ? 0 : /\(R\)\s*$/.test(u) ? 1 : /\(U\)\s*$/.test(u) ? 2 : 0;
+        porSitio[st].sort((a, b) => {
+            const ba = block(a[2]), bb = block(b[2]); if (ba !== bb) return ba - bb;
+            if (st === 'FARMACIA') { const za = cajZona(cajDe(a[2])), zb = cajZona(cajDe(b[2])); if (za !== zb) return za - zb; }
+            const pa = pos.get(a[2]) ?? 1e6, pb = pos.get(b[2]) ?? 1e6; if (pa !== pb) return pa - pb;
+            if (a[2] !== b[2]) return a[2].localeCompare(b[2], 'es');
+            return (opts[a[2]] || []).indexOf(a[3]) - (opts[b[2]] || []).indexOf(b[3]);
+        });
+    }
     const sitios = [...orderedStorages(cat).filter(s => porSitio[s]), ...Object.keys(porSitio).filter(s => !cat[s])];
     return `<div class="cv-res cv-res-ancho"><h2>Resumen</h2>
         ${sitios.length ? `<div class="cv-cols">${sitios.map(s => `<div class="cv-card"><div class="sub-header ${getLocationClass(s)}">${s}</div>
